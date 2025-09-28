@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dxmnae5yjmh1w" path="res://world/world.gd" id="1_tcf2h"]
 [ext_resource type="Texture2D" uid="uid://cmtfs1cr0kqxo" path="res://world/experimental_tileset.png" id="2_4717r"]
-[ext_resource type="Script" uid="uid://csdiyuby17k3b" path="res://world/camera_2d.gd" id="3_4717r"]
+[ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://camera/camera.tscn" id="2_h5o24"]
 [ext_resource type="Texture2D" uid="uid://c6c64y04mj0wq" path="res://world/wall_tileset.png" id="4_h5o24"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tcf2h"]
@@ -854,6 +854,7 @@ texture_region_size = Vector2i(16, 26)
 16:4/0/terrains_peering_bit/left_side = 0
 16:4/0/terrains_peering_bit/top_left_corner = 0
 16:4/0/terrains_peering_bit/top_side = 0
+0:7/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_h5o24"]
 tile_layout = 2
@@ -867,12 +868,10 @@ sources/1 = SubResource("TileSetAtlasSource_mmdvd")
 script = ExtResource("1_tcf2h")
 noise_tex = SubResource("NoiseTexture2D_4717r")
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" parent="." instance=ExtResource("2_h5o24")]
 position = Vector2(574, 439)
-zoom = Vector2(3, 3)
-script = ExtResource("3_4717r")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="."]
+[node name="Ground" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_mmdvd")
 
 [node name="Walls" type="TileMapLayer" parent="."]

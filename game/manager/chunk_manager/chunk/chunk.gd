@@ -1,4 +1,10 @@
-extends Node
+extends RefCounted
 class_name Chunk
 
-var tiles: Dictionary[int, Vector2i]
+var data: Dictionary[Vector2i, Dictionary]
+var index: Vector2i
+
+
+func _init(tiles: Dictionary[Vector2i, Dictionary]) -> void:
+	
+	data = tiles
