@@ -16,7 +16,7 @@ var height: int = 250
 var values: Array
 
 func _ready() -> void:
-	walls.set_cells_terrain_connect([Vector2(20,20)],0,0, false)
+	pass
 	
 	
 	#var noise: Noise = noise_tex.noise
