@@ -1,11 +1,11 @@
 extends Node2D
 
-# BUG DAT BIJ DE GENERATED CHUNKS DE - COORDS NIET WERKEN OOKAL GEEF JE ALS PARAMTER EEN NEGATIEVE COORD. WSS OMDAT IK DEZE 2 PARAMETERS VAN ELKAAR AFTREK EN DAN DE ABS NEEM
+
 var chunk_list: Dictionary[Vector2i, Chunk]
 var active_chunks: Dictionary[Vector2i, Chunk]
 
 var load_interval: float = 0.0
-var load_distance: int = 1
+var load_distance: int = 4
 var unactive_chunk_timer: float = 0.15
 
 @export var player_pos_or_camera: Camera2D
@@ -14,15 +14,18 @@ var unactive_chunk_timer: float = 0.15
 var ground: TileMapLayer
 var walls: TileMapLayer 
 
+@export var noise_tex: NoiseTexture2D 
+
+
 func _ready() -> void:
 	ground = get_node("/root/World/Ground")
 	walls = get_node("/root/World/Walls")
 	player_pos_or_camera = get_node("/root/World/Camera2D")
 	
-	generate_chunks(Vector2i(-20,-20), Vector2i(20,20))
-	
-	#for chunk in chunk_list:
-		#load_chunk(chunk)
+	var noise = noise_tex.noise
+	for x in noise_tex.get_height():
+		for y in noise_tex.get_width():
+			pass
 
 
 
@@ -34,55 +37,99 @@ func _process(delta: float) -> void:
 
 
 
-func load_chunk(start: Vector2i, end: Vector2i):
-	for y in range(start.y, end.y + 1):
-		for x in range(start.x, end.x + 1):
-			var chunk_coords = Vector2i(x,y)
-			var chunk: Chunk = chunk_list[chunk_coords]
-			if not chunk.loaded:
-				chunk.last_accessed = Time.get_ticks_msec() / 1000
-				chunk.loaded = true
-				active_chunks[chunk_coords] = chunk
-				for tile_x in range(16):
-					for tile_y in range(16):
-						ground.set_cell(chunk_coords * 16 + Vector2i(tile_x,tile_y), 0, chunk_list[chunk_coords].data[Vector2i(tile_x,tile_y)]["ground"])
-						walls.set_cell(chunk_coords * 16 + Vector2i(tile_x,tile_y), 0, chunk_list[chunk_coords].data[Vector2i(tile_x,tile_y)]["walls"])
-			else:
-				chunk.last_accessed = Time.get_ticks_msec() / 1000
-
-
-
-func unload_chunk(chunk_coords: Vector2i):
-	chunk_list[chunk_coords].loaded = false
+func load_chunk(chunk_pos: Vector2i):
+	var chunk: Chunk = chunk_list[chunk_pos]
+	active_chunks[chunk_pos] = chunk
+	
+	
 	for tile_x in range(16):
 		for tile_y in range(16):
-			ground.erase_cell(chunk_coords * 16 + Vector2i(tile_x, tile_y))
+			ground.set_cell(chunk_pos * 16 + Vector2i(tile_x, tile_y), 0, chunk.ground_layer[Vector2i(tile_x, tile_y)])
+			walls.set_cell(chunk_pos * 16 + Vector2i(tile_x, tile_y), 0, chunk.wall_layer[Vector2i(tile_x, tile_y)])
+
+
+
+func unload_chunk(chunk_pos: Vector2i):
+	var dict_ground: Dictionary[Vector2i, Vector2i]
+	var dict_walls: Dictionary[Vector2i, Vector2i]
+	
+	for tile_x in range(16):
+		for tile_y in range(16):
+			dict_ground[Vector2i(tile_x, tile_y)] = ground.get_cell_atlas_coords(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+			dict_walls[Vector2i(tile_x, tile_y)] = walls.get_cell_atlas_coords(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+	chunk_list[chunk_pos].ground_layer = dict_ground
+	chunk_list[chunk_pos].wall_layer = dict_walls
+	
+	var chunk: Chunk = chunk_list[chunk_pos]
+	chunk.loaded = false
+	
+	for tile_x in range(16):
+		for tile_y in range(16):
+			ground.erase_cell(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+			walls.erase_cell(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+	active_chunks.erase(chunk_pos)
+	
+	
+
+
+
+func generate_chunk(chunk_pos: Vector2i):
+	var dict_ground: Dictionary[Vector2i, Vector2i]
+	var dict_walls: Dictionary[Vector2i, Vector2i]
+			
+	for tile_x in range(16):
+		for tile_y in range(16):
+			
+			dict_ground[Vector2i(chunk_pos.x * 16 + tile_x, chunk_pos.y * 16 + tile_y)] = Vector2.ZERO
+			
+			if noise_tex.noise.get_noise_2d(tile_x + chunk_pos.x * 16,tile_y + chunk_pos.y * 16) < 0:
+				dict_walls[Vector2i(chunk_pos.x * 16 + tile_x, chunk_pos.y * 16 + tile_y)] = Vector2.ZERO
+	ground.set_cells_terrain_connect(dict_ground.keys(), 0, 0, false)
+	walls.set_cells_terrain_connect(dict_walls.keys(), 0, 0, false)
+	
+	
+	#for tile_x in range(16):
+		#for tile_y in range(16):
+			#dict_ground[Vector2i(tile_x, tile_y)] = ground.get_cell_atlas_coords(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+			#dict_walls[Vector2i(tile_x, tile_y)] = walls.get_cell_atlas_coords(chunk_pos * 16 + Vector2i(tile_x, tile_y))
+					
+	
+	var chunk = Chunk.new(dict_ground, dict_walls)
+	active_chunks[chunk_pos] = chunk
+	chunk_list[chunk_pos] = chunk
+
+
 
 
 func update_loaded_chunks():
 	var player_chunk_pos: Vector2i = floor(player_pos_or_camera.global_position / 256) 
-	var start_load: Vector2i = player_chunk_pos - Vector2i(load_distance, load_distance)
-	var end_load: Vector2i = player_chunk_pos + Vector2i(load_distance, load_distance)
+	var start_pos: Vector2i = player_chunk_pos - Vector2i(load_distance, load_distance)
+	var end_pos: Vector2i = player_chunk_pos + Vector2i(load_distance, load_distance)
 	
-	load_chunk(start_load, end_load)
-	for chunk_coord in active_chunks:
-		if ((Time.get_ticks_msec() / 1000) - active_chunks[chunk_coord].last_accessed > 1 ):
-			unload_chunk(chunk_coord) 
-
-
-
-func generate_chunks(start: Vector2i, end: Vector2i):
-	var amount = (start - end).abs()
-	for y in range(amount.y):
-		for x in range(amount.x):
-			var chunk_coords = Vector2i(x,y)
-			var tiles: Dictionary[Vector2i, Dictionary]
+	for chunk_x in range(start_pos.x, end_pos.x + 1):
+		for chunk_y in range(start_pos.y, end_pos.y + 1):
+			var chunk_pos = Vector2i(chunk_x, chunk_y)
 			
-			for tile_x in range(16):
-				for tile_y in range(16):
-					tiles[Vector2i(tile_x, tile_y)] = {"ground": Vector2i(2, 15), "walls": Vector2i(0,7)}
-			var chunk = Chunk.new(tiles)
-			chunk_list[chunk_coords] = chunk
+			
+			if not chunk_list.has(chunk_pos):
+				generate_chunk(chunk_pos)
+				print("generate", chunk_list[chunk_pos])
+				
+			elif not chunk_list[chunk_pos].loaded: 
+				load_chunk(chunk_pos)
+				print("load", chunk_list[chunk_pos])
+			chunk_list[chunk_pos].last_accessed = Time.get_ticks_msec() / 1000
+			chunk_list[chunk_pos].loaded = true
+	
+	for chunk_coord in active_chunks.keys():
+		if ((Time.get_ticks_msec() / 1000) - active_chunks[chunk_coord].last_accessed > 4 ):
+			unload_chunk(chunk_coord) 
+			
+
+
+
+
+
 
 
 
@@ -91,6 +138,6 @@ func _draw() -> void:
 	z_index = 100
 	for x in range(-10240,10240, chunk_pixel_size):
 		for y in range(-10240,10240, chunk_pixel_size):
-			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.5), false, 1.5)
+			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.2), false, 1.)
 			draw_string(ThemeDB.fallback_font, Vector2(x,y + 16), str(Vector2(x / 256,y / 256)))
-			
+	

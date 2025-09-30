@@ -862,7 +862,7 @@ tile_offset_axis = 1
 terrain_set_0/mode = 0
 terrain_set_0/terrain_0/name = "Dirt Wall"
 terrain_set_0/terrain_0/color = Color(0.000655516, 0.529879, 0.933594, 1)
-sources/1 = SubResource("TileSetAtlasSource_mmdvd")
+sources/0 = SubResource("TileSetAtlasSource_mmdvd")
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_tcf2h")
@@ -876,3 +876,11 @@ tile_set = SubResource("TileSet_mmdvd")
 
 [node name="Walls" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_h5o24")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 23.0
+scale = Vector2(2, 2)
+text = "sdsd"
