@@ -3,13 +3,10 @@
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_ottdo"]
-noise_type = 0
-seed = 350
-frequency = 0.0039
+frequency = 0.0324
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_sejh2"]
 noise = SubResource("FastNoiseLite_ottdo")
-seamless = true
 
 [node name="ChunkManager" type="Node2D"]
 script = ExtResource("1_ottdo")
