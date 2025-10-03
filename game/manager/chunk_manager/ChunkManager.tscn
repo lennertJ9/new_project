@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_ottdo"]
+seed = 1
 frequency = 0.0324
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_sejh2"]
