@@ -1,31 +1,44 @@
 extends Node2D
 
 
-@onready var data_layer: TileMapLayer = $DataLayer
+
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-const TILE_MASK = 0xFFFF
-const ATLAS_MASK = 0xFF
 
 
-const ATLAS_SHIFT = 16
-@export var bit: int
+var generated_chunks: Array[Chunk]
 
 
 
 func _ready() -> void:
 	generate_chunk(Vector2i(0,0))
+	load_chunk(generated_chunks[0])
+
 
 
 func generate_chunk(chunk_pos: Vector2i):
 	var chunk = Chunk.new(chunk_pos)
+	chunk.position = chunk_pos
 	var i = 0
 	for y in range(16):
 		for x in range(16):
-			# noise calcs op te tile te zetten
-			chunk.ground_layer[i] # = hier een int met nodige data
-			var tile_id
+			var atlas_coord = Vector2i(2,2)
+			var atlas_id = 0
+			var data = atlas_coord.y << 8 | atlas_coord.x
+			chunk.ground_layer[i] = data
+			i += 1
+	generated_chunks.append(chunk)
+
+
+
+func load_chunk(chunk: Chunk):
+	var i = 0
+	for x in range(16):
+		for y in range(16):
+			var chunk_data = chunk.ground_layer[i]
+			ground_layer.set_cell(chunk.position * 16 + Vector2i(x,y), 0, chunk.get_tile_coord(chunk_data))
+			#ground_layer.set_cell(chunk.position * 16 + Vector2i(x,y), 0, Vector2i(2,2))
 			i += 1
 			
 

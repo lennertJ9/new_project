@@ -7,10 +7,7 @@ var position: Vector2i
 var ground_layer: PackedInt32Array 
 var wall_layer: PackedInt32Array
 
-const TILE_MASK = 0xFFFF
-const ATLAS_MASK = 0xFF
 
-const ATLAS_SHIFT = 16
 
 
 
@@ -21,13 +18,16 @@ func _init(pos: Vector2i) -> void:
 	
 
 
-func get_tile_id(packed: int):
-	return packed & TILE_MASK
+func get_tile_coord(packed: int) -> Vector2i:
+	var x = packed & 0xFF
+	var y = packed >> 8 & 0xFF
+	return Vector2i(x,y)
 
 
 
-func get_atlas_id(packed: int):
-	return (packed >> ATLAS_SHIFT) & ATLAS_MASK
+func get_atlas_id(packed: int) -> int:
+	return 0
+	#return (packed >> ATLAS_SHIFT) & ATLAS_MASK
 
 
 

@@ -82,8 +82,6 @@ sources/1 = SubResource("TileSetAtlasSource_wt20s")
 [node name="ChunkManager" type="Node2D"]
 script = ExtResource("1_ottdo")
 
-[node name="DataLayer" type="TileMapLayer" parent="."]
-
 [node name="GroundLayer" type="TileMapLayer" parent="."]
 tile_map_data = PackedByteArray("AAD/////AAACAAIAAAAAAP//AAACAAIAAAAAAAAAAAACAAIAAAD//wAAAAACAAIAAAAAAP7/AAACAAAAAAD+//7/AAAAAAAAAAA=")
 tile_set = SubResource("TileSet_x3nnn")
