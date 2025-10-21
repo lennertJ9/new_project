@@ -3,6 +3,7 @@ extends Node2D
 @export var noise_tex: NoiseTexture2D
 
 
+@export var camera: Camera2D
 
 
 

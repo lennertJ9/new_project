@@ -1,34 +1,103 @@
 extends Node2D
 
 
+@export var player: Node2D
 
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
+var render_distance: int = 2
 
+var generated_chunks: Dictionary[Vector2i, Chunk]
+var active_chunks: Array[Chunk]
 
-var generated_chunks: Array[Chunk]
+var chunks_to_generate: Dictionary[Vector2i, Chunk]
+var chunks_to_load: Dictionary[Vector2i, Chunk]
+var chunks_to_unload: Dictionary[Vector2i, Chunk]
 
+var chunk_check_interval: float = 2
+var chunk_check_timer: float = 0
+
+var thread_chunk_gen: Thread = Thread.new()
+var thread_chunk_load: Thread = Thread.new()
 
 
 func _ready() -> void:
-	generate_chunk(Vector2i(0,0))
-	load_chunk(generated_chunks[0])
+	
+	thread_chunk_gen.start(chunk_generator)
+	player = get_tree().get_first_node_in_group("world").camera
+
+
+func _process(delta: float) -> void:
+	chunk_check_timer += delta
+	if chunk_check_timer > chunk_check_interval:
+		chunk_check()
+		chunk_check_timer = 0
+
+
+func chunk_generator():
+	while true:
+		OS.delay_msec(100)
+		if not chunks_to_generate.is_empty():
+			var chunk: Chunk = chunks_to_generate.values()[0]
+			var chunk_pos = chunk.position
+			
+			var i = 0
+			for y in range(16):
+				for x in range(16):
+					var atlas_coord = Vector2i(2,2)
+					var atlas_id = 0
+					var data = atlas_coord.y << 8 | atlas_coord.x
+					chunk.ground_layer[i] = data
+					i += 1
+			generated_chunks[chunk.position] = chunk
+			chunk.is_generated = true
+			chunks_to_generate.erase(chunk_pos)
 
 
 
-func generate_chunk(chunk_pos: Vector2i):
-	var chunk = Chunk.new(chunk_pos)
-	chunk.position = chunk_pos
-	var i = 0
-	for y in range(16):
-		for x in range(16):
-			var atlas_coord = Vector2i(2,2)
-			var atlas_id = 0
-			var data = atlas_coord.y << 8 | atlas_coord.x
-			chunk.ground_layer[i] = data
-			i += 1
-	generated_chunks.append(chunk)
+func chunk_loader():
+	while true:
+		OS.delay_msec(100)
+		if not chunks_to_load.is_empty():
+			pass
+			# load chunks from chunks to load
+
+
+func chunk_check():
+	var player_chunk_coord = floor(player.global_position / 256)
+	var start_coord: Vector2 = player_chunk_coord - Vector2(render_distance, render_distance) 
+	var end_coord: Vector2 = player_chunk_coord + Vector2(render_distance, render_distance) 
+	
+	for coord_x in range(start_coord.x, end_coord.x + 1):
+		for coord_y in range(start_coord.y, end_coord.y + 1):
+			var chunk_pos = Vector2i(coord_x, coord_y)
+			
+			if generated_chunks.has(chunk_pos):
+				pass
+				# load
+				
+			else:
+				if not chunks_to_generate.has(chunk_pos):
+					chunks_to_generate[chunk_pos] = Chunk.new(chunk_pos)
+					print("yes")
+					
+			
+			
+
+
+#func generate_chunk(chunk_pos: Vector2i):
+	#var chunk = Chunk.new(chunk_pos)
+	#chunk.position = chunk_pos
+	#var i = 0
+	#for y in range(16):
+		#for x in range(16):
+			#var atlas_coord = Vector2i(2,2)
+			#var atlas_id = 0
+			#var data = atlas_coord.y << 8 | atlas_coord.x
+			#chunk.ground_layer[i] = data
+			#i += 1
+	#generated_chunks[chunk_pos] = chunk
 
 
 
@@ -43,6 +112,12 @@ func load_chunk(chunk: Chunk):
 			
 
 
+
+
+
+
+
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("left_click"):
 		var local_pos = ground_layer.local_to_map(get_global_mouse_position())
@@ -54,7 +129,7 @@ func _input(event: InputEvent) -> void:
 func _draw() -> void:
 	var chunk_pixel_size = 256
 	
-	z_index = 100
+	z_index = 5
 	for x in range(-1280,1280, chunk_pixel_size):
 		for y in range(-1280,1280, chunk_pixel_size):
 			

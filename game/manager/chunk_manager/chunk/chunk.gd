@@ -7,11 +7,13 @@ var position: Vector2i
 var ground_layer: PackedInt32Array 
 var wall_layer: PackedInt32Array
 
+var is_generated: bool
 
 
 
 
 func _init(pos: Vector2i) -> void:
+	is_generated = false
 	ground_layer.resize(256)
 	wall_layer.resize(256)
 	position = pos
