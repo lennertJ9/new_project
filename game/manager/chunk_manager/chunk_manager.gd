@@ -18,13 +18,14 @@ var chunks_to_unload: Dictionary[Vector2i, Chunk]
 var chunk_check_interval: float = 2
 var chunk_check_timer: float = 0
 
-var thread_chunk_gen: Thread = Thread.new()
-var thread_chunk_load: Thread = Thread.new()
+var thread_chunk_generator: Thread = Thread.new()
+var thread_chunk_loader: Thread = Thread.new()
 
 
 func _ready() -> void:
 	
-	thread_chunk_gen.start(chunk_generator)
+	thread_chunk_generator.start(chunk_generator)
+	thread_chunk_loader.start(chunk_loader)
 	player = get_tree().get_first_node_in_group("world").camera
 
 
@@ -37,7 +38,7 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(100)
+		OS.delay_msec(10000)
 		if not chunks_to_generate.is_empty():
 			var chunk: Chunk = chunks_to_generate.values()[0]
 			var chunk_pos = chunk.position
@@ -60,8 +61,9 @@ func chunk_loader():
 	while true:
 		OS.delay_msec(100)
 		if not chunks_to_load.is_empty():
-			pass
+			print("loading")
 			# load chunks from chunks to load
+			
 
 
 func chunk_check():
@@ -74,13 +76,13 @@ func chunk_check():
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
 			if generated_chunks.has(chunk_pos):
-				pass
+				chunks_to_load[chunk_pos] = generated_chunks[chunk_pos]
 				# load
 				
 			else:
 				if not chunks_to_generate.has(chunk_pos):
 					chunks_to_generate[chunk_pos] = Chunk.new(chunk_pos)
-					print("yes")
+					
 					
 			
 			
