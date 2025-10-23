@@ -38,7 +38,7 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(10000)
+		OS.delay_msec(100)
 		if not chunks_to_generate.is_empty():
 			var chunk: Chunk = chunks_to_generate.values()[0]
 			var chunk_pos = chunk.position
@@ -62,6 +62,12 @@ func chunk_loader():
 		OS.delay_msec(100)
 		if not chunks_to_load.is_empty():
 			print("loading")
+			var chunk = chunks_to_load.values()[0]
+			var i = 0
+			for x_pos in range(16):
+				for y_pos in range(16):
+					ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2) )
+			chunks_to_load.erase(chunk.position)
 			# load chunks from chunks to load
 			
 
