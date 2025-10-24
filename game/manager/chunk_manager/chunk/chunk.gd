@@ -8,7 +8,7 @@ var ground_layer: PackedInt32Array
 var wall_layer: PackedInt32Array
 
 var is_generated: bool
-
+var is_loaded: bool
 
 
 

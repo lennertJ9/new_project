@@ -15,26 +15,35 @@ var chunks_to_generate: Dictionary[Vector2i, Chunk]
 var chunks_to_load: Dictionary[Vector2i, Chunk]
 var chunks_to_unload: Dictionary[Vector2i, Chunk]
 
+# 
 var chunk_check_interval: float = 2
+var chunk_load_interval: float = 0.2
+
 var chunk_check_timer: float = 0
+var chunk_load_timer: float = 0
 
 var thread_chunk_generator: Thread = Thread.new()
-var thread_chunk_loader: Thread = Thread.new()
+
 
 
 func _ready() -> void:
 	
 	thread_chunk_generator.start(chunk_generator)
-	thread_chunk_loader.start(chunk_loader)
+	#thread_chunk_loader.start(chunk_loader) # geen scene tree bewerkingen doen via thread :(
 	player = get_tree().get_first_node_in_group("world").camera
 
 
 func _process(delta: float) -> void:
 	chunk_check_timer += delta
+	chunk_load_timer += delta
+	
 	if chunk_check_timer > chunk_check_interval:
 		chunk_check()
 		chunk_check_timer = 0
-
+		
+	if chunk_load_timer > chunk_load_interval:
+		chunk_loader()
+		chunk_load_timer = 0
 
 func chunk_generator():
 	while true:
@@ -58,21 +67,21 @@ func chunk_generator():
 
 
 func chunk_loader():
-	while true:
-		OS.delay_msec(100)
-		if not chunks_to_load.is_empty():
-			print("loading")
-			var chunk = chunks_to_load.values()[0]
-			var i = 0
-			for x_pos in range(16):
-				for y_pos in range(16):
-					ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2) )
-			chunks_to_load.erase(chunk.position)
+	if not chunks_to_load.is_empty():
+		print("loading")
+		var chunk: Chunk = chunks_to_load.values()[0]
+		var i = 0
+		for x_pos in range(16):
+			for y_pos in range(16):
+				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2) )
+		chunk.is_loaded = true
+		chunks_to_load.erase(chunk.position)
 			# load chunks from chunks to load
 			
 
 
 func chunk_check():
+	print("check")
 	var player_chunk_coord = floor(player.global_position / 256)
 	var start_coord: Vector2 = player_chunk_coord - Vector2(render_distance, render_distance) 
 	var end_coord: Vector2 = player_chunk_coord + Vector2(render_distance, render_distance) 
@@ -81,12 +90,12 @@ func chunk_check():
 		for coord_y in range(start_coord.y, end_coord.y + 1):
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
-			if generated_chunks.has(chunk_pos):
+			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded:
 				chunks_to_load[chunk_pos] = generated_chunks[chunk_pos]
 				# load
 				
 			else:
-				if not chunks_to_generate.has(chunk_pos):
+				if not chunks_to_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
 					chunks_to_generate[chunk_pos] = Chunk.new(chunk_pos)
 					
 					
@@ -134,13 +143,13 @@ func _input(event: InputEvent) -> void:
 
 
 
-func _draw() -> void:
-	var chunk_pixel_size = 256
-	
-	z_index = 5
-	for x in range(-1280,1280, chunk_pixel_size):
-		for y in range(-1280,1280, chunk_pixel_size):
-			
-			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.2), false, 1.)
-			draw_string(ThemeDB.fallback_font, Vector2(x,y + 16), str(Vector2(x / 256,y / 256)))
-	
+#func _draw() -> void:
+	#var chunk_pixel_size = 256
+	#
+	#z_index = 5
+	#for x in range(-1280,1280, chunk_pixel_size):
+		#for y in range(-1280,1280, chunk_pixel_size):
+			#
+			#draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.2), false, 1.)
+			#draw_string(ThemeDB.fallback_font, Vector2(x,y + 16), str(Vector2(x / 256,y / 256)))
+	#
