@@ -9,10 +9,14 @@ var wall_layer: PackedInt32Array
 
 var is_generated: bool
 var is_loaded: bool
+var is_queued_unload: bool
+
+var last_accessed: float
 
 
 
 func _init(pos: Vector2i) -> void:
+	is_queued_unload = false
 	is_generated = false
 	ground_layer.resize(256)
 	wall_layer.resize(256)
