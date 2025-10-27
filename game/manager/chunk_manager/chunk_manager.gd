@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(5)
+		OS.delay_msec(15)
 		if not chunks_to_generate.is_empty():
 			var chunk: Chunk = chunks_to_generate.values()[0]
 			var chunk_pos = chunk.position
