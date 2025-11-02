@@ -1,6 +1,6 @@
 extends RefCounted
 class_name Chunk
-# ongebruikt  atlas ID    tile_x       tile_y    --> 32 bit int
+# ongebruikt  tile ID    tile_x       tile_y    --> 32 bit int
 # 00000000    00000000    00000000    00000000
 var position: Vector2i
 
@@ -10,12 +10,14 @@ var wall_layer: PackedInt32Array
 var is_generated: bool
 var is_loaded: bool
 var is_queued_unload: bool
+var is_autotiled: bool
 
 var last_accessed: float
-
+  
 
 
 func _init(pos: Vector2i) -> void:
+	is_autotiled = false
 	is_queued_unload = false
 	is_generated = false
 	ground_layer.resize(256)
@@ -25,8 +27,8 @@ func _init(pos: Vector2i) -> void:
 
 
 func get_tile_coord(packed: int) -> Vector2i:
-	var x = packed & 0xFF
-	var y = packed >> 8 & 0xFF
+	var x = (packed >> 8) & 0xFF
+	var y = packed & 0xFF
 	return Vector2i(x,y)
 
 

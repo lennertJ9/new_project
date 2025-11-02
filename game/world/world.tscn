@@ -20,7 +20,7 @@ noise_tex = SubResource("NoiseTexture2D_4717r")
 camera = NodePath("Camera2D")
 
 [node name="Camera2D" parent="." instance=ExtResource("2_h5o24")]
-position = Vector2(574, 439)
+position = Vector2(0, 12)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

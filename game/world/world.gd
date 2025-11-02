@@ -21,9 +21,3 @@ var values: Array
 func _process(delta: float) -> void:
 	label.text = str(Engine.get_frames_per_second())
 	
-
-
-
-
-
-	
