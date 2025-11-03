@@ -48,10 +48,6 @@ var tile_lookup: Dictionary[int, Vector2i] = {
 	68: Vector2i(1,4),
 	128: Vector2i(2,4),
 	0: Vector2i(4,4),
-	
-	
-	
-	
 }
 
 
@@ -94,11 +90,12 @@ func chunk_generator():
 			var i = 0
 			for y in range(16):
 				for x in range(16):
+					
 					var global_pos = chunk.position * 16 + Vector2i(x,y)
 					var walls_atlas_id = 0
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
-					if random > 0.20:
+					if random > 0.1:
 						wall_id = 1 << 16 # dirt wall
 					else:
 						wall_id = 0
@@ -123,7 +120,7 @@ func chunk_autotiler():
 		OS.delay_msec(15)
 		if not chunks_to_autotile.is_empty():
 			var chunk: Chunk = chunks_to_autotile.pop_front()
-			for y in range(1, 15):
+			for y in range(1, 15): # loops over de inner tiles
 				for x in range(1, 15):
 					var i = y * 16 + x
 					
@@ -148,13 +145,29 @@ func chunk_autotiler():
 						if chunk.wall_layer[i - 17] >> 16 == tile_id:
 							bitmask += 128
 							
-						print("i: ", i ,"  bitmask:  ",bitmask)
+						#print("i: ", i ,"  bitmask:  ",bitmask)
 						if tile_lookup.has(bitmask):
 							var atlas_pos = tile_lookup[bitmask]
 							
 							chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 						else:
 							chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
+			
+			var top: int
+			var bottom:int
+			var left: int
+			var right:int
+			for x in range(16): # zet de indexen van alle tiles aan de boven en onder rand van een chunk op 0 (niet laden)
+				top = 0 * 16 + x
+				bottom = 15 * 16 + x
+				chunk.wall_layer[top] = 0
+				chunk.wall_layer[bottom] = 0
+				
+			for y in range(16): # zet de indexen van alle tiles aan de linker en rechter rand van een chunk op 0 (niet laden)
+				left =  y * 16 + 0
+				right = y * 16 + 15
+				chunk.wall_layer[left] = 0
+				chunk.wall_layer[right] = 0
 			
 			chunk.is_autotiled = true
 			chunks_to_load.append(chunk)
@@ -167,11 +180,12 @@ func chunk_loader():
 		print("loading")
 		var chunk: Chunk = chunks_to_load.pop_front()
 		var i = 0
+		
 		for y_pos in range(16):
 			for x_pos in range(16):
+				
 				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2))
 				if chunk.wall_layer[i] > 65000:
-					
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, chunk.get_tile_coord(chunk.wall_layer[i])) 
 				i += 1
 		chunk.is_loaded = true

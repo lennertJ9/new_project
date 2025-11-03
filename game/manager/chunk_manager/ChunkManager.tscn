@@ -6,6 +6,7 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
 noise_type = 0
+seed = 6
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_oaajj"]
 noise = SubResource("FastNoiseLite_wt20s")

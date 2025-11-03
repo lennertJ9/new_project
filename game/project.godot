@@ -30,6 +30,12 @@ window/size/window_width_override=1640
 window/size/window_height_override=900
 window/vsync/vsync_mode=0
 
+[file_customization]
+
+folder_colors={
+"res://manager/chunk_manager/test_bitmask_system/": "pink"
+}
+
 [input]
 
 left_click={
