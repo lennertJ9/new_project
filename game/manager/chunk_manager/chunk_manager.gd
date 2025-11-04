@@ -33,16 +33,16 @@ var thread_chunk_autotiler: Thread = Thread.new()
 
 var tile_lookup: Dictionary[int, Vector2i] = {
 	193: Vector2i(0,0),
-	199: Vector2i(1,0),
+	199: Vector2i(1,2),
 	7: Vector2i(2,0),
 	16: Vector2i(4,0),
-	241: Vector2i(0,1),
+	241: Vector2i(2,1),
 	255: Vector2i(1,1),
 	31: Vector2i(2,1),
 	17: Vector2i(4,1),
 	28: Vector2i(0,2),
-	124: Vector2i(1,2),
-	112: Vector2i(2,2),
+	124: Vector2i(1,0),
+	112: Vector2i(2,0),
 	1: Vector2i(4,2),
 	4: Vector2i(0,4),
 	68: Vector2i(1,4),
@@ -120,38 +120,6 @@ func chunk_autotiler():
 		OS.delay_msec(15)
 		if not chunks_to_autotile.is_empty():
 			var chunk: Chunk = chunks_to_autotile.pop_front()
-			for y in range(1, 15): # loops over de inner tiles
-				for x in range(1, 15):
-					var i = y * 16 + x
-					
-					var bitmask: int = 0
-					var tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
-					if tile_id != 0:
-						#print(chunk.wall_layer[i] >> 16)
-						if chunk.wall_layer[i - 16] >> 16 == tile_id:
-							bitmask += 1
-						if chunk.wall_layer[i - 15] >> 16 == tile_id:
-							bitmask += 2
-						if chunk.wall_layer[i + 1] >> 16 == tile_id:
-							bitmask += 4
-						if chunk.wall_layer[i + 17] >> 16 == tile_id:
-							bitmask += 8
-						if chunk.wall_layer[i + 16] >> 16 == tile_id:
-							bitmask += 16
-						if chunk.wall_layer[i + 15] >> 16 == tile_id:
-							bitmask += 32
-						if chunk.wall_layer[i - 1] >> 16 == tile_id:
-							bitmask += 64
-						if chunk.wall_layer[i - 17] >> 16 == tile_id:
-							bitmask += 128
-							
-						#print("i: ", i ,"  bitmask:  ",bitmask)
-						if tile_lookup.has(bitmask):
-							var atlas_pos = tile_lookup[bitmask]
-							
-							chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
-						else:
-							chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
 			
 			var top: int
 			var bottom:int
@@ -168,6 +136,47 @@ func chunk_autotiler():
 				right = y * 16 + 15
 				chunk.wall_layer[left] = 0
 				chunk.wall_layer[right] = 0
+			
+			
+			for y in range(1, 15): # loops over de inner tiles
+				for x in range(1, 15):
+					var i = y * 16 + x
+					
+					var bitmask: int = 0
+					var tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
+					
+					if tile_id != 0:
+						#print(chunk.wall_layer[i] >> 16)
+						if chunk.wall_layer[i - 16] >> 16 == tile_id:
+							print(chunk.wall_layer[i - 16])
+							print("i +1")
+							bitmask += 1
+						if chunk.wall_layer[i - 15] >> 16 == tile_id:
+							bitmask += 2
+						if chunk.wall_layer[i + 1] >> 16 == tile_id:
+							bitmask += 4
+						if chunk.wall_layer[i + 17] >> 16 == tile_id:
+							bitmask += 8
+						if chunk.wall_layer[i + 16] >> 16 == tile_id:
+							bitmask += 16
+						if chunk.wall_layer[i + 15] >> 16 == tile_id:
+							bitmask += 32
+						if chunk.wall_layer[i - 1] >> 16 == tile_id:
+							bitmask += 64
+						if chunk.wall_layer[i - 17] >> 16 == tile_id:
+							bitmask += 128
+							
+						print("i: ", i," bitmask: ",bitmask)
+						print('-----------------------------')
+						#print("i: ", i ,"  bitmask:  ",bitmask)
+						if tile_lookup.has(bitmask):
+							var atlas_pos = tile_lookup[bitmask]
+							
+							chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+						else:
+							chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
+			
+			
 			
 			chunk.is_autotiled = true
 			chunks_to_load.append(chunk)
@@ -256,7 +265,7 @@ func _draw() -> void:
 		for y in range(-1280,1280, chunk_pixel_size):
 			
 			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.2), false, 1.)
-			draw_string(ThemeDB.fallback_font, Vector2(x,y + 16), str(Vector2(x / 256,y / 256)))
+			draw_string(ThemeDB.fallback_font, Vector2(x,y ), str(Vector2(x / 256,y / 256)))
 	for x in range(-320,320, 16):
 		for y in range(-320,320, 16):
 			
