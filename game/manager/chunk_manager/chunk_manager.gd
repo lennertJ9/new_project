@@ -32,15 +32,15 @@ var thread_chunk_autotiler: Thread = Thread.new()
 
 
 var tile_lookup: Dictionary[int, Vector2i] = {
-	193: Vector2i(0,0),
+	193: Vector2i(2,2),
 	199: Vector2i(1,2),
-	7: Vector2i(2,0),
+	7: Vector2i(0,2),
 	16: Vector2i(4,0),
 	241: Vector2i(2,1),
 	255: Vector2i(1,1),
-	31: Vector2i(2,1),
+	31: Vector2i(0,1),
 	17: Vector2i(4,1),
-	28: Vector2i(0,2),
+	28: Vector2i(0,0),
 	124: Vector2i(1,0),
 	112: Vector2i(2,0),
 	1: Vector2i(4,2),
@@ -48,6 +48,11 @@ var tile_lookup: Dictionary[int, Vector2i] = {
 	68: Vector2i(1,4),
 	128: Vector2i(2,4),
 	0: Vector2i(4,4),
+	76: Vector2i(1,4),
+	92: Vector2i(8,0),
+	159: Vector2i(0,1),
+	15: Vector2i(0,2),
+	223: Vector2(8,1)
 }
 
 
