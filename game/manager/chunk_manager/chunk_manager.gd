@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 0
+var render_distance: int = 5
 
 var generated_chunks: Dictionary[Vector2i, Chunk]
 var loaded_chunks: Array[Chunk]
@@ -31,7 +31,7 @@ var thread_chunk_generator: Thread = Thread.new()
 var thread_chunk_autotiler: Thread = Thread.new()
 
 
-var tile_lookup: Dictionary[int, Vector2i] = {
+var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	193: Vector2i(2,2),
 	199: Vector2i(1,2),
 	7: Vector2i(0,2),
@@ -52,7 +52,57 @@ var tile_lookup: Dictionary[int, Vector2i] = {
 	92: Vector2i(8,0),
 	159: Vector2i(0,1),
 	15: Vector2i(0,2),
-	223: Vector2(8,1)
+	223: Vector2(8,1),
+	63: Vector2i(0,1),
+	127: Vector2i(8,2),
+	30: Vector2i(0,0),
+	120: Vector2i(2,0),
+	253: Vector2i(6,2),
+	240: Vector2i(2,0),
+	207: Vector2i(1,2),
+	231: Vector2i(1,2),
+	247: Vector2i(6,1),
+	227: Vector2i(2,2),
+	195: Vector2i(2,2),
+	23: Vector2i(6,3),
+	3: Vector2i(4,2),
+	135: Vector2i(0,2),
+	143: Vector2i(0,2),
+	191: Vector2i(0,1),
+	62: Vector2i(0,0),
+	126: Vector2i(1,0),
+	252: Vector2i(1,0),
+	248: Vector2i(2,0),
+	24: Vector2i(4,0),
+	29: Vector2i(6,4),
+	209: Vector2i(8,3),
+	129: Vector2i(4,2),
+	116: Vector2i(6,0),
+	108: Vector2i(1,4),
+	243: Vector2i(2,1),
+	249: Vector2i(2,1),
+	113: Vector2i(8,4),
+	49: Vector2i(4,1),
+	145: Vector2i(4,1),
+	25: Vector2i(4,1),
+	19: Vector2i(4,1),
+	14: Vector2i(0,4),
+	95: Vector2i(12,2),
+	215: Vector2i(12,1),
+	131: Vector2i(4,2),
+	225: Vector2i(2,2),
+	48: Vector2i(4,0),
+	71: Vector2i(2,6),
+	6: Vector2i(0,4),
+	197: Vector2i(0,6),
+	196: Vector2i(1,4),
+	70: Vector2i(1,4),
+	
+	12: Vector2i(0,4),
+	96: Vector2i(2,4),
+	251: Vector2i(2,2),
+	
+	
 }
 
 
@@ -116,8 +166,7 @@ func chunk_generator():
 			chunks_to_autotile.append(chunk)
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
-			
-			
+
 
 
 func chunk_autotiler():
