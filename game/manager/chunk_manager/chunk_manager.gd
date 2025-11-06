@@ -97,10 +97,35 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	197: Vector2i(0,6),
 	196: Vector2i(1,4),
 	70: Vector2i(1,4),
-	
 	12: Vector2i(0,4),
 	96: Vector2i(2,4),
 	251: Vector2i(2,2),
+	100: Vector2i(1,4),
+	64: Vector2i(2,4),
+	192: Vector2i(2,4),
+	60: Vector2i(0,0),
+	5: Vector2i(0,8),
+	65: Vector2i(3,8),
+	198: Vector2i(1,4),
+	21: Vector2i(6,5),
+	81: Vector2i(8,6),
+	224: Vector2i(2,4),
+	239: Vector2i(1,2),
+	119: Vector2i(6,6),
+	221: Vector2i(8,6),
+	
+	125: Vector2i(10,1), # fout
+	56: Vector2i(4,0),
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 }
