@@ -99,7 +99,7 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	70: Vector2i(1,4),
 	12: Vector2i(0,4),
 	96: Vector2i(2,4),
-	251: Vector2i(2,2),
+	251: Vector2i(2,1),
 	100: Vector2i(1,4),
 	64: Vector2i(2,4),
 	192: Vector2i(2,4),
@@ -113,18 +113,25 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	239: Vector2i(1,2),
 	119: Vector2i(6,6),
 	221: Vector2i(8,6),
-	
-	125: Vector2i(10,1), # fout
+	125: Vector2i(10,1), 
 	56: Vector2i(4,0),
+	254: Vector2i(1,0),
+	185: Vector2i(4,1),
+	211: Vector2i(8,3),
+	244: Vector2i(6,0),
+	102: Vector2i(1,4),
+	79: Vector2i(2,6),
+	245: Vector2i(10,2),
+	229: Vector2i(0,6),
+	84: Vector2i(12,1),
+	203: Vector2i(2,2),
+	156: Vector2i(0,0),
 	
+	115: Vector2i(8,4),
 	
+	54: Vector2i(10,3),
 	
-	
-	
-	
-	
-	
-	
+	97: Vector2i(2,8),
 	
 	
 	
@@ -224,8 +231,9 @@ func chunk_autotiler():
 					var bitmask: int = 0
 					var tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
 					
+					#voor later, maar -> eerst kunnen de orthogonalen eerst, en dan diagonalen. bv, if north and east -> check NorthEast#
 					if tile_id != 0:
-						#print(chunk.wall_layer[i] >> 16)
+						
 						if chunk.wall_layer[i - 16] >> 16 == tile_id:
 							print(chunk.wall_layer[i - 16])
 							print("i +1")
