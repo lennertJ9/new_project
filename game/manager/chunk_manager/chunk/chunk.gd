@@ -1,7 +1,7 @@
 extends RefCounted
 class_name Chunk
 # ongebruikt  tile ID    tile_x       tile_y    --> 32 bit int
-# 00000000    00000000    00000000    00000000
+# 00000000    00000000   00000000     00000000
 var position: Vector2i
 
 var ground_layer: PackedInt32Array 
@@ -10,7 +10,22 @@ var wall_layer: PackedInt32Array
 var is_generated: bool
 var is_loaded: bool
 var is_queued_unload: bool
+
+# ----- autotile ----- #
 var is_autotiled: bool
+
+var is_autotiled_top: bool
+var is_autotiled_top_right: bool
+var is_autotiled_right: bool
+var is_autotiled_bottom_right: bool
+var is_autotiled_bottom: bool
+var is_autotiled_bottom_left: bool
+var is_autotiled_left: bool
+var is_autotiled_top_left: bool
+
+
+var is_autotiled_inner: bool
+var autotiled_bitmask: int # 511 -> alles autotiled
 
 var last_accessed: float
   
@@ -23,6 +38,15 @@ func _init(pos: Vector2i) -> void:
 	ground_layer.resize(256)
 	wall_layer.resize(256)
 	position = pos
+	
+	var is_autotiled_top = false
+	var is_autotiled_top_right = false
+	var is_autotiled_right = false
+	var is_autotiled_bottom_right = false
+	var is_autotiled_bottom = false
+	var is_autotiled_bottom_left = false
+	var is_autotiled_left = false
+	var is_autotiled_top_left = false
 	
 
 

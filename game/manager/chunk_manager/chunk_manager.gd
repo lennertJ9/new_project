@@ -8,13 +8,14 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 5
+var render_distance: int = 2
 
 var generated_chunks: Dictionary[Vector2i, Chunk]
 var loaded_chunks: Array[Chunk]
 
 var chunks_to_generate: Dictionary[Vector2i, Chunk]
-var chunks_to_autotile: Array[Chunk]
+var chunks_to_autotile: Dictionary[Vector2i, Chunk]
+
 var chunks_to_load: Array[Chunk]
 var chunks_to_unload: Array[Chunk]
 
@@ -29,6 +30,12 @@ var chunk_unload_timer: float = 0
 
 var thread_chunk_generator: Thread = Thread.new()
 var thread_chunk_autotiler: Thread = Thread.new()
+
+										 #top          #top-right      #right         #bottom-right   #bottom         #bottom-left     #left          #top-left
+var chunk_neighbours: Array[Vector2i] = [Vector2i(0,1), Vector2i(1,1), Vector2i(1,0), Vector2i(1,-1), Vector2i(0,-1), Vector2i(-1,-1), Vector2i(-1,0), Vector2i(-1,1),  
+  
+]
+
 
 
 var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
@@ -126,15 +133,9 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	84: Vector2i(12,1),
 	203: Vector2i(2,2),
 	156: Vector2i(0,0),
-	
 	115: Vector2i(8,4),
-	
 	54: Vector2i(10,3),
-	
 	97: Vector2i(2,8),
-	
-	
-	
 }
 
 
@@ -145,6 +146,9 @@ func _ready() -> void:
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
+	
+	for i in range(1,15):
+		print(i)
 
 
 
@@ -169,8 +173,9 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(15)
+		OS.delay_msec(25)
 		if not chunks_to_generate.is_empty():
+			
 			var chunk: Chunk = chunks_to_generate.values()[0]
 			var chunk_pos = chunk.position
 			
@@ -194,8 +199,10 @@ func chunk_generator():
 					chunk.ground_layer[i] = ground_data
 					chunk.wall_layer[i] = wall_id
 					i += 1
+					
 			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
-			chunks_to_autotile.append(chunk)
+			#chunks_to_autotile.append(chunk)
+			chunks_to_autotile[chunk_pos] = chunk
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
 
@@ -203,40 +210,59 @@ func chunk_generator():
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(15)
+		OS.delay_msec(50)
 		if not chunks_to_autotile.is_empty():
-			var chunk: Chunk = chunks_to_autotile.pop_front()
 			
-			var top: int
-			var bottom:int
-			var left: int
-			var right:int
-			for x in range(16): # zet de indexen van alle tiles aan de boven en onder rand van een chunk op 0 (niet laden)
-				top = 0 * 16 + x
-				bottom = 15 * 16 + x
-				chunk.wall_layer[top] = 0
-				chunk.wall_layer[bottom] = 0
+			var chunk: Chunk = chunks_to_autotile.values()[0]
+			var chunk_pos = chunk.position
+			var bitmask: int = 0
+			var tile_id: int
+			
+			# ----------------- TOP ------------------------------------#
+			if generated_chunks.has(chunk_pos - chunk_neighbours[0]): 
+				var upper_chunk: Chunk = generated_chunks[chunk_pos - chunk_neighbours[0]]
+				autotile_top(chunk, upper_chunk)
+
+			# ----------------- RIGHT ------------------------------------# niet vergeten - te doen
+			if generated_chunks.has(chunk_pos + chunk_neighbours[1]):
+				pass
+				#right
+			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
+				pass
+				#bottom
+			if generated_chunks.has(chunk_pos + chunk_neighbours[3]):
+				pass
+				#left
 				
-			for y in range(16): # zet de indexen van alle tiles aan de linker en rechter rand van een chunk op 0 (niet laden)
-				left =  y * 16 + 0
-				right = y * 16 + 15
-				chunk.wall_layer[left] = 0
-				chunk.wall_layer[right] = 0
+			if generated_chunks.has(chunk_pos + chunk_neighbours[4]):
+				pass
+				#top-right
+			if generated_chunks.has(chunk_pos + chunk_neighbours[5]):
+				pass
+				#bottom-right 
+			if generated_chunks.has(chunk_pos + chunk_neighbours[6]):
+				pass
+				#bottom-left
+			if generated_chunks.has(chunk_pos + chunk_neighbours[7]):
+				pass
+				#top-left
 			
 			
+			
+			
+			
+			# ----------------- INNER ------------------------------------#
 			for y in range(1, 15): # loops over de inner tiles
 				for x in range(1, 15):
 					var i = y * 16 + x
 					
-					var bitmask: int = 0
-					var tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
+					bitmask = 0
+					tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
 					
 					#voor later, maar -> eerst kunnen de orthogonalen eerst, en dan diagonalen. bv, if north and east -> check NorthEast#
 					if tile_id != 0:
 						
 						if chunk.wall_layer[i - 16] >> 16 == tile_id:
-							print(chunk.wall_layer[i - 16])
-							print("i +1")
 							bitmask += 1
 						if chunk.wall_layer[i - 15] >> 16 == tile_id:
 							bitmask += 2
@@ -253,9 +279,6 @@ func chunk_autotiler():
 						if chunk.wall_layer[i - 17] >> 16 == tile_id:
 							bitmask += 128
 							
-						print("i: ", i," bitmask: ",bitmask)
-						print('-----------------------------')
-						#print("i: ", i ,"  bitmask:  ",bitmask)
 						if tile_lookup.has(bitmask):
 							var atlas_pos = tile_lookup[bitmask]
 							
@@ -263,11 +286,82 @@ func chunk_autotiler():
 						else:
 							chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
 			
-			
-			
-			chunk.is_autotiled = true
-			chunks_to_load.append(chunk)
+			# chunks_to_load.append(chunk)  
+			#chunk.is_autotiled = true
+			# Dit moet verplaats worden door iets anders, bitmask word updated, 
+			# als het 511 is -> alles autotiled en dan naar de load
+			chunks_to_autotile.erase(chunk.position)
 
+
+
+func autotile_top(chunk: Chunk, upper_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
+	print(upper_chunk.position)
+	for i in range(1,15): # bitmask calculatie voor TOP
+		bitmask = 0
+		tile_id = chunk.wall_layer[i] >> 16 
+		if tile_id != 0:
+			if upper_chunk.wall_layer[i + 240] >> 16 == tile_id:
+				bitmask += 1
+			if upper_chunk.wall_layer[i + 241] >> 16 == tile_id:
+				bitmask += 2
+			if chunk.wall_layer[i + 1] >> 16 == tile_id:
+				bitmask += 4
+			if chunk.wall_layer[i + 17] >> 16 == tile_id:
+				bitmask += 8
+			if chunk.wall_layer[i + 16] >> 16 == tile_id:
+				bitmask += 16
+			if chunk.wall_layer[i + 15] >> 16 == tile_id:
+				bitmask += 32
+			if chunk.wall_layer[i - 1] >> 16 == tile_id:
+				bitmask += 64
+			if upper_chunk.wall_layer[i + 239] >> 16 == tile_id:
+				bitmask += 128
+			
+			print("chunk: ",chunk.position ," bitmask: ",bitmask)
+			
+			if tile_lookup.has(bitmask):
+				var atlas_pos = tile_lookup[bitmask]
+				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
+				
+			chunk.is_autotiled_top = true
+		
+		# ---------- SECONDARY CHUNK ---------------- #
+	for i in range(1,15): 
+		bitmask = 0
+		tile_id = upper_chunk.wall_layer[i + 240] >> 16 
+		if tile_id != 0:
+			if upper_chunk.wall_layer[i + 240 - 16] >> 16 == tile_id:
+				bitmask += 1
+			if upper_chunk.wall_layer[i + 240 - 15] >> 16 == tile_id:
+				bitmask += 2
+			if upper_chunk.wall_layer[i + 240 + 1] >> 16 == tile_id:
+				bitmask += 4
+		
+			if chunk.wall_layer[i + 1] >> 16 == tile_id:
+				bitmask += 8
+			if chunk.wall_layer[i] >> 16 == tile_id:
+				bitmask += 16
+			if chunk.wall_layer[i - 1] >> 16 == tile_id:
+				bitmask += 32
+		
+			if upper_chunk.wall_layer[i + 240 - 1] >> 16 == tile_id:
+				bitmask += 64
+			if upper_chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
+				bitmask += 128
+	
+			if tile_lookup.has(bitmask):
+				var atlas_pos = tile_lookup[bitmask]
+				upper_chunk.wall_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				upper_chunk.wall_layer[i + 240] = tile_id << 16 | 3 << 8 | 0
+				
+			upper_chunk.is_autotiled_bottom = true
+	
+	chunks_to_load.append(chunk)
 
 
 
@@ -358,4 +452,22 @@ func _draw() -> void:
 			
 			draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.05), false, 1.)
 			
-	
+			
+			
+# OUDE CODE? #
+# RANDEN WEGHALEN #
+			#var top: int
+			#var bottom:int
+			#var left: int
+			#var right:int
+			#for x in range(16): # zet de indexen van alle tiles aan de boven en onder rand van een chunk op 0 (niet laden)
+				#top = 0 * 16 + x
+				#bottom = 15 * 16 + x
+				#chunk.wall_layer[top] = 0
+				#chunk.wall_layer[bottom] = 0
+				#
+			#for y in range(16): # zet de indexen van alle tiles aan de linker en rechter rand van een chunk op 0 (niet laden)
+				#left =  y * 16 + 0
+				#right = y * 16 + 15
+				#chunk.wall_layer[left] = 0
+				#chunk.wall_layer[right] = 0
