@@ -14,6 +14,7 @@ var is_queued_unload: bool
 # ----- autotile ----- #
 var is_autotiled: bool
 
+var autotile_flag: int = 0 # bitmask autotile status 1 1111 1111 (511) is fully autotiled
 var is_autotiled_top: bool
 var is_autotiled_top_right: bool
 var is_autotiled_right: bool
@@ -25,7 +26,7 @@ var is_autotiled_top_left: bool
 
 
 var is_autotiled_inner: bool
-var autotiled_bitmask: int # 511 -> alles autotiled
+
 
 var last_accessed: float
   
