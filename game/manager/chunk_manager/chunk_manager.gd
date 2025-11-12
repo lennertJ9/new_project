@@ -146,6 +146,7 @@ func _ready() -> void:
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
+	
 
 
 
@@ -219,14 +220,15 @@ func chunk_autotiler():
 			
 			# ----------------- TOP ------------------------------------#
 			if generated_chunks.has(chunk_pos - chunk_neighbours[0]): 
-				var upper_chunk: Chunk = generated_chunks[chunk_pos - chunk_neighbours[0]]
-				autotile_top(chunk, upper_chunk)
+				var top_chunk: Chunk = generated_chunks[chunk_pos - chunk_neighbours[0]]
+				autotile_top(chunk, top_chunk)
 				
-
+ 
 			# ----------------- RIGHT ------------------------------------# niet vergeten - te doen
-			if generated_chunks.has(chunk_pos + chunk_neighbours[1]):
-				pass
-				#right
+			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
+				var right_chunk: Chunk = generated_chunks[chunk_pos + chunk_neighbours[2]]
+				autotile_right(chunk, right_chunk)
+				
 			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
 				pass
 				#bottom
@@ -318,8 +320,6 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 			if top_chunk.wall_layer[i + 239] >> 16 == tile_id:
 				bitmask += 128
 			
-			
-			
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
@@ -367,8 +367,42 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 		chunks_to_load.append(top_chunk)
 	if chunk.autotile_flag == 257:
 		chunks_to_load.append(chunk)
+
+
+
+func autotile_right(chunk: Chunk, right_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
 	
-	
+	for i in range(1,15): # bitmask calculatie voor RIGHT
+		var index = 15 + i * 16
+		bitmask = 0
+		tile_id = chunk.wall_layer[index] >> 16 
+		if tile_id != 0:
+			if right_chunk.wall_layer[i + 240] >> 16 == tile_id:
+				bitmask += 1
+			if right_chunk.wall_layer[i + 241] >> 16 == tile_id:
+				bitmask += 2
+			if chunk.wall_layer[i + 1] >> 16 == tile_id:
+				bitmask += 4
+			if chunk.wall_layer[i + 17] >> 16 == tile_id:
+				bitmask += 8
+			if chunk.wall_layer[i + 16] >> 16 == tile_id:
+				bitmask += 16
+			if chunk.wall_layer[i + 15] >> 16 == tile_id:
+				bitmask += 32
+			if chunk.wall_layer[i - 1] >> 16 == tile_id:
+				bitmask += 64
+			if right_chunk.wall_layer[i + 239] >> 16 == tile_id:
+				bitmask += 128
+			
+			if tile_lookup.has(bitmask):
+				var atlas_pos = tile_lookup[bitmask]
+				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
+				
+			chunk.is_autotiled_top = true
 
 
 
