@@ -208,7 +208,7 @@ func chunk_generator():
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(50)
+		OS.delay_msec(100)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
@@ -232,9 +232,10 @@ func chunk_autotiler():
 			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
 				pass
 				#bottom
-			if generated_chunks.has(chunk_pos + chunk_neighbours[3]):
-				pass
-				#left
+			if generated_chunks.has(chunk_pos - Vector2i(1,0)):
+				var left_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(1,0)]
+				autotile_left(chunk, left_chunk)
+				
 			if generated_chunks.has(chunk_pos + chunk_neighbours[4]):
 				pass
 				#top-right
@@ -290,6 +291,7 @@ func autotile_inner(chunk: Chunk):
 					chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 				else:
 					chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
+	
 	chunk.autotile_flag |= 1 << 8
 	chunk.is_autotiled_inner = true
 
@@ -325,47 +327,54 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
-				
-			chunk.is_autotiled_top = true
-		
-		# ---------- SECONDARY CHUNK BOTTOM ---------------- #
 	
+	chunk.is_autotiled_top = true
+	chunk.autotile_flag |= 1 << 0
+	
+	if not top_chunk.is_autotiled_bottom: 
+		autotile_bottom(top_chunk, chunk)
+	
+	if chunk.autotile_flag == 341:
+		chunks_to_load.append(chunk)
+
+
+
+func autotile_bottom(chunk: Chunk, bottom_chunk: Chunk):
 	for i in range(1,15): 
-		bitmask = 0
-		tile_id = top_chunk.wall_layer[i + 240] >> 16 
+		var bitmask = 0
+		var tile_id = chunk.wall_layer[i + 240] >> 16 
+		
 		if tile_id != 0:
-			if top_chunk.wall_layer[i + 240 - 16] >> 16 == tile_id:
+			if chunk.wall_layer[i + 240 - 16] >> 16 == tile_id:
 				bitmask += 1
-			if top_chunk.wall_layer[i + 240 - 15] >> 16 == tile_id:
+			if chunk.wall_layer[i + 240 - 15] >> 16 == tile_id:
 				bitmask += 2
-			if top_chunk.wall_layer[i + 240 + 1] >> 16 == tile_id:
+			if chunk.wall_layer[i + 240 + 1] >> 16 == tile_id:
 				bitmask += 4
-		
-			if chunk.wall_layer[i + 1] >> 16 == tile_id:
+			if bottom_chunk.wall_layer[i + 1] >> 16 == tile_id:
 				bitmask += 8
-			if chunk.wall_layer[i] >> 16 == tile_id:
+			if bottom_chunk.wall_layer[i] >> 16 == tile_id:
 				bitmask += 16
-			if chunk.wall_layer[i - 1] >> 16 == tile_id:
+			if bottom_chunk.wall_layer[i - 1] >> 16 == tile_id:
 				bitmask += 32
-		
-			if top_chunk.wall_layer[i + 240 - 1] >> 16 == tile_id:
+			if chunk.wall_layer[i + 240 - 1] >> 16 == tile_id:
 				bitmask += 64
-			if top_chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
+			if chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
 				bitmask += 128
 	
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
-				top_chunk.wall_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				chunk.wall_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
-				top_chunk.wall_layer[i + 240] = tile_id << 16 | 3 << 8 | 0
-
+				chunk.wall_layer[i + 240] = tile_id << 16 | 3 << 8 | 0
 	
-	top_chunk.autotile_flag |= 1 << 0 #  zet de eerste bit op 1 -> eerste bit is voor top. # verschuif 1 met 0 plaatsen #
-	top_chunk.is_autotiled_bottom = true
+	chunk.is_autotiled_bottom = true
+	chunk.autotile_flag |= 1 << 4 
 	
-	if top_chunk.autotile_flag == 257:
-		chunks_to_load.append(top_chunk)
-	if chunk.autotile_flag == 257:
+	if bottom_chunk.is_autotiled_top:
+		autotile_top(bottom_chunk, chunk)
+	
+	if chunk.autotile_flag == 341:
 		chunks_to_load.append(chunk)
 
 
@@ -396,46 +405,67 @@ func autotile_right(chunk: Chunk, right_chunk: Chunk):
 				bitmask += 64
 			if chunk.wall_layer[index - 17] >> 16 == tile_id:
 				bitmask += 128
+	
+			if tile_lookup.has(bitmask):
+				var atlas_pos = tile_lookup[bitmask]
+				chunk.wall_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				chunk.wall_layer[index] = tile_id << 16 | 3 << 8 | 0
+	
+	chunk.autotile_flag |= 1 << 2 
+	chunk.is_autotiled_right = true
+	
+	if not right_chunk.is_autotiled_left:
+		autotile_left(right_chunk, chunk)
+	
+	if chunk.autotile_flag == 341:
+		chunks_to_load.append(chunk)
+
+
+
+
+func autotile_left(chunk: Chunk, left_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
+	
+	for i in range(1,15): 
+		var index =  i * 16
+		
+		bitmask = 0
+		tile_id = chunk.wall_layer[index] >> 16 
+		if tile_id != 0:
+			if chunk.wall_layer[index - 16] >> 16 == tile_id:
+				bitmask += 1
+			if chunk.wall_layer[index - 15] >> 16 == tile_id:
+				bitmask += 2
+			if chunk.wall_layer[index + 1] >> 16 == tile_id:
+				bitmask += 4
+			if chunk.wall_layer[index + 17] >> 16 == tile_id:
+				bitmask += 8
+			if chunk.wall_layer[index + 16] >> 16 == tile_id:
+				bitmask += 16
+			if left_chunk.wall_layer[index + 31] >> 16 == tile_id:
+				bitmask += 32
+			if left_chunk.wall_layer[index + 15] >> 16 == tile_id:
+				bitmask += 64
+			if left_chunk.wall_layer[index - 1] >> 16 == tile_id:
+				bitmask += 128
 			
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.wall_layer[index] = tile_id << 16 | 3 << 8 | 0
-				
-			chunk.is_autotiled_right = true
+	
+	chunk.is_autotiled_left = true
+	chunk.autotile_flag |= 1 << 6 
+	
+	if not left_chunk.is_autotiled_right:
+		autotile_right(left_chunk, chunk)
+	
+	if chunk.autotile_flag == 341:
+		chunks_to_load.append(chunk)
 
-	# ---------- SECONDARY CHUNK LEFT ---------------- #
-	for i in range(1,15):
-		var index = i * 16
-		
-		bitmask = 0
-		tile_id = chunk.wall_layer[index] >> 16 
-		if tile_id != 0:
-			if right_chunk.wall_layer[index - 16] >> 16 == tile_id:
-				bitmask += 1
-			if right_chunk.wall_layer[index - 15] >> 16 == tile_id:# to do
-				bitmask += 2
-			if right_chunk.wall_layer[index + 1] >> 16 == tile_id:# to do
-				bitmask += 4
-			if right_chunk.wall_layer[index + 17] >> 16 == tile_id:# to do
-				bitmask += 8
-			if right_chunk.wall_layer[index + 16] >> 16 == tile_id:
-				bitmask += 16
-			if chunk.wall_layer[index + 31] >> 16 == tile_id:
-				bitmask += 32
-			if chunk.wall_layer[index + 15] >> 16 == tile_id:
-				bitmask += 64
-			if chunk.wall_layer[index - 1] >> 16 == tile_id:
-				bitmask += 128
-			
-			if tile_lookup.has(bitmask):
-				var atlas_pos = tile_lookup[bitmask]
-				right_chunk.wall_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
-			else:
-				right_chunk.wall_layer[index] = tile_id << 16 | 3 << 8 | 0
-				
-			right_chunk.is_autotiled_left = true
 
 
 func chunk_loader():
