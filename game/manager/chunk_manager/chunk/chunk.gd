@@ -9,6 +9,7 @@ var wall_layer: PackedInt32Array
 
 var is_generated: bool
 var is_loaded: bool
+var is_queued_load: bool
 var is_queued_unload: bool
 
 # ----- autotile ----- #

@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 2
+var render_distance: int = 4
 
 var generated_chunks: Dictionary[Vector2i, Chunk]
 var loaded_chunks: Array[Chunk]
@@ -208,33 +208,40 @@ func chunk_generator():
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(100)
+		OS.delay_msec(25)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
 			var chunk_pos = chunk.position
 			var bitmask: int = 0
 			var tile_id: int
+			print("----------------------")
 			# ----------------- INNER ------------------------------------#
 			autotile_inner(chunk)
 			
 			# ----------------- TOP ------------------------------------#
-			if generated_chunks.has(chunk_pos - chunk_neighbours[0]): 
-				var top_chunk: Chunk = generated_chunks[chunk_pos - chunk_neighbours[0]]
+			if generated_chunks.has(chunk_pos - Vector2i(0,1)): 
+				print("autotile top for ", chunk_pos)
+				var top_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(0,1)]
 				autotile_top(chunk, top_chunk)
 				
  
 			# ----------------- RIGHT ------------------------------------# 
-			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
-				var right_chunk: Chunk = generated_chunks[chunk_pos + chunk_neighbours[2]]
+			if generated_chunks.has(chunk_pos + Vector2i(1,0)):
+				var right_chunk: Chunk = generated_chunks[chunk_pos + Vector2i(1,0)]
 				autotile_right(chunk, right_chunk)
 				
-			if generated_chunks.has(chunk_pos + chunk_neighbours[2]):
-				pass
-				#bottom
+			# ----------------- BOTTOM ------------------------------------# 
+			if generated_chunks.has(chunk_pos + Vector2i(0,1)):
+				print("autotile bottom for ", chunk_pos)
+				var bottom_chunk: Chunk = generated_chunks[chunk_pos + Vector2i(0,1)]
+				autotile_bottom(chunk, bottom_chunk)
+				
+			# ----------------- LEFT ------------------------------------# 
 			if generated_chunks.has(chunk_pos - Vector2i(1,0)):
 				var left_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(1,0)]
 				autotile_left(chunk, left_chunk)
+				
 				
 			if generated_chunks.has(chunk_pos + chunk_neighbours[4]):
 				pass
@@ -334,7 +341,8 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 	if not top_chunk.is_autotiled_bottom: 
 		autotile_bottom(top_chunk, chunk)
 	
-	if chunk.autotile_flag == 341:
+	if chunk.autotile_flag == 341 and not chunk.is_queued_load:
+		chunk.is_queued_load = true
 		chunks_to_load.append(chunk)
 
 
@@ -371,10 +379,11 @@ func autotile_bottom(chunk: Chunk, bottom_chunk: Chunk):
 	chunk.is_autotiled_bottom = true
 	chunk.autotile_flag |= 1 << 4 
 	
-	if bottom_chunk.is_autotiled_top:
+	if not bottom_chunk.is_autotiled_top:
 		autotile_top(bottom_chunk, chunk)
 	
-	if chunk.autotile_flag == 341:
+	if chunk.autotile_flag == 341 and not chunk.is_queued_load:
+		chunk.is_queued_load = true
 		chunks_to_load.append(chunk)
 
 
@@ -418,7 +427,8 @@ func autotile_right(chunk: Chunk, right_chunk: Chunk):
 	if not right_chunk.is_autotiled_left:
 		autotile_left(right_chunk, chunk)
 	
-	if chunk.autotile_flag == 341:
+	if chunk.autotile_flag == 341 and not chunk.is_queued_load:
+		chunk.is_queued_load = true
 		chunks_to_load.append(chunk)
 
 
@@ -463,7 +473,8 @@ func autotile_left(chunk: Chunk, left_chunk: Chunk):
 	if not left_chunk.is_autotiled_right:
 		autotile_right(left_chunk, chunk)
 	
-	if chunk.autotile_flag == 341:
+	if chunk.autotile_flag == 341 and not chunk.is_queued_load:
+		chunk.is_queued_load = true
 		chunks_to_load.append(chunk)
 
 
@@ -532,13 +543,6 @@ func chunk_unloader():
 		chunk.is_loaded = false
 
 
-#func _input(event: InputEvent) -> void:
-	#if event.is_action_pressed("left_click"):
-		#var local_pos = ground_layer.local_to_map(get_global_mouse_position())
-		#
-		#print(generated_chunks[Vector2i(0,0)].ground_layer)
-
-
 
 func _draw() -> void:
 	var chunk_pixel_size = 256
@@ -553,23 +557,3 @@ func _draw() -> void:
 		for y in range(-320,320, 16):
 			
 			draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.1), false, 1.)
-			
-			
-			
-# OUDE CODE? #
-# RANDEN WEGHALEN #
-			#var top: int
-			#var bottom:int
-			#var left: int
-			#var right:int
-			#for x in range(16): # zet de indexen van alle tiles aan de boven en onder rand van een chunk op 0 (niet laden)
-				#top = 0 * 16 + x
-				#bottom = 15 * 16 + x
-				#chunk.wall_layer[top] = 0
-				#chunk.wall_layer[bottom] = 0
-				#
-			#for y in range(16): # zet de indexen van alle tiles aan de linker en rechter rand van een chunk op 0 (niet laden)
-				#left =  y * 16 + 0
-				#right = y * 16 + 15
-				#chunk.wall_layer[left] = 0
-				#chunk.wall_layer[right] = 0
