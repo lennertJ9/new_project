@@ -146,7 +146,9 @@ func _ready() -> void:
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
-	
+
+
+#func autotile_edges
 
 
 
@@ -208,20 +210,18 @@ func chunk_generator():
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(25)
+		OS.delay_msec(500)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
 			var chunk_pos = chunk.position
 			var bitmask: int = 0
-			var tile_id: int
-			print("----------------------")
+			var tile_id: int = 0
 			# ----------------- INNER ------------------------------------#
 			autotile_inner(chunk)
 			
 			# ----------------- TOP ------------------------------------#
 			if generated_chunks.has(chunk_pos - Vector2i(0,1)): 
-				print("autotile top for ", chunk_pos)
 				var top_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(0,1)]
 				autotile_top(chunk, top_chunk)
 				
@@ -233,7 +233,6 @@ func chunk_autotiler():
 				
 			# ----------------- BOTTOM ------------------------------------# 
 			if generated_chunks.has(chunk_pos + Vector2i(0,1)):
-				print("autotile bottom for ", chunk_pos)
 				var bottom_chunk: Chunk = generated_chunks[chunk_pos + Vector2i(0,1)]
 				autotile_bottom(chunk, bottom_chunk)
 				
@@ -242,9 +241,9 @@ func chunk_autotiler():
 				var left_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(1,0)]
 				autotile_left(chunk, left_chunk)
 				
-				
-			if generated_chunks.has(chunk_pos + chunk_neighbours[4]):
-				pass
+			# ----------------- TOP-RIGHT ------------------------------------#
+			if generated_chunks.has(chunk_pos + Vector2i(1,-1)) and (chunk.autotile_flag & 0b000000101) == 5: # idk als dit juist is want dit is eigenlijk als top en right autotiled zijn. maar eigenlijk hoeven die niet autotiled te zijn, maar alleen generated
+				print("autotiling top right")
 				#top-right
 			if generated_chunks.has(chunk_pos + chunk_neighbours[5]):
 				pass
@@ -507,7 +506,7 @@ func chunk_check():
 		for coord_y in range(start_coord.y, end_coord.y + 1):
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
-			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].is_autotiled:
+			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].autotile_flag == 341:
 				chunks_to_load.append(generated_chunks[chunk_pos])
 				# LOADING CHUNK
 				
