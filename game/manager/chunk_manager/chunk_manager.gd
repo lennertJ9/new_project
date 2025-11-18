@@ -148,7 +148,7 @@ func _ready() -> void:
 	noise = noise_tex.noise
 
 
-#func autotile_edges
+
 
 
 
@@ -173,7 +173,7 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(150)
+		OS.delay_msec(100)
 		if not chunks_to_generate.is_empty():
 			
 			var chunk: Chunk = chunks_to_generate.values()[0]
@@ -210,7 +210,7 @@ func chunk_generator():
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(150)
+		OS.delay_msec(300)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
@@ -242,25 +242,29 @@ func chunk_autotiler():
 				autotile_left(chunk, left_chunk)
 				
 			# ----------------- TOP-RIGHT ------------------------------------#
-			if generated_chunks.has(chunk_pos + Vector2i(1,-1)) and (chunk.autotile_flag & 0b000000000) == 85: # idk als dit juist is want dit is eigenlijk als top en right autotiled zijn. maar eigenlijk hoeven die niet autotiled te zijn, maar alleen generated
+			if generated_chunks.has(chunk_pos + Vector2i(0,-1)) and generated_chunks.has(chunk_pos + Vector2i(1,0)) and generated_chunks.has(chunk_pos + Vector2i(-1,-1)):
 				print("autotiling top right")
-				autotile_right_corner(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(1,-1)], generated_chunks[chunk_pos + Vector2i(1,0)])
+				autotile_top_right(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(1,-1)], generated_chunks[chunk_pos + Vector2i(1,0)])
 	
-			if generated_chunks.has(chunk_pos + chunk_neighbours[5]):
-				pass
-				#bottom-right 
-			if generated_chunks.has(chunk_pos + chunk_neighbours[6]):
-				pass
-				#bottom-left
-			if generated_chunks.has(chunk_pos + Vector2i(-1,-1)) and (chunk.autotile_flag & 0b01010001) == 161:
-				print("top left check")
-				#top-left
+			# ----------------- BOTTOM-RIGHT ------------------------------------#
+			if generated_chunks.has(chunk_pos + Vector2i(1,0)) and generated_chunks.has(chunk_pos + Vector2i(1,1)) and generated_chunks.has(chunk_pos + Vector2i(0,1)):
+				autotile_bottom_right(chunk, generated_chunks[chunk_pos + Vector2i(1,0)], generated_chunks[chunk_pos + Vector2i(1,1)], generated_chunks[chunk_pos + Vector2i(0,1)])
+			
+			# ----------------- BOTTOM-LEFT ------------------------------------#
+			if generated_chunks.has(chunk_pos + Vector2i(0,1)) and generated_chunks.has(chunk_pos + Vector2i(-1,1)) and generated_chunks.has(chunk_pos + Vector2i(-1,0)):
+				autotile_bottom_left(chunk, generated_chunks[chunk_pos + Vector2i(0,1)], generated_chunks[chunk_pos + Vector2i(-1,1)], generated_chunks[chunk_pos + Vector2i(-1,0)])
+			
+			# ----------------- TOP-LEFT ------------------------------------#
+			if generated_chunks.has(chunk_pos + Vector2i(0,-1)) and generated_chunks.has(chunk_pos + Vector2i(-1,0)) and generated_chunks.has(chunk_pos + Vector2i(-1,-1)):
+				autotile_top_left(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(-1,0)], generated_chunks[chunk_pos + Vector2i(-1,-1)])
+				
 
 			# chunks_to_load.append(chunk)  
 			#chunk.is_autotiled = true
 			# Dit moet verplaats worden door iets anders, bitmask word updated, 
 			# als het 511 is -> alles autotiled en dan naar de load
 			chunks_to_autotile.erase(chunk.position)
+
 
 
 func autotile_inner(chunk: Chunk):
@@ -433,7 +437,6 @@ func autotile_right(chunk: Chunk, right_chunk: Chunk):
 
 
 
-
 func autotile_left(chunk: Chunk, left_chunk: Chunk):
 	var bitmask: int
 	var tile_id: int
@@ -478,7 +481,8 @@ func autotile_left(chunk: Chunk, left_chunk: Chunk):
 		#chunks_to_load.append(chunk)
 
 
-func autotile_right_corner(chunk: Chunk, top_chunk: Chunk, top_right_chunk: Chunk, right_chunk: Chunk):
+
+func autotile_top_right(chunk: Chunk, top_chunk: Chunk, top_right_chunk: Chunk, right_chunk: Chunk):
 	var bitmask: int
 	var tile_id: int
 	tile_id = chunk.wall_layer[15] >> 16
@@ -509,12 +513,115 @@ func autotile_right_corner(chunk: Chunk, top_chunk: Chunk, top_right_chunk: Chun
 	chunk.is_autotiled_top_right = true
 	chunk.autotile_flag |= 1 << 1 
 	
-	#if not left_chunk.is_autotiled_right:
-		#autotile_right(left_chunk, chunk)
+	if not top_right_chunk.is_autotiled_bottom_left:
+		autotile_bottom_left(top_right_chunk, right_chunk, chunk, top_chunk)
+
+
+
+func autotile_bottom_right(chunk: Chunk, right_chunk: Chunk, bottom_right_chunk: Chunk, bottom_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
+	tile_id = chunk.wall_layer[255] >> 16
+	if tile_id != 0:
+		if chunk.wall_layer[239] >> 16 == tile_id:
+			bitmask += 1
+		if right_chunk.wall_layer[224] >> 16 == tile_id:
+			bitmask += 2
+		if right_chunk.wall_layer[240] >> 16 == tile_id:
+			bitmask += 4
+		if bottom_right_chunk.wall_layer[0] >> 16 == tile_id:
+			bitmask += 8
+		if bottom_chunk.wall_layer[15] >> 16 == tile_id:
+			bitmask += 16
+		if bottom_chunk.wall_layer[14] >> 16 == tile_id:
+			bitmask += 32
+		if chunk.wall_layer[254] >> 16 == tile_id:
+			bitmask += 64
+		if chunk.wall_layer[238] >> 16 == tile_id:
+			bitmask += 128
 	
-	#if chunk.autotile_flag == 341 and not chunk.is_queued_load:
-		#chunk.is_queued_load = true
-		#chunks_to_load.append(chunk)
+	if tile_lookup.has(bitmask):
+		var atlas_pos = tile_lookup[bitmask]
+		chunk.wall_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+	else:
+		chunk.wall_layer[255] = tile_id << 16 | 3 << 8 | 0
+	
+	chunk.is_autotiled_bottom_right = true
+	chunk.autotile_flag |= 1 << 3
+
+	if not bottom_right_chunk.is_autotiled_top_left:
+		autotile_top_left(bottom_right_chunk, right_chunk, bottom_chunk, chunk)
+
+
+func autotile_bottom_left(chunk: Chunk, bottom_chunk: Chunk, bottom_left_chunk: Chunk, left_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
+	tile_id = chunk.wall_layer[240] >> 16
+	if tile_id != 0:
+		if chunk.wall_layer[224] >> 16 == tile_id:
+			bitmask += 1
+		if chunk.wall_layer[223] >> 16 == tile_id:
+			bitmask += 2
+		if chunk.wall_layer[241] >> 16 == tile_id:
+			bitmask += 4
+		if bottom_chunk.wall_layer[1] >> 16 == tile_id:
+			bitmask += 8
+		if bottom_chunk.wall_layer[0] >> 16 == tile_id:
+			bitmask += 16
+		if bottom_left_chunk.wall_layer[15] >> 16 == tile_id:
+			bitmask += 32
+		if left_chunk.wall_layer[255] >> 16 == tile_id:
+			bitmask += 64
+		if left_chunk.wall_layer[239] >> 16 == tile_id:
+			bitmask += 128
+	
+	if tile_lookup.has(bitmask):
+		var atlas_pos = tile_lookup[bitmask]
+		chunk.wall_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+	else:
+		chunk.wall_layer[240] = tile_id << 16 | 3 << 8 | 0
+	
+	chunk.is_autotiled_bottom_left = true
+	chunk.autotile_flag |= 1 << 5
+
+	if not bottom_left_chunk.is_autotiled_top_right:
+		autotile_top_right(bottom_left_chunk, left_chunk, chunk, bottom_chunk)
+
+
+func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_left_chunk: Chunk):
+	var bitmask: int
+	var tile_id: int
+	tile_id = chunk.wall_layer[0] >> 16
+	if tile_id != 0:
+		if top_chunk.wall_layer[240] >> 16 == tile_id:
+			bitmask += 1
+		if top_chunk.wall_layer[241] >> 16 == tile_id:
+			bitmask += 2
+		if chunk.wall_layer[1] >> 16 == tile_id:
+			bitmask += 4
+		if chunk.wall_layer[17] >> 16 == tile_id:
+			bitmask += 8
+		if chunk.wall_layer[16] >> 16 == tile_id:
+			bitmask += 16
+		if left_chunk.wall_layer[31] >> 16 == tile_id:
+			bitmask += 32
+		if left_chunk.wall_layer[15] >> 16 == tile_id:
+			bitmask += 64
+		if top_left_chunk.wall_layer[255] >> 16 == tile_id:
+			bitmask += 128
+	
+	if tile_lookup.has(bitmask):
+		var atlas_pos = tile_lookup[bitmask]
+		chunk.wall_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+	else:
+		chunk.wall_layer[0] = tile_id << 16 | 3 << 8 | 0
+	
+	chunk.is_autotiled_top_left = true
+	chunk.autotile_flag |= 1 << 7
+	
+	if not top_left_chunk.is_autotiled_bottom_right:
+		autotile_bottom_right(top_left_chunk, top_chunk, chunk, left_chunk)
+
 
 
 
@@ -549,11 +656,11 @@ func chunk_check():
 		for coord_y in range(start_coord.y, end_coord.y + 1):
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
-			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].autotile_flag == 341 and not generated_chunks[chunk_pos].is_queued_load:
+			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].autotile_flag == 511 and not generated_chunks[chunk_pos].is_queued_load:
 				generated_chunks[chunk_pos].is_queued_load = true
 				chunks_to_load.append(generated_chunks[chunk_pos])
 				# LOADING CHUNK
-				
+			
 			else:
 				if not chunks_to_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
 					chunks_to_generate[chunk_pos] = Chunk.new(chunk_pos)
