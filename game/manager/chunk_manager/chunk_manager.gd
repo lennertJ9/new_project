@@ -10,15 +10,19 @@ var noise: Noise
 
 var render_distance: int = 2
 
-var generated_chunks: Dictionary[Vector2i, Chunk]
-var loaded_chunks: Array[Chunk]
+#-------------- Chunks  --------------------#
+var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
+var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
+# --> nieuwe aanpak, generated chunks worden hierin gezet, hierdoor loopen, if alle 8 buren: append naar chunks_to_autotile
 
-var chunks_to_generate: Dictionary[Vector2i, Chunk]
-var chunks_to_autotile: Dictionary[Vector2i, Chunk]
+#-------------- Chunk die processed moeten worden  --------------------#
+var chunks_to_generate: Dictionary[Vector2i, Chunk] # chunks die generated moeten worden -> puur data generatie, met tile ID
+var unautotiled_chunks: Dictionary[Vector2i, Chunk] # generated chunks die mogelijks niet alle 8 buren hebben om geautotiled te worden
+var chunks_to_autotile: Dictionary[Vector2i, Chunk] # chunks die autotiled moeten worden en waarvan alle 8 buren aanwezig zijn
+var chunks_to_load: Array[Chunk] # chunks die loaded moeten worden, deze zijn autotiled
+var chunks_to_unload: Array[Chunk] # chunks die unloaded moeten worden
 
-var chunks_to_load: Array[Chunk]
-var chunks_to_unload: Array[Chunk]
-
+# ------------- Check Timers --------------#
 var chunk_check_interval: float = 0.5
 var chunk_load_interval: float = 0.002
 var chunk_unload_interval: float = 0.002
@@ -201,8 +205,7 @@ func chunk_generator():
 					i += 1
 					
 			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
-			#chunks_to_autotile.append(chunk)
-			chunks_to_autotile[chunk_pos] = chunk
+			chunks_to_autotile[chunk_pos] = chunk #  proberen om de chunks zelf te laten kiezen wanneer toe te voeten aan autotiling lijst?
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
 
@@ -553,6 +556,7 @@ func autotile_bottom_right(chunk: Chunk, right_chunk: Chunk, bottom_right_chunk:
 		autotile_top_left(bottom_right_chunk, right_chunk, bottom_chunk, chunk)
 
 
+
 func autotile_bottom_left(chunk: Chunk, bottom_chunk: Chunk, bottom_left_chunk: Chunk, left_chunk: Chunk):
 	var bitmask: int
 	var tile_id: int
@@ -588,6 +592,7 @@ func autotile_bottom_left(chunk: Chunk, bottom_chunk: Chunk, bottom_left_chunk: 
 		autotile_top_right(bottom_left_chunk, left_chunk, chunk, bottom_chunk)
 
 
+
 func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_left_chunk: Chunk):
 	var bitmask: int
 	var tile_id: int
@@ -621,6 +626,7 @@ func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_le
 	
 	if not top_left_chunk.is_autotiled_bottom_right:
 		autotile_bottom_right(top_left_chunk, top_chunk, chunk, left_chunk)
+
 
 
 
