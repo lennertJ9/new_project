@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 2
+var render_distance: int = 4
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -17,8 +17,8 @@ var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
 
 #-------------- Chunk die processed moeten worden  --------------------#
 var chunks_to_generate: Dictionary[Vector2i, Chunk] # chunks die generated moeten worden -> puur data generatie, met tile ID
-var unautotiled_chunks: Dictionary[Vector2i, Chunk] # generated chunks die mogelijks niet alle 8 buren hebben om geautotiled te worden
 var chunks_to_autotile: Dictionary[Vector2i, Chunk] # chunks die autotiled moeten worden en waarvan alle 8 buren aanwezig zijn
+var unautotiled_chunks_positions: Array[Vector2i] # positions van generated chunks die mogelijks niet alle 8 buren hebben om geautotiled te worden
 var chunks_to_load: Array[Chunk] # chunks die loaded moeten worden, deze zijn autotiled
 var chunks_to_unload: Array[Chunk] # chunks die unloaded moeten worden
 
@@ -34,9 +34,10 @@ var chunk_unload_timer: float = 0
 
 var thread_chunk_generator: Thread = Thread.new()
 var thread_chunk_autotiler: Thread = Thread.new()
+var thread_chunk_autotiler_availabilitychecker: Thread = Thread.new()
 
 										 #top          #top-right      #right         #bottom-right   #bottom         #bottom-left     #left          #top-left
-var chunk_neighbours: Array[Vector2i] = [Vector2i(0,1), Vector2i(1,1), Vector2i(1,0), Vector2i(1,-1), Vector2i(0,-1), Vector2i(-1,-1), Vector2i(-1,0), Vector2i(-1,1),  
+var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1),  
   
 ]
 
@@ -147,12 +148,10 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 func _ready() -> void:
 	thread_chunk_generator.start(chunk_generator)
 	thread_chunk_autotiler.start(chunk_autotiler)
+	thread_chunk_autotiler_availabilitychecker.start(chunk_autotiler_availabilitychecker)
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
-
-
-
 
 
 
@@ -205,15 +204,34 @@ func chunk_generator():
 					i += 1
 					
 			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
-			chunks_to_autotile[chunk_pos] = chunk #  proberen om de chunks zelf te laten kiezen wanneer toe te voeten aan autotiling lijst?
+			#chunks_to_autotile[chunk_pos] = chunk #  proberen om de chunks zelf te laten kiezen wanneer toe te voeten aan autotiling lijst?
+			unautotiled_chunks_positions.append(chunk_pos) 
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
+
+
+func chunk_autotiler_availabilitychecker():
+	while true:
+		OS.delay_msec(500)
+		
+		
+		for i in range(unautotiled_chunks_positions.size() - 1, -1, -1):
+			var is_neighboured = true
+			var chunk_pos = unautotiled_chunks_positions[i]
+			
+			for neigbour in chunk_neighbours:
+				if not generated_chunks.has(chunk_pos + neigbour):
+					is_neighboured = false
+					break
+			if is_neighboured:
+				chunks_to_autotile[chunk_pos] = generated_chunks[chunk_pos]
+				unautotiled_chunks_positions.remove_at(i)
 
 
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(300)
+		OS.delay_msec(100)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
@@ -270,6 +288,7 @@ func chunk_autotiler():
 
 
 
+#region autotiling
 func autotile_inner(chunk: Chunk):
 	var bitmask: int = 0
 	var tile_id: int = 0
@@ -626,7 +645,7 @@ func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_le
 	
 	if not top_left_chunk.is_autotiled_bottom_right:
 		autotile_bottom_right(top_left_chunk, top_chunk, chunk, left_chunk)
-
+#endregion
 
 
 
@@ -647,8 +666,6 @@ func chunk_loader():
 		chunk.is_queued_load = false
 		#chunks_to_load.erase(chunk.position)
 		loaded_chunks.append(chunk)
-
-
 
 
 
