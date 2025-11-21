@@ -214,7 +214,6 @@ func chunk_autotiler_availabilitychecker():
 	while true:
 		OS.delay_msec(200)
 		
-		
 		for i in range(unautotiled_chunks_positions.size() - 1, -1, -1):
 			var is_neighboured = true
 			var chunk_pos = unautotiled_chunks_positions[i]
@@ -267,9 +266,10 @@ func chunk_autotiler():
 
 #region autotiling
 func autotile_inner(chunk: Chunk):
-	var bitmask: int = 0
+	var bitmask: int = 0 # bitmask van tile variant
 	var tile_id: int = 0
 	var i: int = 0
+	var orthogonal: int # bitmask als rand buren wel of niet bestaan
 	
 	for y in range(1, 15): # loops over de inner tiles
 		for x in range(1, 15):
@@ -277,25 +277,40 @@ func autotile_inner(chunk: Chunk):
 			bitmask = 0
 			tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
 	
-			# optimization mogelijk
+			# orthogalen #
 			if tile_id != 0:
-				if chunk.wall_layer[i - 16] >> 16 == tile_id:
-					bitmask += 1
-				if chunk.wall_layer[i - 15] >> 16 == tile_id:
-					bitmask += 2
-				if chunk.wall_layer[i + 1] >> 16 == tile_id:
-					bitmask += 4
+				if chunk.wall_layer[i - 16] >> 16 == tile_id: # top
+					bitmask |= 1 # vervangen door bitmask |= 1 denk ik?
+					orthogonal |= 1
+				
+				if chunk.wall_layer[i + 1] >> 16 == tile_id: # right
+					bitmask |= 4
+					orthogonal |= 2
+				
+				if chunk.wall_layer[i + 16] >> 16 == tile_id: # bottoms
+					bitmask |= 16
+					orthogonal |= 4
+				
+				if chunk.wall_layer[i - 1] >> 16 == tile_id: # left
+					bitmask |= 64
+					orthogonal |= 8
+				
+	
+			# diagonalen #
+				if orthogonal & 0b0011 == 0b0011:  # als 2 eerste bits aan staan is de boven en rechter hoek er
+					if chunk.wall_layer[i - 15] >> 16 == tile_id:
+						bitmask += 2
+				
 				if chunk.wall_layer[i + 17] >> 16 == tile_id:
 					bitmask += 8
-				if chunk.wall_layer[i + 16] >> 16 == tile_id:
-					bitmask += 16
+				
 				if chunk.wall_layer[i + 15] >> 16 == tile_id:
 					bitmask += 32
-				if chunk.wall_layer[i - 1] >> 16 == tile_id:
-					bitmask += 64
+				
 				if chunk.wall_layer[i - 17] >> 16 == tile_id:
 					bitmask += 128
-	
+			
+			
 				if tile_lookup.has(bitmask):
 					var atlas_pos = tile_lookup[bitmask]
 					chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
