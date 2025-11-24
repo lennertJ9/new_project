@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 10
+var render_distance: int = 3
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -265,6 +265,7 @@ func chunk_autotiler():
 
 
 #region autotiling
+# optimalisatie ok
 func autotile_inner(chunk: Chunk):
 	var bitmask: int = 0 # bitmask van tile variant
 	var tile_id: int = 0
@@ -282,33 +283,29 @@ func autotile_inner(chunk: Chunk):
 				if chunk.wall_layer[i - 16] >> 16 == tile_id: # top
 					bitmask |= 1 # vervangen door bitmask |= 1 denk ik?
 					orthogonal |= 1
-				
 				if chunk.wall_layer[i + 1] >> 16 == tile_id: # right
 					bitmask |= 4
 					orthogonal |= 2
-				
 				if chunk.wall_layer[i + 16] >> 16 == tile_id: # bottoms
 					bitmask |= 16
 					orthogonal |= 4
-				
 				if chunk.wall_layer[i - 1] >> 16 == tile_id: # left
 					bitmask |= 64
 					orthogonal |= 8
 				
-	
 			# diagonalen #
-				if orthogonal & 0b0011 == 0b0011:  # als 2 eerste bits aan staan is de boven en rechter hoek er
+				if orthogonal & 0b0011:  # upper right
 					if chunk.wall_layer[i - 15] >> 16 == tile_id:
-						bitmask += 2
-				
-				if chunk.wall_layer[i + 17] >> 16 == tile_id:
-					bitmask += 8
-				
-				if chunk.wall_layer[i + 15] >> 16 == tile_id:
-					bitmask += 32
-				
-				if chunk.wall_layer[i - 17] >> 16 == tile_id:
-					bitmask += 128
+						bitmask |= 2
+				if orthogonal & 0b0110:
+					if chunk.wall_layer[i + 17] >> 16 == tile_id:
+						bitmask |= 8
+				if orthogonal & 0b1100:
+					if chunk.wall_layer[i + 15] >> 16 == tile_id:
+						bitmask |= 32
+				if orthogonal & 0b1001:
+					if chunk.wall_layer[i - 17] >> 16 == tile_id:
+						bitmask |= 128
 			
 			
 				if tile_lookup.has(bitmask):
@@ -321,32 +318,46 @@ func autotile_inner(chunk: Chunk):
 	chunk.is_autotiled_inner = true
 
 
-
+# optimalisatie ok
 func autotile_top(chunk: Chunk, top_chunk: Chunk):
 	var bitmask: int
 	var tile_id: int
+	var orthogonal: int # bitmask als rand buren wel of niet bestaan
 	
 	for i in range(1,15): # bitmask calculatie voor TOP
 		bitmask = 0
-		tile_id = chunk.wall_layer[i] >> 16 
+		tile_id = chunk.wall_layer[i] >> 16
+		orthogonal = 0 
+		
+		# orthogalen #
 		if tile_id != 0:
-			if top_chunk.wall_layer[i + 240] >> 16 == tile_id:
-				bitmask += 1
-			if top_chunk.wall_layer[i + 241] >> 16 == tile_id:
-				bitmask += 2
-			if chunk.wall_layer[i + 1] >> 16 == tile_id:
-				bitmask += 4
-			if chunk.wall_layer[i + 17] >> 16 == tile_id:
-				bitmask += 8
-			if chunk.wall_layer[i + 16] >> 16 == tile_id:
-				bitmask += 16
-			if chunk.wall_layer[i + 15] >> 16 == tile_id:
-				bitmask += 32
-			if chunk.wall_layer[i - 1] >> 16 == tile_id:
-				bitmask += 64
-			if top_chunk.wall_layer[i + 239] >> 16 == tile_id:
-				bitmask += 128
+			if top_chunk.wall_layer[i + 240] >> 16 == tile_id: # top
+				bitmask |= 1 # vervangen door bitmask |= 1 denk ik?
+				orthogonal |= 1
+			if chunk.wall_layer[i + 1] >> 16 == tile_id: # right
+				bitmask |= 4
+				orthogonal |= 2
+			if chunk.wall_layer[i + 16] >> 16 == tile_id: # bottoms
+				bitmask |= 16
+				orthogonal |= 4
+			if chunk.wall_layer[i - 1] >> 16 == tile_id: # left
+				bitmask |= 64
+				orthogonal |= 8
 			
+		# diagonalen #
+			if orthogonal & 0b0011:  # upper right
+				if top_chunk.wall_layer[i + 241] >> 16 == tile_id:
+					bitmask |= 2
+			if orthogonal & 0b0110:
+				if chunk.wall_layer[i + 17] >> 16 == tile_id:
+					bitmask |= 8
+			if orthogonal & 0b1100:
+				if chunk.wall_layer[i + 15] >> 16 == tile_id:
+					bitmask |= 32
+			if orthogonal & 0b1001:
+				if top_chunk.wall_layer[i + 239] >> 16 == tile_id:
+					bitmask |= 128
+		
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
@@ -358,29 +369,46 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 
 
 
-
+# optimalisatie ok
 func autotile_bottom(chunk: Chunk, bottom_chunk: Chunk):
+	var bitmask = 0
+	var tile_id: int
+	var orthogonal: int # bitmask als rand buren wel of niet bestaan
+	
 	for i in range(1,15): 
-		var bitmask = 0
-		var tile_id = chunk.wall_layer[i + 240] >> 16 
-		
+		tile_id = chunk.wall_layer[i + 240] >> 16 
+		bitmask = 0
+		orthogonal = 0
+
+	# orthogalen #
 		if tile_id != 0:
-			if chunk.wall_layer[i + 240 - 16] >> 16 == tile_id:
-				bitmask += 1
-			if chunk.wall_layer[i + 240 - 15] >> 16 == tile_id:
-				bitmask += 2
-			if chunk.wall_layer[i + 240 + 1] >> 16 == tile_id:
-				bitmask += 4
-			if bottom_chunk.wall_layer[i + 1] >> 16 == tile_id:
-				bitmask += 8
-			if bottom_chunk.wall_layer[i] >> 16 == tile_id:
-				bitmask += 16
-			if bottom_chunk.wall_layer[i - 1] >> 16 == tile_id:
-				bitmask += 32
-			if chunk.wall_layer[i + 240 - 1] >> 16 == tile_id:
-				bitmask += 64
-			if chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
-				bitmask += 128
+			if chunk.wall_layer[i + 240 - 16] >> 16 == tile_id: # top
+				bitmask |= 1 # vervangen door bitmask |= 1 denk ik?
+				orthogonal |= 1
+			if chunk.wall_layer[i + 240 + 1] >> 16 == tile_id: # right
+				bitmask |= 4
+				orthogonal |= 2
+			if bottom_chunk.wall_layer[i] >> 16 == tile_id: # bottoms
+				bitmask |= 16
+				orthogonal |= 4
+			if chunk.wall_layer[i + 240 - 1] >> 16 == tile_id: # left
+				bitmask |= 64
+				orthogonal |= 8
+			
+		# diagonalen #
+			if orthogonal & 0b0011:  # upper right
+				if chunk.wall_layer[i + 240 - 15] >> 16 == tile_id:
+					bitmask |= 2
+			if orthogonal & 0b0110:
+				if bottom_chunk.wall_layer[i + 1] >> 16 == tile_id:
+					bitmask |= 8
+			if orthogonal & 0b1100:
+				if bottom_chunk.wall_layer[i - 1] >> 16 == tile_id:
+					bitmask |= 32
+			if orthogonal & 0b1001:
+				if chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
+					bitmask |= 128
+	
 	
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
