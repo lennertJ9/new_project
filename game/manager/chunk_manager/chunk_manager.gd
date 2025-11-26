@@ -190,7 +190,7 @@ func chunk_generator():
 					var walls_atlas_id = 0
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
-					if random > 0.1:
+					if random > -0.01:
 						wall_id = 1 << 16 # dirt wall
 					else:
 						wall_id = 0
@@ -781,16 +781,16 @@ func chunk_unloader():
 
 
 
-func _draw() -> void:
-	var chunk_pixel_size = 256
-	
-	z_index = 5
-	for x in range(-1280,1280, chunk_pixel_size):
-		for y in range(-1280,1280, chunk_pixel_size):
-			
-			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.5), false, 1.)
-			draw_string(ThemeDB.fallback_font, Vector2(x,y ), str(Vector2(x / 256,y / 256)))
-	for x in range(-480,480, 16):
-		for y in range(-480,480, 16):
-			
-			draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.1), false, 1.)
+#func _draw() -> void:
+	#var chunk_pixel_size = 256
+	#
+	#z_index = 5
+	#for x in range(-1280,1280, chunk_pixel_size):
+		#for y in range(-1280,1280, chunk_pixel_size):
+			#
+			#draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.5), false, 1.)
+			#draw_string(ThemeDB.fallback_font, Vector2(x,y ), str(Vector2(x / 256,y / 256)))
+	#for x in range(-480,480, 16):
+		#for y in range(-480,480, 16):
+			#
+			#draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.1), false, 1.)

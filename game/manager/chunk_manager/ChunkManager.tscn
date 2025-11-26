@@ -5,9 +5,11 @@
 [ext_resource type="Texture2D" uid="uid://b50e6tjwm2fhr" path="res://manager/chunk_manager/assets/bitmasking_wall_tileset.png" id="3_wt20s"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
-seed = 131
-frequency = 0.0227
+noise_type = 3
+frequency = 0.0722
 fractal_type = 0
+fractal_lacunarity = 0.0
+fractal_gain = 0.9
 domain_warp_type = 2
 domain_warp_amplitude = 5.615
 domain_warp_fractal_type = 0
