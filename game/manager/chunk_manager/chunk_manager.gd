@@ -143,6 +143,10 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	97: Vector2i(2,8),
 }
 
+var tile_lookup_ground: Dictionary[int, Vector2i] = {
+	9: Vector2i(3,3),
+}
+
 
 
 func _ready() -> void:
@@ -190,10 +194,16 @@ func chunk_generator():
 					var walls_atlas_id = 0
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
-					if random > -0.01:
+					var ground_id: int
+					if random > 0.0:
 						wall_id = 1 << 16 # dirt wall
 					else:
 						wall_id = 0
+					
+					# dark grass
+					if random < -0.2:
+						ground_id = 1 << 16
+						
 					
 					var atlas_coord = Vector2i(2,2)
 					var atlas_id = 0
@@ -240,6 +250,7 @@ func chunk_autotiler():
 			
 			# ----------------- INNER ------------------------------------#
 			autotile_inner(chunk)
+			autotile_inner_ground(chunk)
 			
 			# ----------------- SIDES--------------------------------#
 			var top_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(0,1)]
@@ -712,6 +723,39 @@ func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_le
 #endregion
 
 
+
+#region autotiling ground
+
+func autotile_inner_ground(chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	var i: int
+	
+	for y in range(1,15):
+		for x in range(1,15):
+			i = y * 16 + x
+			bitmask = 0
+			tile_id = chunk.ground_layer[i] >> 16
+			
+			if tile_id != 0: # 0 -> geen tile
+				if chunk.ground_layer[i - 16] >> 16 == tile_id: # UP
+					bitmask |= 1
+				if chunk.ground_layer[i + 1] >> 16 == tile_id: # RIGHT
+					bitmask |= 2
+				if chunk.ground_layer[i + 16] >> 16 == tile_id: # BOTTOM
+					bitmask |= 4
+				if chunk.ground_layer[i - 1] >> 16 == tile_id: # LEFT
+					bitmask |= 8
+				
+				if tile_lookup_ground.has(bitmask):
+					var atlas_pos = tile_lookup_ground[bitmask]
+					chunk.ground_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				else:
+					chunk.ground_layer[i] = tile_id << 16 | 8 << 8 | 0
+				
+
+
+#endregion
 
 
 func chunk_loader():

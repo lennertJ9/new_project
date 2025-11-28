@@ -1,6 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://q3ni4pr1836"]
+[gd_scene load_steps=12 format=3 uid="uid://q3ni4pr1836"]
 
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
+[ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
 [ext_resource type="Texture2D" uid="uid://bvpf46054jtsw" path="res://manager/chunk_manager/assets/grass_tilemap.png" id="2_wt20s"]
 [ext_resource type="Texture2D" uid="uid://b50e6tjwm2fhr" path="res://manager/chunk_manager/assets/bitmasking_wall_tileset.png" id="3_wt20s"]
 
@@ -21,25 +22,53 @@ domain_warp_fractal_gain = 7.175
 noise = SubResource("FastNoiseLite_wt20s")
 seamless = true
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_svfqs"]
+texture = ExtResource("2_oaajj")
+8:0/0 = 0
+0:0/size_in_atlas = Vector2i(2, 2)
+0:0/0 = 0
+2:0/size_in_atlas = Vector2i(1, 2)
+2:0/0 = 0
+3:0/size_in_atlas = Vector2i(2, 2)
+3:0/0 = 0
+3:2/size_in_atlas = Vector2i(2, 1)
+3:2/0 = 0
+2:2/0 = 0
+0:2/size_in_atlas = Vector2i(2, 1)
+0:2/0 = 0
+0:3/size_in_atlas = Vector2i(2, 2)
+0:3/0 = 0
+2:3/size_in_atlas = Vector2i(1, 2)
+2:3/0 = 0
+3:3/size_in_atlas = Vector2i(2, 2)
+3:3/0 = 0
+5:0/size_in_atlas = Vector2i(3, 2)
+5:0/0 = 0
+5:2/size_in_atlas = Vector2i(3, 1)
+5:2/0 = 0
+5:3/size_in_atlas = Vector2i(3, 2)
+5:3/0 = 0
+0:5/size_in_atlas = Vector2i(2, 3)
+0:5/0 = 0
+2:5/size_in_atlas = Vector2i(1, 3)
+2:5/0 = 0
+3:5/size_in_atlas = Vector2i(2, 3)
+3:5/0 = 0
+5:5/size_in_atlas = Vector2i(3, 3)
+5:5/0 = 0
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_oaajj"]
 texture = ExtResource("2_wt20s")
-6:1/0 = 0
 2:2/0 = 0
 3:2/size_in_atlas = Vector2i(2, 1)
 3:2/0 = 0
 3:2/0/texture_origin = Vector2i(-8, 0)
-6:2/0 = 0
 2:3/size_in_atlas = Vector2i(1, 2)
 2:3/0 = 0
 2:3/0/texture_origin = Vector2i(0, -8)
 3:3/size_in_atlas = Vector2i(2, 2)
 3:3/0 = 0
 3:3/0/texture_origin = Vector2i(-8, -8)
-6:3/0 = 0
-1:6/0 = 0
-2:6/0 = 0
-3:6/0 = 0
-6:6/0 = 0
 0:0/size_in_atlas = Vector2i(2, 2)
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(8, 8)
@@ -55,9 +84,25 @@ texture = ExtResource("2_wt20s")
 0:2/size_in_atlas = Vector2i(2, 1)
 0:2/0 = 0
 0:2/0/texture_origin = Vector2i(8, 0)
+5:2/size_in_atlas = Vector2i(3, 1)
+5:2/0 = 0
+5:0/size_in_atlas = Vector2i(3, 2)
+5:0/0 = 0
+5:3/size_in_atlas = Vector2i(3, 2)
+5:3/0 = 0
+5:5/size_in_atlas = Vector2i(3, 3)
+5:5/0 = 0
+2:5/size_in_atlas = Vector2i(1, 3)
+2:5/0 = 0
+0:5/size_in_atlas = Vector2i(2, 3)
+0:5/0 = 0
+3:5/size_in_atlas = Vector2i(2, 3)
+3:5/0 = 0
+8:0/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_x3nnn"]
-sources/0 = SubResource("TileSetAtlasSource_oaajj")
+sources/1 = SubResource("TileSetAtlasSource_svfqs")
+sources/2 = SubResource("TileSetAtlasSource_oaajj")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_x3nnn"]
 texture = ExtResource("3_wt20s")
