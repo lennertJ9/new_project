@@ -144,7 +144,21 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 }
 
 var tile_lookup_ground: Dictionary[int, Vector2i] = {
+	0: Vector2i(2,2),
+	1: Vector2i(5,3),
+	2: Vector2i(0,5),
+	3: Vector2i(0,3),
+	4: Vector2i(5,0),
+	5: Vector2i(5,2),
+	6: Vector2i(0,0),
+	7: Vector2i(0,2),
+	8: Vector2i(3,5),
 	9: Vector2i(3,3),
+	10: Vector2i(2,5),
+	11: Vector2i(2,3),
+	12: Vector2i(3,0),
+	14: Vector2i(3,2),
+	15: Vector2i(2,2),
 }
 
 
@@ -156,6 +170,8 @@ func _ready() -> void:
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
+	var test = 131100
+	print("test is: " + str(test >> 16))
 
 
 
@@ -203,13 +219,15 @@ func chunk_generator():
 					# dark grass
 					if random < -0.2:
 						ground_id = 1 << 16
+					else:
+						ground_id = 2 << 16
 						
 					
 					var atlas_coord = Vector2i(2,2)
 					var atlas_id = 0
 					var ground_data = (atlas_coord.x << 8) | atlas_coord.y
 					
-					chunk.ground_layer[i] = ground_data
+					chunk.ground_layer[i] = ground_id
 					chunk.wall_layer[i] = wall_id
 					i += 1
 					
@@ -270,8 +288,10 @@ func chunk_autotiler():
 			autotile_bottom_right(chunk, generated_chunks[chunk_pos + Vector2i(1,0)], generated_chunks[chunk_pos + Vector2i(1,1)], generated_chunks[chunk_pos + Vector2i(0,1)])
 			autotile_bottom_left(chunk, generated_chunks[chunk_pos + Vector2i(0,1)], generated_chunks[chunk_pos + Vector2i(-1,1)], generated_chunks[chunk_pos + Vector2i(-1,0)])
 			autotile_top_left(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(-1,0)], generated_chunks[chunk_pos + Vector2i(-1,-1)])
-				
+
+			chunk.autotile_flag = 1000
 			chunks_to_autotile.erase(chunk.position)
+
 
 
 
@@ -769,6 +789,7 @@ func chunk_loader():
 				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2))
 				if chunk.wall_layer[i] > 65000:
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, chunk.get_tile_coord(chunk.wall_layer[i])) 
+				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.wall_layer[i])   )
 				i += 1
 		chunk.is_loaded = true
 		chunk.is_queued_load = false
@@ -787,7 +808,7 @@ func chunk_check():
 		for coord_y in range(start_coord.y, end_coord.y + 1):
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
-			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].autotile_flag == 511 and not generated_chunks[chunk_pos].is_queued_load:
+			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].autotile_flag == 1000 and not generated_chunks[chunk_pos].is_queued_load:
 				generated_chunks[chunk_pos].is_queued_load = true
 				chunks_to_load.append(generated_chunks[chunk_pos])
 				# LOADING CHUNK
