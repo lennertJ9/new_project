@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 3
+var render_distance: int = 1
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -157,7 +157,8 @@ var tile_lookup_ground: Dictionary[int, Vector2i] = {
 	10: Vector2i(2,5),
 	11: Vector2i(2,3),
 	12: Vector2i(3,0),
-	14: Vector2i(3,2),
+	13: Vector2i(3,2),
+	14: Vector2i(2,0),
 	15: Vector2i(2,2),
 }
 
@@ -217,10 +218,10 @@ func chunk_generator():
 						wall_id = 0
 					
 					# dark grass
-					if random < -0.2:
-						ground_id = 1 << 16
-					else:
+					if random < -0.1:
 						ground_id = 2 << 16
+					else:
+						ground_id = 1 << 16
 						
 					
 					var atlas_coord = Vector2i(2,2)
@@ -232,7 +233,7 @@ func chunk_generator():
 					i += 1
 					
 			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
-			#chunks_to_autotile[chunk_pos] = chunk #  proberen om de chunks zelf te laten kiezen wanneer toe te voeten aan autotiling lijst?
+			
 			unautotiled_chunks_positions.append(chunk_pos) 
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
@@ -767,6 +768,8 @@ func autotile_inner_ground(chunk: Chunk):
 				if chunk.ground_layer[i - 1] >> 16 == tile_id: # LEFT
 					bitmask |= 8
 				
+				
+				print("i: ", i," bitmask: " ,bitmask)
 				if tile_lookup_ground.has(bitmask):
 					var atlas_pos = tile_lookup_ground[bitmask]
 					chunk.ground_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
@@ -786,11 +789,12 @@ func chunk_loader():
 		for y_pos in range(16):
 			for x_pos in range(16):
 				
-				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, Vector2i(2,2))
-				if chunk.wall_layer[i] > 65000:
+				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, chunk.get_tile_coord(chunk.wall_layer[i])) 
-				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.wall_layer[i])   )
+				
+				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.ground_layer[i]))
 				i += 1
+				
 		chunk.is_loaded = true
 		chunk.is_queued_load = false
 		#chunks_to_load.erase(chunk.position)
