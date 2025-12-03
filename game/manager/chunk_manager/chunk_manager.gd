@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 1
+var render_distance: int = 2
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -218,7 +218,7 @@ func chunk_generator():
 						wall_id = 0
 					
 					# dark grass
-					if random < -0.1:
+					if random < -0.08:
 						ground_id = 2 << 16
 					else:
 						ground_id = 1 << 16
@@ -278,14 +278,15 @@ func chunk_autotiler():
 
 			var right_chunk: Chunk = generated_chunks[chunk_pos + Vector2i(1,0)]
 			autotile_right(chunk, right_chunk)
+			autotile_right_ground(chunk, right_chunk)
 			
 			var bottom_chunk: Chunk = generated_chunks[chunk_pos + Vector2i(0,1)]
 			autotile_bottom(chunk, bottom_chunk)
 			autotile_bottom_ground(chunk, bottom_chunk)
 			
-			
 			var left_chunk: Chunk = generated_chunks[chunk_pos - Vector2i(1,0)]
 			autotile_left(chunk, left_chunk)
+			autotile_left_ground(chunk, left_chunk)
 			
 			# ----------------- EDGES ------------------------------------#
 			autotile_top_right(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(1,-1)], generated_chunks[chunk_pos + Vector2i(1,0)])
@@ -806,7 +807,33 @@ func autotile_top_ground(chunk: Chunk, top_chunk: Chunk):
 				chunk.ground_layer[i] = tile_id << 16 | 8 << 8 | 0
 
 
-# right
+
+func autotile_right_ground(chunk: Chunk, right_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	var index: int
+	
+	for i in range(1,15):
+		index = 15 + i * 16
+		bitmask = 0
+		tile_id = chunk.ground_layer[index] >> 16
+		
+		if tile_id != 0: # 0 -> geen tile
+			if chunk.ground_layer[index - 16] >> 16 == tile_id and chunk.wall_layer[index - 16] >> 16 == 0: # UP
+				bitmask |= 1
+			if right_chunk.ground_layer[index - 15] >> 16 == tile_id and right_chunk.wall_layer[index - 15] >> 16 == 0: # RIGHT
+				bitmask |= 2
+			if chunk.ground_layer[index + 16] >> 16 == tile_id and chunk.wall_layer[index + 16] >> 16 == 0: # BOTTOM
+				bitmask |= 4
+			if chunk.ground_layer[index - 1] >> 16 == tile_id and chunk.wall_layer[index - 1] >> 16 == 0: # LEFT
+				bitmask |= 8
+			
+			if tile_lookup_ground.has(bitmask):
+				var atlas_pos = tile_lookup_ground[bitmask]
+				chunk.ground_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				chunk.ground_layer[index] = tile_id << 16 | 8 << 8 | 0
+
 
 
 func autotile_bottom_ground(chunk: Chunk, bottom_chunk: Chunk):
@@ -833,6 +860,37 @@ func autotile_bottom_ground(chunk: Chunk, bottom_chunk: Chunk):
 				chunk.ground_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.ground_layer[i + 240] = tile_id << 16 | 8 << 8 | 0
+
+
+
+func autotile_left_ground(chunk: Chunk, left_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	var index: int
+	
+	for i in range(1,15):
+		index =  i * 16
+		bitmask = 0
+		tile_id = chunk.ground_layer[index] >> 16
+		
+		if tile_id != 0: # 0 -> geen tile
+			if chunk.ground_layer[index - 16] >> 16 == tile_id and chunk.wall_layer[index - 16] >> 16 == 0: # UP
+				bitmask |= 1
+			if chunk.ground_layer[index + 1] >> 16 == tile_id and chunk.wall_layer[index + 1] >> 16 == 0: # RIGHT
+				bitmask |= 2
+			if chunk.ground_layer[index + 16] >> 16 == tile_id and chunk.wall_layer[index + 16] >> 16 == 0: # BOTTOM
+				bitmask |= 4
+			if left_chunk.ground_layer[index + 15] >> 16 == tile_id and left_chunk.wall_layer[index + 15] >> 16 == 0: # LEFT
+				bitmask |= 8
+			
+			if tile_lookup_ground.has(bitmask):
+				var atlas_pos = tile_lookup_ground[bitmask]
+				chunk.ground_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			else:
+				chunk.ground_layer[index] = tile_id << 16 | 8 << 8 | 0
+
+
+
 
 
 
