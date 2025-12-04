@@ -8,7 +8,7 @@ var noise: Noise
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 
-var render_distance: int = 2
+var render_distance: int = 3
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -290,9 +290,17 @@ func chunk_autotiler():
 			
 			# ----------------- EDGES ------------------------------------#
 			autotile_top_right(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(1,-1)], generated_chunks[chunk_pos + Vector2i(1,0)])
+			autotile_top_right_ground(chunk, top_chunk, right_chunk)
+			
 			autotile_bottom_right(chunk, generated_chunks[chunk_pos + Vector2i(1,0)], generated_chunks[chunk_pos + Vector2i(1,1)], generated_chunks[chunk_pos + Vector2i(0,1)])
+			autotile_bottom_right_ground(chunk, right_chunk, bottom_chunk)
+			
 			autotile_bottom_left(chunk, generated_chunks[chunk_pos + Vector2i(0,1)], generated_chunks[chunk_pos + Vector2i(-1,1)], generated_chunks[chunk_pos + Vector2i(-1,0)])
+			autotile_bottom_left_ground(chunk, bottom_chunk, left_chunk)
+			
 			autotile_top_left(chunk, generated_chunks[chunk_pos + Vector2i(0,-1)], generated_chunks[chunk_pos + Vector2i(-1,0)], generated_chunks[chunk_pos + Vector2i(-1,-1)])
+			autotile_top_left_ground(chunk, top_chunk, left_chunk)
+
 
 			chunk.autotile_flag = 1000
 			chunks_to_autotile.erase(chunk.position)
@@ -444,7 +452,6 @@ func autotile_bottom(chunk: Chunk, bottom_chunk: Chunk):
 			if orthogonal & 0b1001:
 				if chunk.wall_layer[i + 240 - 17] >> 16 == tile_id:
 					bitmask |= 128
-	
 	
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
@@ -891,10 +898,104 @@ func autotile_left_ground(chunk: Chunk, left_chunk: Chunk):
 
 
 
+func autotile_top_right_ground(chunk: Chunk, top_chunk: Chunk, right_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	
+	bitmask = 0
+	tile_id = chunk.ground_layer[15] >> 16
+	
+	if tile_id != 0: # 0 -> geen tile
+		if top_chunk.ground_layer[255] >> 16 == tile_id and top_chunk.wall_layer[255] >> 16 == 0: # UP
+			bitmask |= 1
+		if right_chunk.ground_layer[0] >> 16 == tile_id and right_chunk.wall_layer[0] >> 16 == 0: # RIGHT
+			bitmask |= 2
+		if chunk.ground_layer[31] >> 16 == tile_id and chunk.wall_layer[31] >> 16 == 0: # BOTTOM
+			bitmask |= 4
+		if chunk.ground_layer[14] >> 16 == tile_id and chunk.wall_layer[14] >> 16 == 0: # LEFT
+			bitmask |= 8
+
+		if tile_lookup_ground.has(bitmask):
+			var atlas_pos = tile_lookup_ground[bitmask]
+			chunk.ground_layer[15] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		else:
+			chunk.ground_layer[15] = tile_id << 16 | 8 << 8 | 0
 
 
 
-#endregion
+func autotile_bottom_right_ground(chunk: Chunk, right_chunk: Chunk, bottom_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	
+	bitmask = 0
+	tile_id = chunk.ground_layer[255] >> 16
+	
+	if tile_id != 0: # 0 -> geen tile
+		if chunk.ground_layer[239] >> 16 == tile_id and chunk.wall_layer[239] >> 16 == 0: # UP
+			bitmask |= 1
+		if right_chunk.ground_layer[240] >> 16 == tile_id and right_chunk.wall_layer[240] >> 16 == 0: # RIGHT
+			bitmask |= 2
+		if bottom_chunk.ground_layer[15] >> 16 == tile_id and bottom_chunk.wall_layer[15] >> 16 == 0: # BOTTOM
+			bitmask |= 4
+		if chunk.ground_layer[254] >> 16 == tile_id and chunk.wall_layer[254] >> 16 == 0: # LEFT
+			bitmask |= 8
+
+		if tile_lookup_ground.has(bitmask):
+			var atlas_pos = tile_lookup_ground[bitmask]
+			chunk.ground_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		else:
+			chunk.ground_layer[255] = tile_id << 16 | 8 << 8 | 0
+
+
+func autotile_bottom_left_ground(chunk: Chunk, bottom_chunk: Chunk, left_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	
+	bitmask = 0
+	tile_id = chunk.ground_layer[240] >> 16
+	
+	if tile_id != 0: # 0 -> geen tile
+		if chunk.ground_layer[224] >> 16 == tile_id and chunk.wall_layer[224] >> 16 == 0: # UP
+			bitmask |= 1
+		if chunk.ground_layer[241] >> 16 == tile_id and chunk.wall_layer[241] >> 16 == 0: # RIGHT
+			bitmask |= 2
+		if bottom_chunk.ground_layer[0] >> 16 == tile_id and bottom_chunk.wall_layer[0] >> 16 == 0: # BOTTOM
+			bitmask |= 4
+		if left_chunk.ground_layer[255] >> 16 == tile_id and left_chunk.wall_layer[255] >> 16 == 0: # LEFT
+			bitmask |= 8
+
+		if tile_lookup_ground.has(bitmask):
+			var atlas_pos = tile_lookup_ground[bitmask]
+			chunk.ground_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		else:
+			chunk.ground_layer[240] = tile_id << 16 | 8 << 8 | 0
+
+
+func autotile_top_left_ground(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk):
+	var bitmask: int 
+	var tile_id: int
+	
+	bitmask = 0
+	tile_id = chunk.ground_layer[0] >> 16
+	
+	if tile_id != 0: # 0 -> geen tile
+		if top_chunk.ground_layer[240] >> 16 == tile_id and top_chunk.wall_layer[240] >> 16 == 0: # UP
+			bitmask |= 1
+		if chunk.ground_layer[1] >> 16 == tile_id and chunk.wall_layer[1] >> 16 == 0: # RIGHT
+			bitmask |= 2
+		if chunk.ground_layer[16] >> 16 == tile_id and chunk.wall_layer[16] >> 16 == 0: # BOTTOM
+			bitmask |= 4
+		if left_chunk.ground_layer[15] >> 16 == tile_id and left_chunk.wall_layer[15] >> 16 == 0: # LEFT
+			bitmask |= 8
+
+		if tile_lookup_ground.has(bitmask):
+			var atlas_pos = tile_lookup_ground[bitmask]
+			chunk.ground_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		else:
+			chunk.ground_layer[0] = tile_id << 16 | 8 << 8 | 0
+
+
+#endregion autotile ground
 
 
 func chunk_loader():
