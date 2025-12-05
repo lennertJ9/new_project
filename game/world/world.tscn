@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://bt2absuqhkyvq"]
+[gd_scene load_steps=6 format=3 uid="uid://bt2absuqhkyvq"]
 
 [ext_resource type="Script" uid="uid://dxmnae5yjmh1w" path="res://world/world.gd" id="1_tcf2h"]
 [ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://camera/camera.tscn" id="2_h5o24"]
+[ext_resource type="PackedScene" uid="uid://c6nnj1f78ujk2" path="res://test_player/testplayer.tscn" id="3_4717r"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tcf2h"]
 noise_type = 0
@@ -29,3 +30,5 @@ offset_right = 40.0
 offset_bottom = 23.0
 scale = Vector2(2, 2)
 text = "sdsd"
+
+[node name="Testplayer" parent="." instance=ExtResource("3_4717r")]

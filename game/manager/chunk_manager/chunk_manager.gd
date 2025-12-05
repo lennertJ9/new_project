@@ -172,7 +172,7 @@ func _ready() -> void:
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
 	var test = 131100
-	print("test is: " + str(test >> 16))
+	
 
 
 
@@ -779,8 +779,6 @@ func autotile_inner_ground(chunk: Chunk):
 				if chunk.ground_layer[i - 1] >> 16 == tile_id and chunk.wall_layer[i - 1] >> 16 == 0: # LEFT
 					bitmask |= 8
 				
-				
-				print("i: ", i," bitmask: " ,bitmask)
 				if tile_lookup_ground.has(bitmask):
 					var atlas_pos = tile_lookup_ground[bitmask]
 					chunk.ground_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
@@ -1019,7 +1017,6 @@ func chunk_loader():
 
 
 func chunk_check():
-	#print("check")
 	var player_chunk_coord = floor(player.global_position / 256)
 	var start_coord: Vector2 = player_chunk_coord - Vector2(render_distance, render_distance) 
 	var end_coord: Vector2 = player_chunk_coord + Vector2(render_distance, render_distance) 

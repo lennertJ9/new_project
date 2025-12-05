@@ -1,16 +1,17 @@
 extends Camera2D
 
 var speed = 300
+@export var player: Node2D
+
+
+func _ready() -> void:
+	set_process(false)
+	player = get_tree().get_first_node_in_group("player")
+	set_process(true)
+
 
 func _process(delta: float) -> void:
-	if Input.is_action_pressed("ui_left"):
-		position.x -= speed * delta
-	if Input.is_action_pressed("ui_right"):
-		position.x += speed * delta
-	if Input.is_action_pressed("ui_up"):
-		position.y -= speed * delta
-	if Input.is_action_pressed("ui_down"):
-		position.y += speed * delta
+	position = player.global_position
 
 
 
