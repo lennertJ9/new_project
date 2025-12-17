@@ -116,6 +116,7 @@ _data = {
 }
 
 [node name="Player" type="CharacterBody2D"]
+z_index = 500
 
 [node name="Body" type="Sprite2D" parent="."]
 texture = ExtResource("1_g1dw6")

@@ -11,7 +11,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	position = player.global_position
+	if player:
+		
+		position = player.global_position
 
 
 
