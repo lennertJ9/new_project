@@ -1,8 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://bt2absuqhkyvq"]
+[gd_scene load_steps=8 format=3 uid="uid://bt2absuqhkyvq"]
 
 [ext_resource type="Script" uid="uid://dxmnae5yjmh1w" path="res://world/world.gd" id="1_tcf2h"]
 [ext_resource type="PackedScene" uid="uid://c6nnj1f78ujk2" path="res://test_player/testplayer.tscn" id="2_4717r"]
 [ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://camera/camera.tscn" id="2_h5o24"]
+[ext_resource type="Script" uid="uid://ctt55sbed1mwc" path="res://world/multiplayer_spawner.gd" id="3_mmdvd"]
+[ext_resource type="PackedScene" uid="uid://crtnxq6v1i31t" path="res://user_interface/user_interface.tscn" id="4_h5o24"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tcf2h"]
 noise_type = 0
@@ -15,11 +17,6 @@ width = 1
 height = 1
 noise = SubResource("FastNoiseLite_tcf2h")
 
-[sub_resource type="GDScript" id="GDScript_tcf2h"]
-script/source = "
-extends Node
-"
-
 [node name="World" type="Node2D" node_paths=PackedStringArray("camera") groups=["world"]]
 script = ExtResource("1_tcf2h")
 noise_tex = SubResource("NoiseTexture2D_4717r")
@@ -28,10 +25,12 @@ player_scene = ExtResource("2_4717r")
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("uid://c6nnj1f78ujk2")
-spawn_path = NodePath("../PlayerManager")
+spawn_path = NodePath("..")
+script = ExtResource("3_mmdvd")
+player = ExtResource("2_4717r")
 
 [node name="Camera2D" parent="." instance=ExtResource("2_h5o24")]
-position = Vector2(0, 12)
+position = Vector2(124, 77)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -41,6 +40,10 @@ offset_bottom = 23.0
 scale = Vector2(2, 2)
 text = "sdsd"
 
-[node name="PlayerManager" type="Node2D" parent="."]
-unique_name_in_owner = true
-script = SubResource("GDScript_tcf2h")
+[node name="UserInterface" parent="CanvasLayer" instance=ExtResource("4_h5o24")]
+offset_left = 5.0
+offset_top = -279.0
+offset_right = 5.0
+offset_bottom = -279.0
+
+[node name="Testplayer" parent="." instance=ExtResource("2_4717r")]
