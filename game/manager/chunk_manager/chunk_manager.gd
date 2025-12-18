@@ -144,7 +144,7 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 }
 
 var tile_lookup_ground: Dictionary[int, Vector2i] = {
-	0: Vector2i(2,2),
+	0: Vector2i(5,5),
 	1: Vector2i(5,3),
 	2: Vector2i(0,5),
 	3: Vector2i(0,3),
@@ -1061,8 +1061,8 @@ func chunk_unloader():
 		chunk.is_queued_unload = false
 		chunk.is_loaded = false
 
-
-
+#
+#
 #func _draw() -> void:
 	#var chunk_pixel_size = 256
 	#
