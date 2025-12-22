@@ -14,6 +14,7 @@ properties/0/spawn = true
 properties/0/replication_mode = 1
 
 [node name="Testplayer" type="CharacterBody2D" groups=["player"]]
+motion_mode = 1
 script = ExtResource("1_hhr0h")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

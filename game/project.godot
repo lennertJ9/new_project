@@ -35,9 +35,8 @@ window/vsync/vsync_mode=0
 
 folder_colors={
 "res://manager/chunk_manager/test_bitmask_system/": "pink",
-"res://multiplayer/": "orange",
 "res://network/": "orange",
-"res://test_player/": "gray",
+"res://test_player/": "red",
 "res://user_interface/": "green"
 }
 

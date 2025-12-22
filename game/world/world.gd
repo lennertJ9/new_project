@@ -7,8 +7,8 @@ extends Node2D
 @onready var label: Label = $CanvasLayer/Label # fps lable
 
 # -------------- networking -------------------- #
-@export var player_scene: PackedScene
-@onready var player_manager = $PlayerManager
+
+
 # ---------------------------------------------- #
 
 
