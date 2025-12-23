@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://q3ni4pr1836"]
+[gd_scene load_steps=13 format=3 uid="uid://q3ni4pr1836"]
 
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://scenes/manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 [ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
 [ext_resource type="Texture2D" uid="uid://bvpf46054jtsw" path="res://scenes/manager/chunk_manager/assets/grass_tilemap.png" id="2_wt20s"]
 [ext_resource type="Texture2D" uid="uid://b50e6tjwm2fhr" path="res://scenes/manager/chunk_manager/assets/bitmasking_wall_tileset.png" id="3_wt20s"]
+[ext_resource type="Script" uid="uid://c81vs3p2r58jy" path="res://scenes/manager/chunk_manager/autotiling.gd" id="5_6k28p"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
 noise_type = 3
@@ -268,3 +269,4 @@ z_index = -1
 tile_set = SubResource("TileSet_oaajj")
 
 [node name="Autotiling" type="Node" parent="."]
+script = ExtResource("5_6k28p")
