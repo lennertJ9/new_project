@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b50e6tjwm2fhr"
-path="res://.godot/imported/bitmasking_wall_tileset.png-3e6ca237cc671950f0019872d3bd1bdd.ctex"
+uid="uid://cmtfs1cr0kqxo"
+path="res://.godot/imported/experimental_tileset.png-940bc0656db6c67d2d596cb2124a22d9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://manager/chunk_manager/assets/bitmasking_wall_tileset.png"
-dest_files=["res://.godot/imported/bitmasking_wall_tileset.png-3e6ca237cc671950f0019872d3bd1bdd.ctex"]
+source_file="res://scenes/world/experimental_tileset.png"
+dest_files=["res://.godot/imported/experimental_tileset.png-940bc0656db6c67d2d596cb2124a22d9.ctex"]
 
 [params]
 

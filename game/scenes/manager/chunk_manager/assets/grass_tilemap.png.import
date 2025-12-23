@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bejwsw5iasvg6"
-path="res://.godot/imported/player_head.png-5b0e4e261ccce4398944b7bc17b61599.ctex"
+uid="uid://bvpf46054jtsw"
+path="res://.godot/imported/grass_tilemap.png-b07eaa0435e865b3aa38e29cebbba973.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://player/assets/player_head.png"
-dest_files=["res://.godot/imported/player_head.png-5b0e4e261ccce4398944b7bc17b61599.ctex"]
+source_file="res://scenes/manager/chunk_manager/assets/grass_tilemap.png"
+dest_files=["res://.godot/imported/grass_tilemap.png-b07eaa0435e865b3aa38e29cebbba973.ctex"]
 
 [params]
 

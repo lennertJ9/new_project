@@ -171,8 +171,6 @@ func _ready() -> void:
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
-	var test = 131100
-	
 
 
 

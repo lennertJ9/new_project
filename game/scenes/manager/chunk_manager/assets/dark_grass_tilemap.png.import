@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ckdgddkfiwiy"
-path="res://.godot/imported/dual_own_test_textures.png-fb2958c408204deb3e98a4f23c706b55.ctex"
+uid="uid://cj2odx85i4wyo"
+path="res://.godot/imported/dark_grass_tilemap.png-15b018884f0ebd7232ce3dce0ad2d7ce.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://manager/chunk_manager/assets/dual_own_test_textures.png"
-dest_files=["res://.godot/imported/dual_own_test_textures.png-fb2958c408204deb3e98a4f23c706b55.ctex"]
+source_file="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png"
+dest_files=["res://.godot/imported/dark_grass_tilemap.png-15b018884f0ebd7232ce3dce0ad2d7ce.ctex"]
 
 [params]
 

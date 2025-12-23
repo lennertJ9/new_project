@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://crtnxq6v1i31t"]
 
-[ext_resource type="Script" uid="uid://cti3h5pfvva1l" path="res://user_interface/user_interface.gd" id="1_ratyj"]
+[ext_resource type="Script" uid="uid://cti3h5pfvva1l" path="res://scenes/user_interface/user_interface.gd" id="1_ratyj"]
 
 [node name="UserInterface" type="Control"]
 z_index = 11

@@ -18,7 +18,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-ChunkManager="*res://manager/chunk_manager/ChunkManager.tscn"
+ChunkManager="*res://scenes/manager/chunk_manager/ChunkManager.tscn"
 NetworkManager="*res://network/network_manager.gd"
 
 [debug]
@@ -36,8 +36,8 @@ window/vsync/vsync_mode=0
 folder_colors={
 "res://manager/chunk_manager/test_bitmask_system/": "pink",
 "res://network/": "orange",
-"res://test_player/": "red",
-"res://user_interface/": "green"
+"res://scenes/test_player/": "red",
+"res://scenes/user_interface/": "green"
 }
 
 [global_group]

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://6q86aapqocus"
-path="res://.godot/imported/player_legs.png-5516656ccf609b6edc607f96d75ffcdb.ctex"
+uid="uid://bn80318neobay"
+path="res://.godot/imported/bitmasks_image.png-6dda145b67c492902b003df5597d5a70.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://player/assets/player_legs.png"
-dest_files=["res://.godot/imported/player_legs.png-5516656ccf609b6edc607f96d75ffcdb.ctex"]
+source_file="res://scenes/manager/chunk_manager/assets/bitmasks_image.png"
+dest_files=["res://.godot/imported/bitmasks_image.png-6dda145b67c492902b003df5597d5a70.ctex"]
 
 [params]
 
