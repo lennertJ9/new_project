@@ -1,5 +1,5 @@
 extends Node2D
-
+var test = 1
 
 @export var player: Node2D
 @export var noise_tex: NoiseTexture2D
@@ -7,11 +7,13 @@ var noise: Noise
 
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
+@onready var object_layer: TileMapLayer = $ObjectLayer
 
 @onready var autotiling: Node = $Autotiling
+@onready var object_generator: Node = $ObjectGenerator
 
 
-var render_distance: int = 3
+var render_distance: int = 2
 
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
@@ -50,6 +52,7 @@ var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2
 
 
 func _ready() -> void:
+	set_process(false)
 	thread_chunk_generator.start(chunk_generator)
 	thread_chunk_autotiler_availabilitychecker.start(chunk_autotiler_availabilitychecker)
 	
@@ -88,7 +91,6 @@ func chunk_generator():
 			var i = 0
 			for y in range(16):
 				for x in range(16):
-					
 					var global_pos = chunk.position * 16 + Vector2i(x,y)
 					var walls_atlas_id = 0
 					var random = noise.get_noise_2dv(global_pos)
@@ -98,22 +100,19 @@ func chunk_generator():
 						wall_id = 1 << 16 # dirt wall
 					else:
 						wall_id = 0
-					
 					# dark grass
 					if random < -0.08:
 						ground_id = 2 << 16
 					else:
 						ground_id = 1 << 16
-						
-					
 					var atlas_coord = Vector2i(2,2)
 					var atlas_id = 0
-					var ground_data = (atlas_coord.x << 8) | atlas_coord.y
 					
 					chunk.ground_layer[i] = ground_id
 					chunk.wall_layer[i] = wall_id
 					i += 1
-					
+			
+			object_generator.generate_trees(chunk)
 			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
 			
 			unautotiled_chunks_positions.append(chunk_pos) 
@@ -149,6 +148,8 @@ func chunk_loader():
 				
 				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, chunk.get_tile_coord(chunk.wall_layer[i])) 
+				if chunk.object_layer[i] > 65000:
+					object_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.object_layer[i] >> 16, chunk.get_tile_coord(chunk.object_layer[i]))
 				
 				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.ground_layer[i]))
 				i += 1

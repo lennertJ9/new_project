@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dxmnae5yjmh1w" path="res://scenes/world/world.gd" id="1_tcf2h"]
 [ext_resource type="PackedScene" uid="uid://c6nnj1f78ujk2" path="res://scenes/test_player/testplayer.tscn" id="2_4717r"]
-[ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://scenes/camera/camera.tscn" id="2_h5o24"]
 [ext_resource type="Script" uid="uid://ctt55sbed1mwc" path="res://scenes/world/multiplayer_spawner.gd" id="3_mmdvd"]
 [ext_resource type="PackedScene" uid="uid://crtnxq6v1i31t" path="res://scenes/user_interface/user_interface.tscn" id="4_h5o24"]
+[ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://scenes/camera/camera.tscn" id="4_t5ptc"]
 [ext_resource type="Script" uid="uid://c4xrim1djaf7c" path="res://scenes/world/player_manager.gd" id="6_fn3g3"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tcf2h"]
@@ -18,19 +18,16 @@ width = 1
 height = 1
 noise = SubResource("FastNoiseLite_tcf2h")
 
-[node name="World" type="Node2D" node_paths=PackedStringArray("camera") groups=["world"]]
+[node name="World" type="Node2D" groups=["world"]]
 script = ExtResource("1_tcf2h")
 noise_tex = SubResource("NoiseTexture2D_4717r")
-camera = NodePath("Camera2D")
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("uid://c6nnj1f78ujk2")
-spawn_path = NodePath("..")
+spawn_path = NodePath("../PlayerManager")
 script = ExtResource("3_mmdvd")
 player_scene = ExtResource("2_4717r")
-
-[node name="Camera2D" parent="." instance=ExtResource("2_h5o24")]
-position = Vector2(124, 77)
+camera_scene = ExtResource("4_t5ptc")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

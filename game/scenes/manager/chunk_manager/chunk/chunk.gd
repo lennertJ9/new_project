@@ -3,9 +3,12 @@ class_name Chunk
 # ongebruikt  tile ID    tile_x       tile_y    --> 32 bit int
 # 00000000    00000000   00000000     00000000
 var position: Vector2i
+var global_position: Vector2i 
 
 var ground_layer: PackedInt32Array 
 var wall_layer: PackedInt32Array
+var object_layer: PackedInt32Array
+
 
 var is_generated: bool
 var is_loaded: bool
@@ -15,18 +18,6 @@ var is_queued_unload: bool
 # ----- autotile ----- #
 var is_autotiled: bool
 
-var autotile_flag: int = 0 # bitmask autotile status 1 1111 1111 (511) is fully autotiled
-var is_autotiled_top: bool
-var is_autotiled_top_right: bool
-var is_autotiled_right: bool
-var is_autotiled_bottom_right: bool
-var is_autotiled_bottom: bool
-var is_autotiled_bottom_left: bool
-var is_autotiled_left: bool
-var is_autotiled_top_left: bool
-
-
-var is_autotiled_inner: bool
 
 
 var last_accessed: float
@@ -39,17 +30,10 @@ func _init(pos: Vector2i) -> void:
 	is_generated = false
 	ground_layer.resize(256)
 	wall_layer.resize(256)
+	object_layer.resize(256)
 	position = pos
-	
-	var is_autotiled_top = false
-	var is_autotiled_top_right = false
-	var is_autotiled_right = false
-	var is_autotiled_bottom_right = false
-	var is_autotiled_bottom = false
-	var is_autotiled_bottom_left = false
-	var is_autotiled_left = false
-	var is_autotiled_top_left = false
-	
+	global_position = pos * 16
+
 
 
 func get_tile_coord(packed: int) -> Vector2i:

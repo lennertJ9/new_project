@@ -3,8 +3,9 @@ extends Node2D
 @export var noise_tex: NoiseTexture2D
 @export var camera: Camera2D
 
-
+var b = 1
 @onready var label: Label = $CanvasLayer/Label # fps lable
+@onready var player_manager: Node2D = $PlayerManager
 
 # -------------- networking -------------------- #
 
