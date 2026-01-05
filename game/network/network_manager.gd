@@ -11,7 +11,6 @@ var is_server: bool = false
 
 
 
-
 func start_server():
 	is_server = true
 	peer = ENetMultiplayerPeer.new()

@@ -5,23 +5,24 @@ class_name Chunk
 var position: Vector2i
 var global_position: Vector2i 
 
+# ------ layers ----- #
 var ground_layer: PackedInt32Array 
 var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
 
-
+# ------ states ------- #
 var is_generated: bool
 var is_loaded: bool
 var is_queued_load: bool
 var is_queued_unload: bool
+var last_accessed: float
 
-# ----- autotile ----- #
+
+# ----- autotile ----- # 
 var is_autotiled: bool
 
-
-
-var last_accessed: float
-  
+# ----- AStar ----- # 
+var a_star_id: int # een "start" id. 0,256,512,...
 
 
 func _init(pos: Vector2i) -> void:

@@ -1,5 +1,7 @@
 extends Node2D
-var test = 1
+
+signal chunk_generated
+
 
 @export var player: Node2D
 @export var noise_tex: NoiseTexture2D
@@ -87,7 +89,7 @@ func chunk_generator():
 			
 			var chunk: Chunk = chunks_to_generate.values()[0]
 			var chunk_pos = chunk.position
-			
+			chunk.a_star_id = AStarManager.get_a_star_id()
 			var i = 0
 			for y in range(16):
 				for x in range(16):
@@ -118,6 +120,7 @@ func chunk_generator():
 			unautotiled_chunks_positions.append(chunk_pos) 
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
+			chunk_generated.emit(chunk)
 
 
 func chunk_autotiler_availabilitychecker():

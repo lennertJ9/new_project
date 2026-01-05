@@ -14,12 +14,13 @@ config/name="game"
 run/main_scene="uid://bt2absuqhkyvq"
 config/features=PackedStringArray("4.5", "Forward Plus")
 run/max_fps=144
-config/icon="res://icon.svg"
+config/icon="res://assets/icon.svg"
 
 [autoload]
 
 ChunkManager="*res://scenes/manager/chunk_manager/ChunkManager.tscn"
 NetworkManager="*res://network/network_manager.gd"
+AStarManager="*res://scenes/a_star/AStar.tscn"
 
 [debug]
 
@@ -35,9 +36,7 @@ window/vsync/vsync_mode=0
 
 folder_colors={
 "res://assets/": "purple",
-"res://manager/chunk_manager/test_bitmask_system/": "pink",
 "res://network/": "orange",
-"res://scenes/test_player/": "red",
 "res://scenes/user_interface/": "green"
 }
 
