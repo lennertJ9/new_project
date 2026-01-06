@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-var speed = 100
+var speed = 200
 @export var camera_scene: PackedScene
 
 # alleen uitvoeren op de client

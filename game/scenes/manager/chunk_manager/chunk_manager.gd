@@ -120,7 +120,8 @@ func chunk_generator():
 			unautotiled_chunks_positions.append(chunk_pos) 
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
-			chunk_generated.emit(chunk)
+			
+			emit_signal.call_deferred("chunk_generated", chunk)
 
 
 func chunk_autotiler_availabilitychecker():
