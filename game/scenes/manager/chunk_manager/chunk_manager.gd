@@ -115,13 +115,13 @@ func chunk_generator():
 					i += 1
 			
 			object_generator.generate_trees(chunk)
-			generated_chunks[chunk.position] = chunk # eerst autotile dan pas in generated chunks
+			generated_chunks[chunk.position] = chunk # ? idk waarom dit hier staat: -> eerst autotile dan pas in generated chunks
 			
 			unautotiled_chunks_positions.append(chunk_pos) 
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
 			
-			emit_signal.call_deferred("chunk_generated", chunk)
+			
 
 
 func chunk_autotiler_availabilitychecker():

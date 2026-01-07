@@ -1,5 +1,6 @@
 extends Node
 
+signal chunk_autotiled
 
 var chunks_to_autotile: Dictionary[Vector2i, Chunk]
 
@@ -177,6 +178,8 @@ func chunk_autotiler():
 			
 			chunk.is_autotiled = true
 			chunks_to_autotile.erase(chunk.position)
+			
+			emit_signal.call_deferred("chunk_autotiled", chunk)
 
 
 
