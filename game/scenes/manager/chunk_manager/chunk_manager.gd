@@ -15,8 +15,7 @@ var noise: Noise
 @onready var object_generator: Node = $ObjectGenerator
 
 
-var render_distance: int = 2
-
+var render_distance: int = 10
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
 var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
