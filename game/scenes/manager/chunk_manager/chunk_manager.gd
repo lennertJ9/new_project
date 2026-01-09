@@ -15,7 +15,7 @@ var noise: Noise
 @onready var object_generator: Node = $ObjectGenerator
 
 
-var render_distance: int = 10
+var render_distance: int = 1
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
 var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
@@ -120,7 +120,7 @@ func chunk_generator():
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
 			
-			
+			emit_signal.call_deferred("chunk_generated", chunk)
 
 
 func chunk_autotiler_availabilitychecker():
