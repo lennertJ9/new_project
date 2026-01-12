@@ -1,5 +1,14 @@
 extends Node2D
 
+#tijdens generation een chunk property maken: packedintarray[0|1] 1 = walkable, 0 = not walkable
+# astar generation voorzien in chunk rendering pipeline 
+# (ergens na chunk data generation, best na autotiling want die chunks hebben alle 8 buren?) 
+#-> die functie die checkt voor autotiling, 
+#dus als de buren er zijn, deze algemeen noemen, en dan if true aan een lijst toevoegen chunks_to_astar
+
+# aanpassingen nodig -> astars points alleen toevoegen op walkable tiles
+# diagonaal niet verbinden als een wall of object dit zou blokkeren (deels)
+#
 
 var next_available_id: int # een waarde van een nog niet gebruikte a_star_id
 var AStar: AStar2D = AStar2D.new()
@@ -25,7 +34,7 @@ func on_chunk_generated(chunk: Chunk):
 
 func on_chunk_autotiled(chunk: Chunk):
 	connect_AStar_center(chunk)
-	connect_AStar_edge(chunk)
+	connect_AStar_edges(chunk)
 	get_astar_path()
 
 
@@ -43,66 +52,93 @@ func generate_a_star_points(chunk_pos: Vector2i, chunk_Astar_id: int):
 
 # connecting logic moet aangepast worden omdat om de 2x2 connecties maken eigenlijk niet alles tiles verbind
 func connect_AStar_center(chunk: Chunk):
-	print("star id? ",chunk.a_star_id)
-	var index: int = chunk.a_star_id + 17 # 17 is het begin van 'de center'
-	
-	for y in range(1, 14, 2):
-		for x in range(1, 14, 2): # id = 17
-			AStar.connect_points(index, index - 16) # top
-			AStar.connect_points(index, index - 15)
-			AStar.connect_points(index, index + 1) # right
-			AStar.connect_points(index, index + 17)
-			AStar.connect_points(index, index + 16) # bottom
-			AStar.connect_points(index, index + 15)
-			AStar.connect_points(index, index - 1) # left
-			AStar.connect_points(index, index - 17)
-			index += 2
-			# id = + 14 = 31
-		index += 18
-
-
-func connect_AStar_edge(chunk: Chunk):
-	var right_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,0)].a_star_id + 16
-	var bottom_right_neighbour_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1, -1)].a_star_id
-	var bottom_id = ChunkManager.generated_chunks[chunk.position + Vector2i(0, -1)].a_star_id + 1
 	var id: int
 	
-	#connect right to left edge
-	id = chunk.a_star_id + 31
-	for i in range(1,7):
-		AStar.connect_points(id, id - 16)
-		AStar.connect_points(id, right_id - 16)
-		AStar.connect_points(id, right_id)
-		AStar.connect_points(id, right_id + 16)
-		AStar.connect_points(id, id + 16)
-		
-		AStar.connect_points(id, id + 15)
-		AStar.connect_points(id, id - 1)
-		AStar.connect_points(id, id - 17)
-		id += 32
-		right_id += 32
+	for y in range(1, 15):
+		for x in range(1, 15): 
+			id = y * 16 + x + chunk.a_star_id
+			AStar.connect_points(id, id - 16, false) # top
+			AStar.connect_points(id, id - 15, false)
+			AStar.connect_points(id, id + 1, false) # right
+			AStar.connect_points(id, id + 17, false)
+			AStar.connect_points(id, id + 16, false) # bottom
+			AStar.connect_points(id, id + 15, false)
+			AStar.connect_points(id, id - 1, false) # left
+			AStar.connect_points(id, id - 17, false)
+
+
+
+func connect_AStar_edges(chunk: Chunk):
+	var top_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(0,1)].a_star_id 
+	var top_right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,1)].a_star_id 
+	var right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,0)].a_star_id 
+	var bottom_right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1, -1)].a_star_id
+	var bottom_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(0, -1)].a_star_id 
+	var bottom_left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,-1)].a_star_id 
+	var left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,0)].a_star_id 
+	var top_left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,1)].a_star_id 
+	var id: int
+	var secondary_id: int
 	
-	#connect bottom to upper edge
-	id = chunk.a_star_id + 241
-	for i in range(1,7):
-		AStar.connect_points(id, id - 16)
-		AStar.connect_points(id, id - 15)
-		AStar.connect_points(id, id + 1)
-		AStar.connect_points(id, bottom_id + 1)
-		AStar.connect_points(id, bottom_id)
-		AStar.connect_points(id, bottom_id - 1)
-		AStar.connect_points(id, id - 1)
-		AStar.connect_points(id, id - 17)
-		
-		id += 2
-		bottom_id += 2
+	# top
+	for x in range(1,15):
+		id = x + chunk.a_star_id
+		secondary_id = 240 + x + top_AStar_id 
+		AStar.connect_points(id, secondary_id, false)
+		AStar.connect_points(id, secondary_id + 1, false)
+		AStar.connect_points(id, id + 1, false)
+		AStar.connect_points(id, id + 17, false)
+		AStar.connect_points(id, id + 16, false)
+		AStar.connect_points(id, id + 15, false)
+		AStar.connect_points(id, id - 1, false)
+		AStar.connect_points(id, secondary_id - 1, false)
+	
+	# bottom
+	for x in range(1,15):
+		id = 240 + x + chunk.a_star_id
+		secondary_id = x + bottom_AStar_id
+		AStar.connect_points(id, id - 16, false)
+		AStar.connect_points(id, id - 15, false)
+		AStar.connect_points(id, id + 1, false)
+		AStar.connect_points(id, secondary_id + 1, false)
+		AStar.connect_points(id, secondary_id, false)
+		AStar.connect_points(id, secondary_id - 1, false)
+		AStar.connect_points(id, id - 1, false)
+		AStar.connect_points(id, id - 17, false)
+
+	# left
+	for y in range(1,15):
+		id =  y * 16 + chunk.a_star_id
+		secondary_id = 15 + y * 16 + left_AStar_id
+		AStar.connect_points(id, id - 16, false)
+		AStar.connect_points(id, id - 15, false)
+		AStar.connect_points(id, id + 1, false)
+		AStar.connect_points(id, id + 17, false)
+		AStar.connect_points(id, id + 16, false)
+		AStar.connect_points(id, secondary_id - 16, false)
+		AStar.connect_points(id, secondary_id, false)
+		AStar.connect_points(id, secondary_id + 16, false)
+
+
+	# right
+	for y in range(1,15):
+		id = 15 + y * 16 + chunk.a_star_id
+		secondary_id = y * 16 + left_AStar_id
+		AStar.connect_points(id, id - 16, false)
+		AStar.connect_points(id, secondary_id + 16, false)
+		AStar.connect_points(id, secondary_id, false)
+		AStar.connect_points(id, secondary_id - 16, false)
+		AStar.connect_points(id, id + 16, false)
+		AStar.connect_points(id, id + 15, false)
+		AStar.connect_points(id, id - 1, false)
+		AStar.connect_points(id, id - 17, false)
+
 
 
 
 func get_astar_path():
-	
-	var start_pos: Vector2i = Vector2i(8,8)
-	var end_pos: Vector2i = Vector2i(24,8)
+	var start_pos: Vector2i = Vector2i(248,24)
+	var end_pos: Vector2i = Vector2i(248,40)
 	
 	var start_id = AStar.get_closest_point(start_pos)
 	var end_id = AStar.get_closest_point(end_pos)
