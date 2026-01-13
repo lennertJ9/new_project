@@ -1,7 +1,11 @@
+## idee voor later:
+##
+## tilemappattern
+## tijdens het generaten per chunk een tilemappattern maken
+## tijdens het laden is set_cell nietmeer nodig omdat we gwn een tilemappattern inladen
+##
+
 extends Node2D
-
-signal chunk_generated
-
 
 @export var player: Node2D
 @export var noise_tex: NoiseTexture2D
@@ -40,7 +44,7 @@ var chunk_unload_timer: float = 0
 # -------------- threads ------------------------------------------- #
 var thread_chunk_generator: Thread = Thread.new()
 var thread_chunk_autotiler: Thread = Thread.new()
-var thread_chunk_autotiler_availabilitychecker: Thread = Thread.new()
+var thread_neighbour_checker: Thread = Thread.new()
 # ------------------------------------------------------------------ #
 
 										 #top          #top-right      #right         #bottom-right   #bottom         #bottom-left     #left          #top-left
@@ -55,7 +59,7 @@ var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2
 func _ready() -> void:
 	set_process(false)
 	thread_chunk_generator.start(chunk_generator)
-	thread_chunk_autotiler_availabilitychecker.start(chunk_autotiler_availabilitychecker)
+	thread_neighbour_checker.start(chunk_neighbour_checker)
 	
 	player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
@@ -84,6 +88,7 @@ func _process(delta: float) -> void:
 func chunk_generator():
 	while true:
 		OS.delay_msec(50)
+		
 		if not chunks_to_generate.is_empty():
 			
 			var chunk: Chunk = chunks_to_generate.values()[0]
@@ -92,6 +97,7 @@ func chunk_generator():
 			var i = 0
 			for y in range(16):
 				for x in range(16):
+					chunk.walkable[i] = 1
 					var global_pos = chunk.position * 16 + Vector2i(x,y)
 					var walls_atlas_id = 0
 					var random = noise.get_noise_2dv(global_pos)
@@ -99,11 +105,12 @@ func chunk_generator():
 					var ground_id: int
 					if random > 0.1:
 						wall_id = 1 << 16 # dirt wall
+						chunk.walkable[i] = 0
 					else:
 						wall_id = 0
 					# dark grass
 					if random < -0.08:
-						ground_id = 2 << 16
+						ground_id = 2 << 16 # aanetten van 
 					else:
 						ground_id = 1 << 16
 					var atlas_coord = Vector2i(2,2)
@@ -114,16 +121,18 @@ func chunk_generator():
 					i += 1
 			
 			object_generator.generate_trees(chunk)
-			generated_chunks[chunk.position] = chunk # ? idk waarom dit hier staat: -> eerst autotile dan pas in generated chunks
 			
-			unautotiled_chunks_positions.append(chunk_pos) 
+			# dit maakt alleen points, geen connecties. connecties pas na de neighbour checker
+			AStarManager.generate_a_star_points(chunk) 
+			
+			generated_chunks[chunk.position] = chunk 
+			unautotiled_chunks_positions.append(chunk_pos) # hier loopt thread en kijkt als buren generated zijn
 			chunk.is_generated = true
 			chunks_to_generate.erase(chunk_pos)
-			
-			emit_signal.call_deferred("chunk_generated", chunk)
 
 
-func chunk_autotiler_availabilitychecker():
+
+func chunk_neighbour_checker():
 	while true:
 		OS.delay_msec(200)
 		
@@ -137,6 +146,7 @@ func chunk_autotiler_availabilitychecker():
 					break
 			if is_neighboured:
 				autotiling.chunks_to_autotile[chunk_pos] = generated_chunks[chunk_pos]
+				AStarManager.chunk_to_connect.append(generated_chunks[chunk_pos])
 				unautotiled_chunks_positions.remove_at(i)
 
 
@@ -162,7 +172,7 @@ func chunk_loader():
 		loaded_chunks.append(chunk)
 
 
-
+# chunk worden geload wanneer: in generated lijst | niet al loaded of queued voor loading zijn | autotiled zijn 
 func chunk_check():
 	var player_chunk_coord = floor(player.global_position / 256)
 	var start_coord: Vector2 = player_chunk_coord - Vector2(render_distance, render_distance) 

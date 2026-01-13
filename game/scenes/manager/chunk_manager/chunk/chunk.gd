@@ -4,6 +4,7 @@ class_name Chunk
 # 00000000    00000000   00000000     00000000
 var position: Vector2i
 var global_position: Vector2i 
+var walkable: PackedInt32Array
 
 # ------ layers ----- #
 var ground_layer: PackedInt32Array 
@@ -29,6 +30,7 @@ func _init(pos: Vector2i) -> void:
 	is_autotiled = false
 	is_queued_unload = false
 	is_generated = false
+	walkable.resize(256)
 	ground_layer.resize(256)
 	wall_layer.resize(256)
 	object_layer.resize(256)

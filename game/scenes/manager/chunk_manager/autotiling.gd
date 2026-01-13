@@ -1,6 +1,6 @@
 extends Node
 
-signal chunk_autotiled
+
 
 var chunks_to_autotile: Dictionary[Vector2i, Chunk]
 
@@ -150,7 +150,7 @@ func chunk_autotiler():
 			var top_chunk: Chunk = owner.generated_chunks[chunk_pos - Vector2i(0,1)]
 			autotile_top(chunk, top_chunk)
 			autotile_top_ground(chunk, top_chunk)
-
+			
 			var right_chunk: Chunk = owner.generated_chunks[chunk_pos + Vector2i(1,0)]
 			autotile_right(chunk, right_chunk)
 			autotile_right_ground(chunk, right_chunk)
@@ -178,8 +178,7 @@ func chunk_autotiler():
 			
 			chunk.is_autotiled = true
 			chunks_to_autotile.erase(chunk.position)
-			
-			emit_signal.call_deferred("chunk_autotiled", chunk)
+
 
 
 

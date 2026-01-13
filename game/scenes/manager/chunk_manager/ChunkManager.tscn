@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://q3ni4pr1836"]
+[gd_scene load_steps=21 format=3 uid="uid://q3ni4pr1836"]
 
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://scenes/manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 [ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
@@ -25,6 +25,9 @@ domain_warp_fractal_gain = 7.175
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_oaajj"]
 noise = SubResource("FastNoiseLite_wt20s")
 seamless = true
+
+[sub_resource type="TileMapPattern" id="TileMapPattern_wyfgc"]
+tile_data = PackedInt32Array(0, 131073, 2, 65536, 131073, 2, 131072, 131073, 2, 196608, 131073, 2, 262144, 131073, 2, 1, 131073, 2, 65537, 131073, 2, 131073, 131073, 2, 196609, 131073, 2, 262145, 131073, 2, 2, 131073, 2, 65538, 131073, 2, 131074, 131073, 2, 196610, 131073, 2, 262146, 131073, 2, 3, 131073, 2, 65539, 131073, 2, 131075, 131073, 2, 196611, 131073, 2, 262147, 131073, 2, 4, 131073, 2, 65540, 131073, 2, 131076, 131073, 2, 196612, 131073, 2, 262148, 131073, 2, 5, 131073, 2, 65541, 131073, 2, 131077, 131073, 2, 196613, 131073, 2, 262149, 131073, 2, 6, 131073, 2, 65542, 131073, 2, 131078, 131073, 2, 196614, 131073, 2, 262150, 131073, 2, 7, 131073, 2, 65543, 131073, 2, 131079, 131073, 2, 196615, 131073, 2, 262151, 131073, 2)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_svfqs"]
 texture = ExtResource("2_oaajj")
@@ -123,6 +126,7 @@ texture = ExtResource("2_wt20s")
 [sub_resource type="TileSet" id="TileSet_x3nnn"]
 sources/1 = SubResource("TileSetAtlasSource_svfqs")
 sources/2 = SubResource("TileSetAtlasSource_oaajj")
+pattern_0 = SubResource("TileMapPattern_wyfgc")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_x3nnn"]
 texture = ExtResource("3_wt20s")

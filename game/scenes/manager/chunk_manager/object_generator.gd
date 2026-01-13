@@ -24,8 +24,10 @@ func generate_trees2(chunk: Chunk):
 				#chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
 				id = 1 << 16 | 0 << 8 | 0
 				chunk.object_layer[i] = id
+				chunk.walkable[i] = 0
 			i += 1
-			
+
+
 func generate_trees(chunk: Chunk):
 	
 	var cells = [0,0,0,0]
