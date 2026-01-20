@@ -7,6 +7,9 @@
 
 extends Node2D
 
+signal chunk_deloaded
+
+
 @export var player: Node2D
 @export var noise_tex: NoiseTexture2D
 var noise: Noise
@@ -19,21 +22,24 @@ var noise: Noise
 @onready var object_generator: Node = $ObjectGenerator
 
 
-var render_distance: int = 1
+var render_distance: int = 5
+var cpu_generator_delay: int = 25
+var cpu_load_delay: int = 25
+
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
 var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
 # --> nieuwe aanpak, generated chunks worden hierin gezet, hierdoor loopen, if alle 8 buren: append naar chunks_to_autotile
 
 #-------------- Chunk die processed moeten worden  --------------------#
-var chunks_to_generate: Dictionary[Vector2i, Chunk] # chunks die generated moeten worden -> puur data generatie, met tile ID
+var chunks_to_data_generate: Dictionary[Vector2i, Chunk] # chunks die generated moeten worden -> puur data generatie, met tile ID
 var chunks_to_autotile: Dictionary[Vector2i, Chunk] # chunks die autotiled moeten worden en waarvan alle 8 buren aanwezig zijn
-var unautotiled_chunks_positions: Array[Vector2i] # positions van generated chunks die mogelijks niet alle 8 buren hebben om geautotiled te worden
+var neighbourless_chunks: Array[Vector2i] # positions van generated chunks die mogelijks niet alle 8 buren hebben om geautotiled te worden
 var chunks_to_load: Array[Chunk] # chunks die loaded moeten worden, deze zijn autotiled
 var chunks_to_unload: Array[Chunk] # chunks die unloaded moeten worden
 
 # ------------- Check Timers --------------#
-var chunk_check_interval: float = 0.5
+var chunk_check_interval: float = 0.2
 var chunk_load_interval: float = 0.002
 var chunk_unload_interval: float = 0.002
 
@@ -87,11 +93,11 @@ func _process(delta: float) -> void:
 
 func chunk_generator():
 	while true:
-		OS.delay_msec(50)
+		OS.delay_msec(cpu_generator_delay)
 		
-		if not chunks_to_generate.is_empty():
+		if not chunks_to_data_generate.is_empty():
 			
-			var chunk: Chunk = chunks_to_generate.values()[0]
+			var chunk: Chunk = chunks_to_data_generate.values()[0]
 			var chunk_pos = chunk.position
 			chunk.a_star_id = AStarManager.get_a_star_id()
 			var i = 0
@@ -126,19 +132,19 @@ func chunk_generator():
 			AStarManager.generate_a_star_points(chunk) 
 			
 			generated_chunks[chunk.position] = chunk 
-			unautotiled_chunks_positions.append(chunk_pos) # hier loopt thread en kijkt als buren generated zijn
+			neighbourless_chunks.append(chunk_pos) # hier loopt thread en kijkt als buren generated zijn
 			chunk.is_generated = true
-			chunks_to_generate.erase(chunk_pos)
+			chunks_to_data_generate.erase(chunk_pos)
 
 
 
 func chunk_neighbour_checker():
 	while true:
-		OS.delay_msec(200)
+		OS.delay_msec(100)
 		
-		for i in range(unautotiled_chunks_positions.size() - 1, -1, -1): # reverse loop voor item deletion
+		for i in range(neighbourless_chunks.size() - 1, -1, -1): # reverse loop voor item deletion
 			var is_neighboured = true
-			var chunk_pos = unautotiled_chunks_positions[i]
+			var chunk_pos = neighbourless_chunks[i]
 			
 			for neigbour in chunk_neighbours:
 				if not generated_chunks.has(chunk_pos + neigbour):
@@ -147,7 +153,7 @@ func chunk_neighbour_checker():
 			if is_neighboured:
 				autotiling.chunks_to_autotile[chunk_pos] = generated_chunks[chunk_pos]
 				AStarManager.chunk_to_connect.append(generated_chunks[chunk_pos])
-				unautotiled_chunks_positions.remove_at(i)
+				neighbourless_chunks.remove_at(i)
 
 
 
@@ -188,8 +194,9 @@ func chunk_check():
 				# LOADING CHUNK
 			
 			else:
-				if not chunks_to_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
-					chunks_to_generate[chunk_pos] = Chunk.new(chunk_pos)
+				if not chunks_to_data_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
+					chunks_to_data_generate[chunk_pos] = Chunk.new(chunk_pos)
+					
 					# GENERATING CHUNK
 					
 					
@@ -217,6 +224,7 @@ func chunk_unloader():
 				wall_layer.erase_cell(tile_pos)
 		chunk.is_queued_unload = false
 		chunk.is_loaded = false
+		chunk_deloaded.emit(chunk)
 
 #
 #

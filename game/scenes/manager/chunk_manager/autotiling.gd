@@ -5,6 +5,7 @@ extends Node
 var chunks_to_autotile: Dictionary[Vector2i, Chunk]
 
 var thread_chunk_autotiler: Thread = Thread.new()
+var cpu_autotile_delay: int = 25
 
 # -------------- LOOKUP TABLES -------------------------------------#
 var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
@@ -134,7 +135,7 @@ func _ready() -> void:
 
 func chunk_autotiler():
 	while true:
-		OS.delay_msec(50)
+		OS.delay_msec(cpu_autotile_delay)
 		if not chunks_to_autotile.is_empty():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]

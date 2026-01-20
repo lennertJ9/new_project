@@ -12,10 +12,12 @@ var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
 
 # ------ states ------- #
+var status: int # 10001 -> load chunk ###  generated | loaded | queued_load | queud_unload | astar_ready          
 var is_generated: bool
 var is_loaded: bool
 var is_queued_load: bool
 var is_queued_unload: bool
+var is_Astar_ready: bool
 var last_accessed: float
 
 
@@ -24,6 +26,7 @@ var is_autotiled: bool
 
 # ----- AStar ----- # 
 var a_star_id: int # een "start" id. 0,256,512,...
+var a_star_is_ready: bool # als point generated en connected zijn
 
 
 func _init(pos: Vector2i) -> void:
