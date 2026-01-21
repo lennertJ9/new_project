@@ -11,32 +11,42 @@ var ground_layer: PackedInt32Array
 var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
 
-# ------ states ------- #
-var status: int # 10001 -> load chunk ###  generated | loaded | queued_load | queud_unload | astar_ready          
+# ------ states ------- #        
 var is_generated: bool
+var is_autotiled: bool
+var is_Astar_ready: bool
 var is_loaded: bool
 var is_queued_load: bool
 var is_queued_unload: bool
-var is_Astar_ready: bool
+
+
+
+
 var last_accessed: float
 
 
 # ----- autotile ----- # 
-var is_autotiled: bool
+
 
 # ----- AStar ----- # 
 var a_star_id: int # een "start" id. 0,256,512,...
 var a_star_is_ready: bool # als point generated en connected zijn
+
+# ----- Neighbour Data ----- # 
+var is_neigbhoured
+var neighbours: Array
 
 
 func _init(pos: Vector2i) -> void:
 	is_autotiled = false
 	is_queued_unload = false
 	is_generated = false
+	is_neigbhoured = false
 	walkable.resize(256)
 	ground_layer.resize(256)
 	wall_layer.resize(256)
 	object_layer.resize(256)
+	neighbours.resize(8)
 	position = pos
 	global_position = pos * 16
 

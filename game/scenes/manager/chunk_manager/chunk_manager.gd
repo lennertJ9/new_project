@@ -7,7 +7,9 @@
 
 extends Node2D
 
+signal chunk_generated
 signal chunk_deloaded
+signal neighbours_checked
 
 
 @export var player: Node2D
@@ -22,7 +24,7 @@ var noise: Noise
 @onready var object_generator: Node = $ObjectGenerator
 
 
-var render_distance: int = 5
+var render_distance: int = 2
 var cpu_generator_delay: int = 25
 var cpu_load_delay: int = 25
 
@@ -54,7 +56,8 @@ var thread_neighbour_checker: Thread = Thread.new()
 # ------------------------------------------------------------------ #
 
 										 #top          #top-right      #right         #bottom-right   #bottom         #bottom-left     #left          #top-left
-var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1),  
+var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), 
+										Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1),  
   
 ]
 
@@ -127,33 +130,50 @@ func chunk_generator():
 					i += 1
 			
 			object_generator.generate_trees(chunk)
-			
 			# dit maakt alleen points, geen connecties. connecties pas na de neighbour checker
 			AStarManager.generate_a_star_points(chunk) 
 			
 			generated_chunks[chunk.position] = chunk 
+			chunk.is_generated = true
+			
 			neighbourless_chunks.append(chunk_pos) # hier loopt thread en kijkt als buren generated zijn
 			chunk.is_generated = true
 			chunks_to_data_generate.erase(chunk_pos)
+			
+			emit_signal.call_deferred("chunk_generated", chunk)
+			
 
 
 
 func chunk_neighbour_checker():
 	while true:
 		OS.delay_msec(100)
+		var chunk: Chunk
 		
 		for i in range(neighbourless_chunks.size() - 1, -1, -1): # reverse loop voor item deletion
 			var is_neighboured = true
 			var chunk_pos = neighbourless_chunks[i]
+			chunk = generated_chunks[chunk_pos]
 			
-			for neigbour in chunk_neighbours:
-				if not generated_chunks.has(chunk_pos + neigbour):
+			var j: int = 0
+			for neighbour in chunk_neighbours:
+				if generated_chunks.has(chunk_pos + neighbour):
+					chunk.neighbours[j] = generated_chunks[chunk_pos + neighbour]
+					j += 1
+				else:
 					is_neighboured = false
 					break
+			
+			# hier worden chunks klaargemaakt voor astar en autotiling, alle 8 neigbours zijn hiervoor nodig.
 			if is_neighboured:
+				chunk.is_neigbhoured = true
 				autotiling.chunks_to_autotile[chunk_pos] = generated_chunks[chunk_pos]
-				AStarManager.chunk_to_connect.append(generated_chunks[chunk_pos])
 				neighbourless_chunks.remove_at(i)
+				
+				#neighbours_checked.emit(chunk)
+				
+				emit_signal.call_deferred("neighbours_checked", chunk)
+				#AStarManager.chunk_to_connect.append(generated_chunks[chunk_pos])
 
 
 
@@ -188,9 +208,17 @@ func chunk_check():
 		for coord_y in range(start_coord.y, end_coord.y + 1):
 			var chunk_pos = Vector2i(coord_x, coord_y)
 			
-			if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].is_autotiled and not generated_chunks[chunk_pos].is_queued_load:
-				generated_chunks[chunk_pos].is_queued_load = true
-				chunks_to_load.append(generated_chunks[chunk_pos])
+			if generated_chunks.has(chunk_pos):
+				var chunk: Chunk = generated_chunks[chunk_pos]
+				if not chunk.is_loaded and not chunk.is_queued_load and chunk.is_autotiled:
+					generated_chunks[chunk_pos].is_queued_load = true
+					chunks_to_load.append(generated_chunks[chunk_pos])
+				
+					
+					
+			#if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].is_autotiled and not generated_chunks[chunk_pos].is_queued_load:
+				#generated_chunks[chunk_pos].is_queued_load = true
+				#chunks_to_load.append(generated_chunks[chunk_pos])
 				# LOADING CHUNK
 			
 			else:
@@ -225,19 +253,20 @@ func chunk_unloader():
 		chunk.is_queued_unload = false
 		chunk.is_loaded = false
 		chunk_deloaded.emit(chunk)
+		
 
-#
-#
-#func _draw() -> void:
-	#var chunk_pixel_size = 256
-	#
-	#z_index = 5
-	#for x in range(-1280,1280, chunk_pixel_size):
-		#for y in range(-1280,1280, chunk_pixel_size):
-			#
-			#draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.5), false, 1.)
-			#draw_string(ThemeDB.fallback_font, Vector2(x,y ), str(Vector2(x / 256,y / 256)))
-	#for x in range(-480,480, 16):
-		#for y in range(-480,480, 16):
-			#
-			#draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.1), false, 1.)
+
+
+func _draw() -> void:
+	var chunk_pixel_size = 256
+	
+	
+	for x in range(-1280,1280, chunk_pixel_size):
+		for y in range(-1280,1280, chunk_pixel_size):
+			
+			draw_rect(Rect2(Vector2(x,y), Vector2(256,256)), Color(1,0,0,0.5), false, 1.)
+			draw_string(ThemeDB.fallback_font, Vector2(x,y ), str(Vector2(x / 256,y / 256)))
+	for x in range(-480,480, 16):
+		for y in range(-480,480, 16):
+			
+			draw_rect(Rect2(Vector2(x,y), Vector2(16,16)), Color(1,0,0,0.1), false, 1.)
