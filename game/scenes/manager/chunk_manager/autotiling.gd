@@ -108,29 +108,30 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	255: Vector2i(1,1),
 
 }
-var tile_lookup_ground: Dictionary[int, Vector2i] = {
-	0: Vector2i(5,5),
-	1: Vector2i(5,3),
-	2: Vector2i(0,5),
-	3: Vector2i(0,3),
-	4: Vector2i(5,0),
-	5: Vector2i(5,2),
-	6: Vector2i(0,0),
-	7: Vector2i(0,2),
-	8: Vector2i(3,5),
-	9: Vector2i(3,3),
-	10: Vector2i(2,5),
-	11: Vector2i(2,3),
-	12: Vector2i(3,0),
-	13: Vector2i(3,2),
-	14: Vector2i(2,0),
-	15: Vector2i(2,2),
+var tile_lookup_ground: Dictionary[int, Dictionary] = {
+	0: {Vector2i(5,5): 100},
+	1: {Vector2i(5,3): 100},
+	2: {Vector2i(0,5): 100},
+	3: {Vector2i(0,3): 100},
+	4: {Vector2i(5,0): 100},
+	5: {Vector2i(5,2): 100},
+	6: {Vector2i(0,0): 100},
+	7: {Vector2i(0,2): 100},
+	8: {Vector2i(3,5): 100},
+	9: {Vector2i(3,3): 100},
+	10:{Vector2i(2,5): 100},
+	11: {Vector2i(2,3): 100},
+	12: {Vector2i(3,0): 100},
+	13: {Vector2i(3,2): 100},
+	14: {Vector2i(2,0): 100},
+	15: {Vector2i(2,2): 90, Vector2i(9,2): 10},
 }
 # ------------------------------------------------------------------#
 
 
 func _ready() -> void:
 	thread_chunk_autotiler.start(chunk_autotiler)
+
 
 
 
@@ -182,6 +183,18 @@ func chunk_autotiler():
 			chunks_to_autotile.erase(chunk.position)
 
 
+
+func pick_tile_variant(bitmask):
+	var dict = tile_lookup_ground[bitmask]
+	dict.sort()
+	
+	var sum: int = 0
+	var random = randi_range(0,99) # ik denk verschillend bij seeds maar opzich geen probleem
+	
+	for key in dict:
+		sum += dict[key]
+		if sum > random:
+			return key
 
 
 
@@ -620,10 +633,8 @@ func autotile_inner_ground(chunk: Chunk):
 					bitmask |= 8
 				
 				if tile_lookup_ground.has(bitmask):
-					var atlas_pos = tile_lookup_ground[bitmask]
-					var random = randf_range(0,1)
-					#if random > 0.8 and bitmask == 15:
-						#atlas_pos.x += 7
+					var atlas_pos = pick_tile_variant(bitmask)
+					#var atlas_pos = tile_lookup_ground[bitmask]
 					chunk.ground_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 				else:
 					chunk.ground_layer[i] = tile_id << 16 | 8 << 8 | 0
@@ -654,7 +665,7 @@ func autotile_top_ground(chunk: Chunk, top_chunk: Chunk):
 				bitmask |= 8
 			
 			if tile_lookup_ground.has(bitmask):
-				var atlas_pos = tile_lookup_ground[bitmask]
+				var atlas_pos = pick_tile_variant(bitmask)
 				chunk.ground_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.ground_layer[i] = tile_id << 16 | 8 << 8 | 0
@@ -683,7 +694,7 @@ func autotile_right_ground(chunk: Chunk, right_chunk: Chunk):
 				bitmask |= 8
 			
 			if tile_lookup_ground.has(bitmask):
-				var atlas_pos = tile_lookup_ground[bitmask]
+				var atlas_pos = pick_tile_variant(bitmask)
 				chunk.ground_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.ground_layer[index] = tile_id << 16 | 8 << 8 | 0
@@ -710,7 +721,7 @@ func autotile_bottom_ground(chunk: Chunk, bottom_chunk: Chunk):
 				bitmask |= 8
 			
 			if tile_lookup_ground.has(bitmask):
-				var atlas_pos = tile_lookup_ground[bitmask]
+				var atlas_pos = pick_tile_variant(bitmask)
 				chunk.ground_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.ground_layer[i + 240] = tile_id << 16 | 8 << 8 | 0
@@ -738,7 +749,7 @@ func autotile_left_ground(chunk: Chunk, left_chunk: Chunk):
 				bitmask |= 8
 			
 			if tile_lookup_ground.has(bitmask):
-				var atlas_pos = tile_lookup_ground[bitmask]
+				var atlas_pos = pick_tile_variant(bitmask)
 				chunk.ground_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 			else:
 				chunk.ground_layer[index] = tile_id << 16 | 8 << 8 | 0
@@ -763,7 +774,7 @@ func autotile_top_right_ground(chunk: Chunk, top_chunk: Chunk, right_chunk: Chun
 			bitmask |= 8
 
 		if tile_lookup_ground.has(bitmask):
-			var atlas_pos = tile_lookup_ground[bitmask]
+			var atlas_pos = pick_tile_variant(bitmask)
 			chunk.ground_layer[15] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 		else:
 			chunk.ground_layer[15] = tile_id << 16 | 8 << 8 | 0
@@ -788,7 +799,7 @@ func autotile_bottom_right_ground(chunk: Chunk, right_chunk: Chunk, bottom_chunk
 			bitmask |= 8
 
 		if tile_lookup_ground.has(bitmask):
-			var atlas_pos = tile_lookup_ground[bitmask]
+			var atlas_pos = pick_tile_variant(bitmask)
 			chunk.ground_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 		else:
 			chunk.ground_layer[255] = tile_id << 16 | 8 << 8 | 0
@@ -813,7 +824,7 @@ func autotile_bottom_left_ground(chunk: Chunk, bottom_chunk: Chunk, left_chunk: 
 			bitmask |= 8
 
 		if tile_lookup_ground.has(bitmask):
-			var atlas_pos = tile_lookup_ground[bitmask]
+			var atlas_pos = pick_tile_variant(bitmask)
 			chunk.ground_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 		else:
 			chunk.ground_layer[240] = tile_id << 16 | 8 << 8 | 0
@@ -838,7 +849,7 @@ func autotile_top_left_ground(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk)
 			bitmask |= 8
 
 		if tile_lookup_ground.has(bitmask):
-			var atlas_pos = tile_lookup_ground[bitmask]
+			var atlas_pos = pick_tile_variant(bitmask)
 			chunk.ground_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 		else:
 			chunk.ground_layer[0] = tile_id << 16 | 8 << 8 | 0
