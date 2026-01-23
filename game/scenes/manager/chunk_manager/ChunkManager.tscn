@@ -75,6 +75,7 @@ texture = ExtResource("2_oaajj")
 3:5/0/texture_origin = Vector2i(-8, 0)
 5:5/size_in_atlas = Vector2i(3, 3)
 5:5/0 = 0
+9:2/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_oaajj"]
 texture = ExtResource("2_wt20s")
@@ -122,6 +123,7 @@ texture = ExtResource("2_wt20s")
 3:5/0 = 0
 3:5/0/texture_origin = Vector2i(-8, 0)
 8:0/0 = 0
+9:2/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_x3nnn"]
 sources/1 = SubResource("TileSetAtlasSource_svfqs")
