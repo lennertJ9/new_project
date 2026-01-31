@@ -37,7 +37,8 @@ window/vsync/vsync_mode=0
 folder_colors={
 "res://assets/": "purple",
 "res://network/": "orange",
-"res://scenes/user_interface/": "green"
+"res://scenes/": "blue",
+"res://user_interface/": "green"
 }
 
 [global_group]

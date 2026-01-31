@@ -186,7 +186,7 @@ func chunk_loader():
 			for x_pos in range(16):
 				
 				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
-					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 0, chunk.get_tile_coord(chunk.wall_layer[i])) 
+					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, chunk.get_tile_coord(chunk.wall_layer[i])) 
 				if chunk.object_layer[i] > 65000:
 					object_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.object_layer[i] >> 16, chunk.get_tile_coord(chunk.object_layer[i]))
 				
