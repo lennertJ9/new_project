@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://c6nnj1f78ujk2"]
+[gd_scene load_steps=8 format=3 uid="uid://c6nnj1f78ujk2"]
 
 [ext_resource type="Script" uid="uid://bymc45t4uwvnj" path="res://scenes/test_player/testplayer.gd" id="1_hhr0h"]
 [ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://scenes/camera/camera.tscn" id="2_cgoq6"]
@@ -13,6 +13,18 @@ size = Vector2(8, 16)
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
 properties/0/replication_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_cgoq6"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_kn146"]
+gradient = SubResource("Gradient_cgoq6")
+width = 512
+height = 512
+use_hdr = true
+fill = 1
+fill_from = Vector2(0.491453, 0.4957265)
+fill_to = Vector2(0.89316237, 0.102564104)
 
 [node name="Testplayer" type="CharacterBody2D" groups=["player"]]
 collision_mask = 0
@@ -29,3 +41,12 @@ shape = SubResource("RectangleShape2D_hhr0h")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_hhr0h")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+shadow_enabled = true
+shadow_filter = 2
+shadow_filter_smooth = 0.1
+texture = SubResource("GradientTexture2D_kn146")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(3, 3)
