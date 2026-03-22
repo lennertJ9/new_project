@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b50e6tjwm2fhr"
-path="res://.godot/imported/wall_tileset_old.png-bdc436cd1043775b01d059948923712c.ctex"
+uid="uid://dvhxt6cikcsfr"
+path="res://.godot/imported/shadow.png-f6368cdf0f33d433ff3bfb0432037458.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://scenes/manager/chunk_manager/assets/wall_tileset_old.png"
-dest_files=["res://.godot/imported/wall_tileset_old.png-bdc436cd1043775b01d059948923712c.ctex"]
+source_file="res://scenes/manager/chunk_manager/assets/shadow.png"
+dest_files=["res://.godot/imported/shadow.png-f6368cdf0f33d433ff3bfb0432037458.ctex"]
 
 [params]
 

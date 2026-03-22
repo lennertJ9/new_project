@@ -47,7 +47,3 @@ offset_bottom = -279.0
 
 [node name="PlayerManager" type="Node2D" parent="."]
 script = ExtResource("6_fn3g3")
-
-[node name="CanvasModulate" type="CanvasModulate" parent="."]
-position = Vector2(-1, 0)
-color = Color(0, 0, 0, 1)
