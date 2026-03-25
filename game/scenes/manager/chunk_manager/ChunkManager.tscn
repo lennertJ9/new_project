@@ -325,6 +325,7 @@ y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
 [node name="ShadowLayer" type="TileMapLayer" parent="."]
+modulate = Color(1, 1, 1, 0.8117647)
 z_index = 10
 tile_set = SubResource("TileSet_rk3tq")
 
