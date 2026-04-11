@@ -7,16 +7,43 @@ var wall_layer: TileMapLayer
 
 
 var timer: float = 0
-var fov_distance = 16
+var fov_width_radius = 10 # momenteel is dit de width
+var fov_height_radius = 8
 
 var tiles_to_process: Array
 var tiles_to_process_copy: Array
+
+# lijst van alle zichtbare tiles
+var visible_tiles: Array[Vector2i]
+var visible_tiles_old:  Array[Vector2i]
 
 var shadow_lookup: Dictionary[Vector2i, Array] = {
 	Vector2i(1,2): [Vector2i(1,2)],
 	Vector2i(2,2): [Vector2i(2,2)],
 	Vector2i(6,1): [Vector2i(6,1)],
+	Vector2i(2,1): [Vector2i(2,1)],
+	Vector2i(1,0): [Vector2i(1,0)],
+	Vector2i(2,0): [Vector2i(2,0)],
+	Vector2i(0,1): [Vector2i(0,1)],
+	Vector2i(0,0): [Vector2i(0,0)],
+	Vector2i(0,2): [Vector2i(0,2)],
+	Vector2i(8,1): [Vector2i(8,1)],
 	
+	Vector2i(0,4): [Vector2i(0,4)],
+	Vector2i(1,4): [Vector2i(0,4)],
+	Vector2i(2,4): [Vector2i(0,4)],
+	
+	Vector2i(6,2): [Vector2i(0,2)],
+	Vector2i(8,2): [Vector2i(0,2)],
+	
+	Vector2i(10,2): [Vector2i(10,2)],
+	Vector2i(12,2): [Vector2i(12,2)],
+	
+	Vector2i(4,0): [Vector2i(4,0)],
+	Vector2i(4,1): [Vector2i(4,1)],
+	Vector2i(4,2): [Vector2i(4,2)],
+	
+	Vector2i(10,1): [Vector2i(10,1)],
 }
 
 
@@ -24,6 +51,7 @@ var shadow_lookup: Dictionary[Vector2i, Array] = {
 func _ready() -> void:
 	shadow_layer = ChunkManager.shadow_layer
 	wall_layer = ChunkManager.wall_layer
+	calculate_in_shape(Vector2i(16,0))
 
 
 func _process(delta: float) -> void:
@@ -31,9 +59,11 @@ func _process(delta: float) -> void:
 	if timer > 0.5:
 		timer = 0
 		calculate_fov()
+	
 
 
 func calculate_fov():
+	visible_tiles.clear()
 	var player_pos: Vector2i = player.global_position
 	var global_tile_pos = shadow_layer.local_to_map(player_pos)
 	
@@ -41,60 +71,63 @@ func calculate_fov():
 		var current_chunk: Chunk = ChunkManager.generated_chunks[floor(player_pos / 256)]
 	
 		tiles_to_process.append(global_tile_pos)
+		#tiles_to_process.append(Vector2i(global_tile_pos.x + 1, global_tile_pos.y))
+		#tiles_to_process.append(Vector2i(global_tile_pos.x - 1, global_tile_pos.y))
 		
-		
-		for distance in fov_distance:
+		for distance in fov_width_radius:
 			for tile in tiles_to_process:
-				shadow_layer.erase_cell(tile)
-				process_tile(Vector2i(tile.x, tile.y - 1))
-				process_tile(Vector2i(tile.x + 1, tile.y))
-				process_tile(Vector2i(tile.x, tile.y + 1))
-				process_tile(Vector2i(tile.x - 1, tile.y))
-				
-				#if not wall_layer.get_cell_tile_data(Vector2i(tile.x, tile.y - 1)) and not tiles_to_process_copy.has(Vector2i(tile.x, tile.y - 1)):
-					#tiles_to_process_copy.append(Vector2i(tile.x, tile.y - 1))
-				#else:
-					#var atlas_coords = wall_layer.get_cell_atlas_coords(Vector2i(tile.x, tile.y - 1))
-					#
-					#if shadow_lookup.has(atlas_coords):
-						#shadow_layer.set_cell(Vector2i(tile.x, tile.y - 1),1, atlas_coords)
-				#
-				#
-				#if not wall_layer.get_cell_tile_data(Vector2i(tile.x + 1, tile.y)) and not tiles_to_process_copy.has(Vector2i(tile.x + 1, tile.y)):
-					#tiles_to_process_copy.append(Vector2i(tile.x + 1, tile.y))
-				#else:
-					#var atlas_coords = wall_layer.get_cell_atlas_coords(Vector2i(tile.x + 1, tile.y))
-					#
-					#if shadow_lookup.has(atlas_coords):
-						#shadow_layer.set_cell(Vector2i(tile.x + 1, tile.y),1, atlas_coords)
-					#
-				#if not wall_layer.get_cell_tile_data(Vector2i(tile.x, tile.y + 1)) and not tiles_to_process_copy.has(Vector2i(tile.x, tile.y + 1)):
-					#tiles_to_process_copy.append(Vector2i(tile.x, tile.y + 1))
-				#else:
-					#var atlas_coords = wall_layer.get_cell_atlas_coords(Vector2i(tile.x, tile.y + 1))
-					#
-					#if shadow_lookup.has(atlas_coords):
-						#shadow_layer.set_cell(Vector2i(tile.x, tile.y + 1),1, atlas_coords)
-				#
-				#if not wall_layer.get_cell_tile_data(Vector2i(tile.x - 1, tile.y)) and not tiles_to_process_copy.has(Vector2i(tile.x - 1, tile.y)):
-					#tiles_to_process_copy.append(Vector2i(tile.x - 1, tile.y))
-				#else:
-					#var atlas_coords = wall_layer.get_cell_atlas_coords(Vector2i(tile.x - 1, tile.y))
-					#
-					#if shadow_lookup.has(atlas_coords):
-						#shadow_layer.set_cell(Vector2i(tile.x - 1, tile.y),1, atlas_coords)
-			
+				if calculate_in_shape(tile):
+					shadow_layer.erase_cell(tile)
+					process_tile(Vector2i(tile.x, tile.y -1))
+					process_tile(Vector2i(tile.x +1, tile.y))
+					process_tile(Vector2i(tile.x, tile.y +1))
+					process_tile(Vector2i(tile.x -1 , tile.y))
+					
+					process_tile(Vector2i(tile.x +1, tile.y -1))
+					process_tile(Vector2i(tile.x +1, tile.y +1))
+					process_tile(Vector2i(tile.x -1, tile.y +1))
+					process_tile(Vector2i(tile.x -1, tile.y -1))
+					
 			tiles_to_process = tiles_to_process_copy.duplicate()
 			tiles_to_process_copy.clear()
 		tiles_to_process.clear()
+		
+	check_old_shadows()
+	visible_tiles_old = visible_tiles.duplicate()
 
 
 
-
-func process_tile(tile: Vector2i):
-	if not wall_layer.get_cell_tile_data(Vector2i(tile.x, tile.y)) and not tiles_to_process_copy.has(Vector2i(tile.x, tile.y)):
-		tiles_to_process_copy.append(Vector2i(tile.x, tile.y))
+func process_tile(tile: Vector2i): 
+	# als "tile" geen muur is:
+	if not wall_layer.get_cell_tile_data(tile) and not tiles_to_process_copy.has(tile):
+		tiles_to_process_copy.append(tile)
+		if not visible_tiles.has(tile):
+			visible_tiles.append(tile)
+		
+	# als "tile" == wall 
 	else:
-		var atlas_coords = wall_layer.get_cell_atlas_coords(Vector2i(tile.x, tile.y ))
-		if shadow_lookup.has(atlas_coords):
-			shadow_layer.set_cell(Vector2i(tile.x, tile.y),1, atlas_coords)
+		shadow_layer.erase_cell(tile )
+		#visible_tiles.append(tile)
+
+
+# plaatst de schaduws terug waar nodig
+func check_old_shadows():
+	for tile_pos in visible_tiles_old:
+		if not visible_tiles.has(tile_pos):
+			shadow_layer.set_cell(tile_pos, 1, Vector2i(1,1))
+		
+
+
+
+
+
+# shape van een ovaal
+func calculate_in_shape(position: Vector2i):
+	var dx = position.x - floor(get_tree().get_first_node_in_group("player").global_position.x / 16)
+	var dy = position.y - floor(get_tree().get_first_node_in_group("player").global_position.y / 16)
+	
+	if pow(dx, 2) / pow(fov_width_radius,2) + pow(dy, 2) / pow(fov_height_radius,2) < 1:
+		return true
+		
+	else:
+		return false

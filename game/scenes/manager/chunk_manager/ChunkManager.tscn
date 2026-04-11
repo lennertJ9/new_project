@@ -11,7 +11,7 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
 noise_type = 3
-seed = 3
+seed = 4
 frequency = 0.0722
 fractal_type = 0
 fractal_lacunarity = 0.0
@@ -303,6 +303,42 @@ texture_region_size = Vector2i(16, 26)
 2:2/0/texture_origin = Vector2i(0, 5)
 6:1/0 = 0
 6:1/0/texture_origin = Vector2i(0, 5)
+2:1/0 = 0
+2:1/0/texture_origin = Vector2i(0, 5)
+0:1/0 = 0
+0:1/0/texture_origin = Vector2i(0, 5)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(0, 5)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 5)
+1:1/0 = 0
+1:1/0/texture_origin = Vector2i(0, 5)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(0, 5)
+8:1/0 = 0
+8:1/0/texture_origin = Vector2i(0, 5)
+2:4/0 = 0
+2:4/0/texture_origin = Vector2i(0, 5)
+1:4/0 = 0
+1:4/0/texture_origin = Vector2i(0, 5)
+0:4/0 = 0
+0:4/0/texture_origin = Vector2i(0, 5)
+6:2/0 = 0
+6:2/0/texture_origin = Vector2i(0, 5)
+8:2/0 = 0
+8:2/0/texture_origin = Vector2i(0, 5)
+10:2/0 = 0
+10:2/0/texture_origin = Vector2i(0, 5)
+12:2/0 = 0
+12:2/0/texture_origin = Vector2i(0, 5)
+4:0/0 = 0
+4:0/0/texture_origin = Vector2i(0, 5)
+4:1/0 = 0
+4:1/0/texture_origin = Vector2i(0, 5)
+4:2/0 = 0
+4:2/0/texture_origin = Vector2i(0, 5)
+10:1/0 = 0
+10:1/0/texture_origin = Vector2i(0, 5)
 
 [sub_resource type="TileSet" id="TileSet_rk3tq"]
 sources/1 = SubResource("TileSetAtlasSource_qcvye")
@@ -325,18 +361,17 @@ z_index = -1
 tile_set = SubResource("TileSet_x3nnn")
 
 [node name="WallLayer" type="TileMapLayer" parent="."]
-modulate = Color(1, 1, 1, 0.52156866)
 y_sort_enabled = true
 tile_set = SubResource("TileSet_oaajj")
 
 [node name="ObjectLayer" type="TileMapLayer" parent="."]
-z_index = 1
+z_index = 10
 y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
 [node name="ShadowLayer" type="TileMapLayer" parent="."]
-modulate = Color(1, 1, 1, 0.83137256)
-z_index = 10
+z_index = 20
+y_sort_enabled = true
 tile_set = SubResource("TileSet_rk3tq")
 
 [node name="Autotiling" type="Node" parent="."]

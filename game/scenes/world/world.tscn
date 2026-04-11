@@ -46,4 +46,5 @@ offset_right = 5.0
 offset_bottom = -279.0
 
 [node name="PlayerManager" type="Node2D" parent="."]
+y_sort_enabled = true
 script = ExtResource("6_fn3g3")

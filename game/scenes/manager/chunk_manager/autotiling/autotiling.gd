@@ -244,6 +244,10 @@ func autotile_inner(chunk: Chunk):
 				if tile_lookup.has(bitmask):
 					var atlas_pos = tile_lookup[bitmask]
 					chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+					
+					# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+					if atlas_pos.x != 1 or atlas_pos.y != 1:
+						chunk.shadow_layer[i] =  1 << 16
 				else:
 					chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
 			
@@ -291,6 +295,10 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				
+				# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+				if atlas_pos.x != 1 or atlas_pos.y != 1:
+					chunk.shadow_layer[i] =  1 << 16
 			else:
 				chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
 
@@ -339,6 +347,10 @@ func autotile_right(chunk: Chunk, right_chunk: Chunk):
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				
+				# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+				if atlas_pos.x != 1 or atlas_pos.y != 1:
+					chunk.shadow_layer[index] =  1 << 16
 			else:
 				chunk.wall_layer[index] = tile_id << 16 | 3 << 8 | 0
 
@@ -386,6 +398,11 @@ func autotile_bottom(chunk: Chunk, bottom_chunk: Chunk):
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[i + 240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				
+				# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+				if atlas_pos.x != 1 or atlas_pos.y != 1:
+					chunk.shadow_layer[i + 240] =  1 << 16
+					
 			else:
 				chunk.wall_layer[i + 240] = tile_id << 16 | 3 << 8 | 0
 
@@ -433,6 +450,11 @@ func autotile_left(chunk: Chunk, left_chunk: Chunk):
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
 				chunk.wall_layer[index] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+				
+				# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+				if atlas_pos.x != 1 or atlas_pos.y != 1:
+					chunk.shadow_layer[index] =  1 << 16
+				
 			else:
 				chunk.wall_layer[index] = tile_id << 16 | 3 << 8 | 0
 
@@ -476,6 +498,11 @@ func autotile_top_right(chunk: Chunk, top_chunk: Chunk, top_right_chunk: Chunk, 
 	if tile_lookup.has(bitmask):
 		var atlas_pos = tile_lookup[bitmask]
 		chunk.wall_layer[15] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		
+		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+		if atlas_pos.x != 1 or atlas_pos.y != 1:
+			chunk.shadow_layer[15] =  1 << 16
+		
 	else:
 		chunk.wall_layer[15] = tile_id << 16 | 3 << 8 | 0
 
@@ -518,6 +545,10 @@ func autotile_bottom_right(chunk: Chunk, right_chunk: Chunk, bottom_right_chunk:
 	if tile_lookup.has(bitmask):
 		var atlas_pos = tile_lookup[bitmask]
 		chunk.wall_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		
+		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+		if atlas_pos.x != 1 or atlas_pos.y != 1:
+			chunk.shadow_layer[255] =  1 << 16
 	else:
 		chunk.wall_layer[255] = tile_id << 16 | 3 << 8 | 0
 
@@ -561,6 +592,11 @@ func autotile_bottom_left(chunk: Chunk, bottom_chunk: Chunk, bottom_left_chunk: 
 		var atlas_pos = tile_lookup[bitmask]
 		#atlas_pos = Vector2i(3,0)
 		chunk.wall_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		
+		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+		if atlas_pos.x != 1 or atlas_pos.y != 1:
+			chunk.shadow_layer[240] =  1 << 16
+		
 	else:
 		chunk.wall_layer[240] = tile_id << 16 | 3 << 8 | 0
 
@@ -605,6 +641,10 @@ func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_le
 	if tile_lookup.has(bitmask):
 		var atlas_pos = tile_lookup[bitmask]
 		chunk.wall_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+		if atlas_pos.x != 1 or atlas_pos.y != 1:
+			chunk.shadow_layer[0] =  1 << 16
+		
 	else:
 		chunk.wall_layer[0] = tile_id << 16 | 3 << 8 | 0
 

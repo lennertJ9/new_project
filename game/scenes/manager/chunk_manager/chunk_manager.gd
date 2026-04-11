@@ -119,6 +119,7 @@ func chunk_generator():
 						chunk.walkable[i] = 0
 						
 					else:
+						chunk.shadow_layer[i] =  1 << 16
 						wall_id = 0
 						
 					# dark grass
@@ -128,7 +129,7 @@ func chunk_generator():
 					else:
 						ground_id = 1 << 16
 					
-					chunk.shadow_layer[i] =  1 << 16
+					
 					chunk.ground_layer[i] = ground_id
 					chunk.wall_layer[i] = wall_id
 					i += 1
@@ -190,7 +191,7 @@ func chunk_loader():
 			for x_pos in range(16):
 				
 				if chunk.shadow_layer[i] >> 16 == 1:
-					shadow_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, Vector2i(0,0))
+					shadow_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, Vector2i(1,1))
 				
 				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, chunk.get_tile_coord(chunk.wall_layer[i])) 
