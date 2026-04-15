@@ -114,7 +114,7 @@ func chunk_generator():
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
 					var ground_id: int
-					if random > 0.1:
+					if random > 0.9:
 						wall_id = 1 << 16 # dirt wall
 						chunk.walkable[i] = 0
 						
@@ -272,4 +272,4 @@ func chunk_unloader():
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("left_click"):
 		var atlas_pos = wall_layer.get_cell_atlas_coords(ground_layer.local_to_map(get_global_mouse_position()))
-		print(atlas_pos)
+		

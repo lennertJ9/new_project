@@ -27,7 +27,7 @@ func is_arrived():
 
 func get_AStar_path(start_pos, end_pos):
 	path = AStarManager.get_astar_path(start_pos, end_pos)
-	print(path)
+	
 
 
 func _on_timer_timeout() -> void:

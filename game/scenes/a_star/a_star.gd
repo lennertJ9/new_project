@@ -56,10 +56,7 @@ func get_astar_path(start_pos, end_pos):
 	
 	var path = AStar.get_point_path(AStar.get_closest_point(start_pos), AStar.get_closest_point(end_pos))
 	return path
-	#print("path: ",path)
-	#print("start_id: ", start_id)
-	#print("end_id: ", end_id)
-	#print("--------------------")
+	
 
 
 func astar_point_generator():

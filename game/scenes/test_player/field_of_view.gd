@@ -7,7 +7,7 @@ var wall_layer: TileMapLayer
 
 
 var timer: float = 0
-var fov_width_radius = 10 # momenteel is dit de width
+var fov_width_radius = 20 # momenteel is dit de width
 var fov_height_radius = 8
 
 var tiles_to_process: Array
@@ -56,7 +56,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	timer += delta
-	if timer > 0.5:
+	if timer > 0.9:
 		timer = 0
 		calculate_fov()
 	
@@ -71,11 +71,13 @@ func calculate_fov():
 		var current_chunk: Chunk = ChunkManager.generated_chunks[floor(player_pos / 256)]
 	
 		tiles_to_process.append(global_tile_pos)
+		visible_tiles.append(global_tile_pos)
 		#tiles_to_process.append(Vector2i(global_tile_pos.x + 1, global_tile_pos.y))
 		#tiles_to_process.append(Vector2i(global_tile_pos.x - 1, global_tile_pos.y))
 		
 		for distance in fov_width_radius:
 			for tile in tiles_to_process:
+				
 				if calculate_in_shape(tile):
 					shadow_layer.erase_cell(tile)
 					process_tile(Vector2i(tile.x, tile.y -1))
@@ -87,9 +89,12 @@ func calculate_fov():
 					process_tile(Vector2i(tile.x +1, tile.y +1))
 					process_tile(Vector2i(tile.x -1, tile.y +1))
 					process_tile(Vector2i(tile.x -1, tile.y -1))
-					
+			print("-----------")
 			tiles_to_process = tiles_to_process_copy.duplicate()
+			if distance == fov_height_radius - 1:
+				calculate_edge(tiles_to_process_copy)
 			tiles_to_process_copy.clear()
+				
 		tiles_to_process.clear()
 		
 	check_old_shadows()
@@ -99,7 +104,7 @@ func calculate_fov():
 
 func process_tile(tile: Vector2i): 
 	# als "tile" geen muur is:
-	if not wall_layer.get_cell_tile_data(tile) and not tiles_to_process_copy.has(tile):
+	if not wall_layer.get_cell_tile_data(tile) and not tiles_to_process_copy.has(tile) and not visible_tiles.has(tile):
 		tiles_to_process_copy.append(tile)
 		if not visible_tiles.has(tile):
 			visible_tiles.append(tile)
@@ -107,11 +112,11 @@ func process_tile(tile: Vector2i):
 	# als "tile" == wall 
 	else:
 		shadow_layer.erase_cell(tile )
-		#visible_tiles.append(tile)
+		visible_tiles.append(tile)
 
 
-# plaatst de schaduws terug waar nodig
-func check_old_shadows():
+## deze functie zorgt dat shadows geupdate worden
+func check_old_shadows(): 
 	for tile_pos in visible_tiles_old:
 		if not visible_tiles.has(tile_pos):
 			shadow_layer.set_cell(tile_pos, 1, Vector2i(1,1))
@@ -131,3 +136,9 @@ func calculate_in_shape(position: Vector2i):
 		
 	else:
 		return false
+
+
+func calculate_edge(_tiles_to_process: Array):
+	#print(_tiles_to_process)
+	#print("------------")
+	pass
