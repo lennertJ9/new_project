@@ -7,8 +7,8 @@ var wall_layer: TileMapLayer
 
 
 var timer: float = 0
-var fov_width_radius = 20 # momenteel is dit de width
-var fov_height_radius = 8
+var fov_width_radius = 16 # momenteel is dit de width
+var fov_height_radius = 12
 
 var tiles_to_process: Array
 var tiles_to_process_copy: Array
