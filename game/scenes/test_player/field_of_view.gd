@@ -1,14 +1,14 @@
-extends Node
+extends Node2D
 
 @export var player: CharacterBody2D
 
 var shadow_layer: TileMapLayer
 var wall_layer: TileMapLayer
-
+var print_debug = true
 
 var timer: float = 0
-var fov_width_radius = 16 # momenteel is dit de width
-var fov_height_radius = 12
+var fov_width_radius = 12 # momenteel is dit de width
+var fov_height_radius = 8
 
 var tiles_to_process: Dictionary
 var tiles_to_process_copy: Dictionary
@@ -16,7 +16,10 @@ var tiles_to_process_copy: Dictionary
 # lijst van alle zichtbare tiles
 var visible_tiles: Dictionary
 var visible_tiles_old:  Dictionary
+var edge_fov_walls: Dictionary
 
+## deze lookup is voor het type shadow, maar ik denk dat het momenteel ongebruikt is, 
+## omdat visible muren nu geen aangepaste shadows hebben wanneer ze zichtbaar zijn
 var shadow_lookup: Dictionary[Vector2i, Array] = {
 	Vector2i(1,2): [Vector2i(1,2)],
 	Vector2i(2,2): [Vector2i(2,2)],
@@ -46,6 +49,51 @@ var shadow_lookup: Dictionary[Vector2i, Array] = {
 	Vector2i(10,1): [Vector2i(10,1)],
 }
 
+var shadow_edge_lookup: Dictionary[int, Vector2i] = {
+	
+	224: Vector2i(1,1),
+	248: Vector2i(1,2),
+	56: Vector2i(2,2),
+	227: Vector2i(1,0),
+	131: Vector2i(2,0),
+	143: Vector2i(3,0),
+	14: Vector2i(3,1),
+	62: Vector2i(3,2),
+	
+	232: Vector2i(3,2),
+	240: Vector2i(1,2),
+	32: Vector2i(6,0),
+	96: Vector2i(1,1),
+	112: Vector2i(1,2),
+	120: Vector2i(1,2),
+	
+	225: Vector2i(1,0),
+	128: Vector2i(6,2),
+	192: Vector2i(1,1),
+	193: Vector2i(1,0),
+	195: Vector2i(1,0),
+	
+	135: Vector2i(3,0),
+	2: Vector2i(4,2),
+	7: Vector2i(3,0),
+	15: Vector2i(3,0),
+	6: Vector2i(3,1),
+	
+	30: Vector2i(3,2),
+	8: Vector2i(4,0),
+	12: Vector2i(3,1),
+	40: Vector2i(3,2),
+	28: Vector2i(3,2),
+	60: Vector2i(3,2),
+	
+	3: Vector2i(2,0),
+	129: Vector2i(2,0),
+	
+	24: Vector2i(2,2),
+	
+	
+	
+}
 
 
 func _ready() -> void:
@@ -82,18 +130,23 @@ func calculate_fov():
 				if calculate_in_shape(tile):
 					shadow_layer.erase_cell(tile)
 					
-					process_tile(Vector2i(tile.x, tile.y -1))
-					process_tile(Vector2i(tile.x +1, tile.y))
-					process_tile(Vector2i(tile.x, tile.y +1))
-					process_tile(Vector2i(tile.x -1 , tile.y))
+					process_tile(Vector2i(tile.x, tile.y -1), distance)
+					process_tile(Vector2i(tile.x +1, tile.y), distance)
+					process_tile(Vector2i(tile.x, tile.y +1), distance)
+					process_tile(Vector2i(tile.x -1 , tile.y), distance)
 					
-					process_tile(Vector2i(tile.x +1, tile.y -1))
-					process_tile(Vector2i(tile.x +1, tile.y +1))
-					process_tile(Vector2i(tile.x -1, tile.y +1))
-					process_tile(Vector2i(tile.x -1, tile.y -1))
+					process_tile(Vector2i(tile.x +1, tile.y -1), distance)
+					process_tile(Vector2i(tile.x +1, tile.y +1), distance)
+					process_tile(Vector2i(tile.x -1, tile.y +1), distance)
+					process_tile(Vector2i(tile.x -1, tile.y -1), distance)
+				else:
+					
+					tiles_to_process_copy[tile] = 1
+					visible_tiles[tile] = 1
+			
 			
 			tiles_to_process = tiles_to_process_copy.duplicate()
-			if distance == fov_height_radius - 1:
+			if distance == fov_width_radius - 1:
 				calculate_edge(tiles_to_process_copy)
 			tiles_to_process_copy.clear()
 				
@@ -104,17 +157,26 @@ func calculate_fov():
 
 
 
-func process_tile(tile: Vector2i): 
+func process_tile(tile: Vector2i, distance): 
 	# als "tile" geen muur is:
 	if not tiles_to_process_copy.has(tile) and not wall_layer.get_cell_tile_data(tile) and not visible_tiles.has(tile):
 		tiles_to_process_copy[tile] = 1
+		
 		if not visible_tiles.has(tile):
 			visible_tiles[tile] = 1
 		
 	# als "tile" == wall 
 	else:
-		shadow_layer.erase_cell(tile )
-		visible_tiles[tile] = 1
+		if not visible_tiles.has(tile) and wall_layer.get_cell_tile_data(tile):
+			visible_tiles[tile] = 1
+			shadow_layer.erase_cell(tile)
+			
+			if distance == fov_width_radius -5:
+				edge_fov_walls[tile] = 1
+			
+			#if distance == fov_width_radius -1:
+				#tiles_to_process_copy[tile] = 1
+				
 
 
 ## deze functie zorgt dat shadows geupdate worden
@@ -122,9 +184,6 @@ func check_old_shadows():
 	for tile_pos in visible_tiles_old.keys():
 		if not visible_tiles.has(tile_pos):
 			shadow_layer.set_cell(tile_pos, 1, Vector2i(1,1))
-		
-
-
 
 
 
@@ -141,6 +200,63 @@ func calculate_in_shape(position: Vector2i):
 
 
 func calculate_edge(_tiles_to_process: Dictionary):
-	#print(_tiles_to_process)
-	#print("------------")
-	pass
+	#if print_debug:
+		#print(_tiles_to_process)
+		#print("--------------")
+		#print_debug = false
+		
+	var bitmask: int 
+	for tile in _tiles_to_process.keys():
+		bitmask = 0
+		if not visible_tiles.has(Vector2i(tile.x, tile.y -1)):
+			bitmask += 1
+		if not visible_tiles.has(Vector2i(tile.x +1, tile.y )):
+			bitmask += 4
+		if not visible_tiles.has(Vector2i(tile.x , tile.y +1)):
+			bitmask += 16
+		if not visible_tiles.has(Vector2i(tile.x -1, tile.y )):
+			bitmask += 64
+		
+		if not visible_tiles.has(Vector2i(tile.x +1, tile.y -1)):
+			bitmask += 2
+		if not visible_tiles.has(Vector2i(tile.x +1, tile.y +1)):
+			bitmask += 8
+		if not visible_tiles.has(Vector2i(tile.x -1, tile.y +1)):
+			bitmask += 32
+		if not visible_tiles.has(Vector2i(tile.x -1, tile.y -1)):
+			bitmask += 128
+		
+		if shadow_edge_lookup.has(bitmask):
+			var atlas_coords = shadow_edge_lookup[bitmask]
+			
+			shadow_layer.set_cell(Vector2i(tile.x, tile.y), 2, atlas_coords)
+		else:
+			shadow_layer.set_cell(Vector2i(tile.x, tile.y), 2, Vector2i(0,2))
+		
+		# test kan weg 
+		for tile_wall in edge_fov_walls.keys():
+			shadow_layer.set_cell(Vector2i(tile_wall.x, tile_wall.y), 2, Vector2i(0,2))
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("left_click"):
+		print_debug = false
+		var pos = shadow_layer.local_to_map(get_global_mouse_position())
+		if calculate_in_shape(pos):
+			print("in range")
+		else:
+			print("not in range")
+			
+		if visible_tiles.has(pos):
+			print("visible ")
+		else:
+			print("not visible")
+		print("tile: ", pos)
+		if edge_fov_walls.has(pos):
+			print(pos, " in lijst")
+		else:
+			print(pos, " niet in lijst")
+		print("-------------------")
+		
+		
+		

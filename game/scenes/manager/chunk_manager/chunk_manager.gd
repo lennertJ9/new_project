@@ -114,7 +114,7 @@ func chunk_generator():
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
 					var ground_id: int
-					if random > 0.9:
+					if random > 0.1:
 						wall_id = 1 << 16 # dirt wall
 						chunk.walkable[i] = 0
 						

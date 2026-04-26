@@ -20,6 +20,7 @@ height = 1
 noise = SubResource("FastNoiseLite_tcf2h")
 
 [node name="World" type="Node2D" groups=["world"]]
+y_sort_enabled = true
 script = ExtResource("1_tcf2h")
 noise_tex = SubResource("NoiseTexture2D_4717r")
 enemy_scene = ExtResource("2_bq33v")
