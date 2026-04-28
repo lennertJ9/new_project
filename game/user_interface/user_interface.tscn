@@ -28,5 +28,10 @@ text = "Server"
 layout_mode = 2
 text = "Client"
 
+[node name="Debug" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Debug"
+
 [connection signal="pressed" from="VBoxContainer/Server" to="." method="_on_server_pressed"]
 [connection signal="pressed" from="VBoxContainer/Client" to="." method="_on_client_pressed"]
+[connection signal="pressed" from="VBoxContainer/Debug" to="." method="_on_debug_pressed"]

@@ -4,11 +4,13 @@ extends Node2D
 
 var shadow_layer: TileMapLayer
 var wall_layer: TileMapLayer
-var print_debug = true
+var debug_layer: TileMapLayer
+
+
 
 var timer: float = 0
-var fov_width_radius = 12 # momenteel is dit de width
-var fov_height_radius = 8
+var fov_width_radius = 18 # momenteel is dit de width
+var fov_height_radius = 14
 
 var tiles_to_process: Dictionary
 var tiles_to_process_copy: Dictionary
@@ -90,6 +92,7 @@ var shadow_edge_lookup: Dictionary[int, Vector2i] = {
 	129: Vector2i(2,0),
 	
 	24: Vector2i(2,2),
+	48: Vector2i(2,2),
 	
 	
 	
@@ -97,8 +100,9 @@ var shadow_edge_lookup: Dictionary[int, Vector2i] = {
 
 
 func _ready() -> void:
-	shadow_layer = ChunkManager.shadow_layer
-	wall_layer = ChunkManager.wall_layer
+	shadow_layer = get_node("/root/World/ChunkManager").shadow_layer
+	wall_layer = get_node("/root/World/ChunkManager").wall_layer
+	debug_layer = get_node("/root/World/ChunkManager").debug_layer
 	calculate_in_shape(Vector2i(16,0))
 
 
@@ -115,8 +119,8 @@ func calculate_fov():
 	var player_pos: Vector2i = player.global_position
 	var global_tile_pos = shadow_layer.local_to_map(player_pos)
 	
-	if ChunkManager.generated_chunks.has(floor(player_pos / 256)):
-		var current_chunk: Chunk = ChunkManager.generated_chunks[floor(player_pos / 256)]
+	if get_node("/root/World/ChunkManager").generated_chunks.has(floor(player_pos / 256)):
+		var current_chunk: Chunk = get_node("/root/World/ChunkManager").generated_chunks[floor(player_pos / 256)]
 	
 		
 		tiles_to_process[global_tile_pos] = 1
@@ -154,6 +158,7 @@ func calculate_fov():
 		
 	check_old_shadows()
 	visible_tiles_old = visible_tiles.duplicate()
+	debug_stuff()
 
 
 
@@ -170,13 +175,7 @@ func process_tile(tile: Vector2i, distance):
 		if not visible_tiles.has(tile) and wall_layer.get_cell_tile_data(tile):
 			visible_tiles[tile] = 1
 			shadow_layer.erase_cell(tile)
-			
-			if distance == fov_width_radius -5:
-				edge_fov_walls[tile] = 1
-			
-			#if distance == fov_width_radius -1:
-				#tiles_to_process_copy[tile] = 1
-				
+
 
 
 ## deze functie zorgt dat shadows geupdate worden
@@ -200,22 +199,37 @@ func calculate_in_shape(position: Vector2i):
 
 
 func calculate_edge(_tiles_to_process: Dictionary):
-	#if print_debug:
-		#print(_tiles_to_process)
-		#print("--------------")
-		#print_debug = false
-		
 	var bitmask: int 
+	var edge_walls: Dictionary
 	for tile in _tiles_to_process.keys():
 		bitmask = 0
 		if not visible_tiles.has(Vector2i(tile.x, tile.y -1)):
 			bitmask += 1
+		if wall_layer.get_cell_tile_data(Vector2i(tile.x, tile.y -1)):
+			edge_walls[Vector2i(tile.x, tile.y -1)] = 1
+			
+			
+			
 		if not visible_tiles.has(Vector2i(tile.x +1, tile.y )):
 			bitmask += 4
+		if wall_layer.get_cell_tile_data(Vector2i(tile.x +1, tile.y )):
+			edge_walls[Vector2i(tile.x +1, tile.y )] = 1
+			
+			
+			
 		if not visible_tiles.has(Vector2i(tile.x , tile.y +1)):
 			bitmask += 16
-		if not visible_tiles.has(Vector2i(tile.x -1, tile.y )):
+		if wall_layer.get_cell_tile_data(Vector2i(tile.x , tile.y +1)):
+			edge_walls[Vector2i(tile.x , tile.y +1)] = 1
+			
+			
+			
+		if not visible_tiles.has(Vector2i(tile.x -1, tile.y)):
 			bitmask += 64
+		if wall_layer.get_cell_tile_data(Vector2i(tile.x -1, tile.y)):
+			edge_walls[Vector2i(tile.x -1, tile.y)] = 1
+			
+		
 		
 		if not visible_tiles.has(Vector2i(tile.x +1, tile.y -1)):
 			bitmask += 2
@@ -233,14 +247,53 @@ func calculate_edge(_tiles_to_process: Dictionary):
 		else:
 			shadow_layer.set_cell(Vector2i(tile.x, tile.y), 2, Vector2i(0,2))
 		
-		# test kan weg 
-		for tile_wall in edge_fov_walls.keys():
-			shadow_layer.set_cell(Vector2i(tile_wall.x, tile_wall.y), 2, Vector2i(0,2))
+	for wall_tile in edge_walls.keys():
+		var wall_bitmask = calculate_bitmask(wall_tile)
+		if shadow_edge_lookup.has(wall_bitmask):
+			var atlas_coord = shadow_edge_lookup[wall_bitmask]
+			shadow_layer.set_cell(wall_tile, 2, atlas_coord)
+		else:
+			shadow_layer.set_cell(wall_tile, 2, Vector2i(0,2))
+
+
+
+func calculate_bitmask(_tile: Vector2i) -> int:
+	var bitmask: int 
+
+	if not visible_tiles.has(Vector2i(_tile.x, _tile.y -1)):
+		bitmask += 1
+	if not visible_tiles.has(Vector2i(_tile.x +1, _tile.y )):
+		bitmask += 4
+	if not visible_tiles.has(Vector2i(_tile.x , _tile.y +1)):
+		bitmask += 16
+	if not visible_tiles.has(Vector2i(_tile.x -1, _tile.y)):
+		bitmask += 64
+	
+	if not visible_tiles.has(Vector2i(_tile.x +1, _tile.y -1)):
+		bitmask += 2
+	if not visible_tiles.has(Vector2i(_tile.x +1, _tile.y +1)):
+		bitmask += 8
+	if not visible_tiles.has(Vector2i(_tile.x -1, _tile.y +1)):
+		bitmask += 32
+	if not visible_tiles.has(Vector2i(_tile.x -1, _tile.y -1)):
+		bitmask += 128
+	
+
+	return bitmask
+
+
+func debug_stuff():
+	debug_layer.clear()
+	if get_node("/root/World").debug_mode:
+		for tile in visible_tiles.keys():
+			debug_layer.set_cell(tile,0, Vector2.ZERO)
+		
+
 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("left_click"):
-		print_debug = false
+		
 		var pos = shadow_layer.local_to_map(get_global_mouse_position())
 		if calculate_in_shape(pos):
 			print("in range")
@@ -257,6 +310,3 @@ func _input(event: InputEvent) -> void:
 		else:
 			print(pos, " niet in lijst")
 		print("-------------------")
-		
-		
-		

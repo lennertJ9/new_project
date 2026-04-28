@@ -6,6 +6,7 @@
 ##
 
 extends Node2D
+class_name ChunkManager
 
 signal chunk_generated
 signal chunk_deloaded
@@ -20,6 +21,7 @@ var noise: Noise
 @onready var wall_layer: TileMapLayer = $WallLayer
 @onready var object_layer: TileMapLayer = $ObjectLayer
 @onready var shadow_layer: TileMapLayer = $ShadowLayer
+@onready var debug_layer: TileMapLayer = $DebugLayer
 
 
 @onready var autotiling: Node = $Autotiling
@@ -261,7 +263,7 @@ func chunk_unloader():
 		chunk.is_queued_unload = false
 		chunk.is_loaded = false
 		chunk_deloaded.emit(chunk)
-		
+
 
 
 

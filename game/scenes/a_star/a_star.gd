@@ -22,10 +22,10 @@ var thread_point_connect: Thread = Thread.new() # deze thread legt astar connect
 
 
 func _ready() -> void:
-	thread_point_generator.start(astar_point_generator)
-	ChunkManager.chunk_deloaded.connect(on_chunk_deload)
-	ChunkManager.neighbours_checked.connect(on_neighbours_checked)
-
+	#thread_point_generator.start(astar_point_generator)
+	get_node("/root/World/ChunkManager").chunk_deloaded.connect(on_chunk_deload)
+	get_node("/root/World/ChunkManager").neighbours_checked.connect(on_neighbours_checked)
+	
 
 
 func on_chunk_deload(chunk):
@@ -114,14 +114,14 @@ func connect_AStar_center(chunk: Chunk):
 
 
 func connect_AStar_edges(chunk: Chunk):
-	var top_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(0,-1)].a_star_id 
-	var top_right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,-1)].a_star_id 
-	var right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,0)].a_star_id 
-	var bottom_right_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(1,1)].a_star_id
-	var bottom_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(0,1)].a_star_id 
-	var bottom_left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,1)].a_star_id 
-	var left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,0)].a_star_id 
-	var top_left_AStar_id = ChunkManager.generated_chunks[chunk.position + Vector2i(-1,-1)].a_star_id 
+	var top_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(0,-1)].a_star_id 
+	var top_right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,-1)].a_star_id 
+	var right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,0)].a_star_id 
+	var bottom_right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,1)].a_star_id
+	var bottom_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(0,1)].a_star_id 
+	var bottom_left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,1)].a_star_id 
+	var left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,0)].a_star_id 
+	var top_left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,-1)].a_star_id 
 	var id: int
 	var secondary_id: int
 	

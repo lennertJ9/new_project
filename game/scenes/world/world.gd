@@ -9,6 +9,8 @@ extends Node2D
 
 @export var enemy_scene: PackedScene
 
+var debug_mode: bool = true
+
 # -------------- networking -------------------- #
 
 

@@ -30,6 +30,6 @@ func _on_server_started(peer_id: int):
 	var camera = player.camera_scene.instantiate()
 	player.add_child(camera)
 	
-	ChunkManager.player = player
-	ChunkManager.set_process(true)
+	get_node("/root/World/ChunkManager").player = player
+	get_node("/root/World/ChunkManager").set_process(true)
 	get_node(spawn_path).call_deferred("add_child", player)
