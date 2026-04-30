@@ -1,7 +1,7 @@
 extends Node2D
 
 
-const font = preload("uid://c2b2qqkxssqqp")
+
 
 #func _draw() -> void:
 	#var chunk_pixel_size = 256

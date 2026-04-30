@@ -369,7 +369,7 @@ script = ExtResource("1_ottdo")
 noise_tex = SubResource("NoiseTexture2D_oaajj")
 
 [node name="GroundLayer" type="TileMapLayer" parent="."]
-z_index = -1
+z_index = -3
 y_sort_enabled = true
 tile_set = SubResource("TileSet_x3nnn")
 
@@ -382,6 +382,7 @@ y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
 [node name="ShadowLayer" type="TileMapLayer" parent="."]
+modulate = Color(1, 1, 1, 0.5882353)
 z_index = 20
 y_sort_enabled = true
 tile_set = SubResource("TileSet_rk3tq")
