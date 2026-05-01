@@ -52,3 +52,7 @@ y_sort_enabled = true
 script = ExtResource("6_fn3g3")
 
 [node name="ChunkManager" parent="." instance=ExtResource("8_j2gmx")]
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+visible = false
+color = Color(0, 0, 0, 1)

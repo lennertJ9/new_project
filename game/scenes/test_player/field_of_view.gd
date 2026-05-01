@@ -216,10 +216,27 @@ func calculate_edge_tiles():
 			edge_tiles[tile] = 1
 		if not visible_tiles.has(Vector2i(tile.x - 1, tile.y)) and not edge_tiles.has(Vector2i(tile.x - 1, tile.y)):
 			edge_tiles[tile] = 1
+			
+		if not visible_tiles.has(Vector2i(tile.x + 1, tile.y - 1)) and not edge_tiles.has(Vector2i(tile.x, tile.y - 1)):
+			edge_tiles[tile] = 1
+		if not visible_tiles.has(Vector2i(tile.x + 1, tile.y + 1)) and not edge_tiles.has(Vector2i(tile.x + 1, tile.y)):
+			edge_tiles[tile] = 1
+		if not visible_tiles.has(Vector2i(tile.x - 1, tile.y + 1)) and not edge_tiles.has(Vector2i(tile.x, tile.y + 1)):
+			edge_tiles[tile] = 1
+		if not visible_tiles.has(Vector2i(tile.x - 1, tile.y - 1)) and not edge_tiles.has(Vector2i(tile.x - 1, tile.y)):
+			edge_tiles[tile] = 1
+		
 	
 	if get_node("/root/World").debug_mode:
 		for tile in edge_tiles:
-			shadow_layer.set_cell(tile, 2, Vector2i(0,2))
+			
+			var bitmask = calculate_bitmask(tile)
+			if shadow_edge_lookup.has(bitmask):
+				var atlas_coord = shadow_edge_lookup[bitmask]
+				shadow_layer.set_cell(tile, 2, atlas_coord)
+				#shadow_layer.set_cell(tile, 2, Vector2i(0,2))
+			else:
+				shadow_layer.set_cell(tile, 2, Vector2i(0,2))
 
 
 #momenteel ongebruikt
