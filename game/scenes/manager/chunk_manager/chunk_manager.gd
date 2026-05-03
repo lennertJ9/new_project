@@ -21,6 +21,9 @@ var noise: Noise
 @onready var wall_layer: TileMapLayer = $WallLayer
 @onready var object_layer: TileMapLayer = $ObjectLayer
 @onready var shadow_layer: TileMapLayer = $ShadowLayer
+
+
+
 @onready var debug_layer: TileMapLayer = $DebugLayer
 
 
@@ -64,8 +67,6 @@ var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2
 										Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1),  
   
 ]
-
-
 
 
 

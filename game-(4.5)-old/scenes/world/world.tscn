@@ -1,0 +1,58 @@
+[gd_scene load_steps=11 format=3 uid="uid://bt2absuqhkyvq"]
+
+[ext_resource type="Script" uid="uid://dxmnae5yjmh1w" path="res://scenes/world/world.gd" id="1_tcf2h"]
+[ext_resource type="PackedScene" uid="uid://c6nnj1f78ujk2" path="res://scenes/test_player/testplayer.tscn" id="2_4717r"]
+[ext_resource type="PackedScene" uid="uid://xf5rvr0wuwpt" path="res://scenes/test_enemy/test_enemy.tscn" id="2_bq33v"]
+[ext_resource type="Script" uid="uid://ctt55sbed1mwc" path="res://scenes/world/multiplayer_spawner.gd" id="3_mmdvd"]
+[ext_resource type="PackedScene" uid="uid://crtnxq6v1i31t" path="res://user_interface/user_interface.tscn" id="4_h5o24"]
+[ext_resource type="PackedScene" uid="uid://bedn26a16pqss" path="res://scenes/camera/camera.tscn" id="4_t5ptc"]
+[ext_resource type="Script" uid="uid://c4xrim1djaf7c" path="res://scenes/world/player_manager.gd" id="6_fn3g3"]
+[ext_resource type="PackedScene" uid="uid://q3ni4pr1836" path="res://scenes/manager/chunk_manager/ChunkManager.tscn" id="8_j2gmx"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_tcf2h"]
+noise_type = 0
+frequency = 0.0209
+fractal_type = 0
+domain_warp_type = 1
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_4717r"]
+width = 1
+height = 1
+noise = SubResource("FastNoiseLite_tcf2h")
+
+[node name="World" type="Node2D" groups=["world"]]
+y_sort_enabled = true
+script = ExtResource("1_tcf2h")
+noise_tex = SubResource("NoiseTexture2D_4717r")
+enemy_scene = ExtResource("2_bq33v")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("uid://c6nnj1f78ujk2")
+spawn_path = NodePath("../PlayerManager")
+script = ExtResource("3_mmdvd")
+player_scene = ExtResource("2_4717r")
+camera_scene = ExtResource("4_t5ptc")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 23.0
+scale = Vector2(2, 2)
+
+[node name="UserInterface" parent="CanvasLayer" instance=ExtResource("4_h5o24")]
+offset_left = 4.0
+offset_top = -133.0
+offset_right = 4.0
+offset_bottom = -133.0
+scale = Vector2(0.25, 0.25)
+
+[node name="PlayerManager" type="Node2D" parent="."]
+y_sort_enabled = true
+script = ExtResource("6_fn3g3")
+
+[node name="ChunkManager" parent="." instance=ExtResource("8_j2gmx")]
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+visible = false
+color = Color(0, 0, 0, 1)

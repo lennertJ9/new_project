@@ -1,7 +1,8 @@
-[gd_scene load_steps=30 format=3 uid="uid://q3ni4pr1836"]
+[gd_scene format=3 uid="uid://q3ni4pr1836"]
 
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://scenes/manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 [ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
+[ext_resource type="Texture2D" uid="uid://b5f04rllcoogf" path="res://scenes/manager/chunk_manager/assets/grass_tilemap.png" id="2_rk3tq"]
 [ext_resource type="Script" uid="uid://c81vs3p2r58jy" path="res://scenes/manager/chunk_manager/autotiling/autotiling.gd" id="5_6k28p"]
 [ext_resource type="Texture2D" uid="uid://cs5y622gsnsk7" path="res://scenes/manager/chunk_manager/assets/shadow_wall_map.png" id="5_bkkls"]
 [ext_resource type="Texture2D" uid="uid://d2t7xr604y6hv" path="res://scenes/manager/chunk_manager/assets/wall_tileset_version_2.png" id="5_v76aw"]
@@ -97,21 +98,8 @@ texture = ExtResource("2_oaajj")
 9:2/0 = 0
 9:2/0/z_index = 1
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_vjmws"]
-load_path = "res://.godot/imported/grass_tilemap.png-1ebb6d799997ff255cb0edc04aa12967.ctex"
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_oaajj"]
-texture = SubResource("CompressedTexture2D_vjmws")
-2:2/0 = 0
-3:2/size_in_atlas = Vector2i(2, 1)
-3:2/0 = 0
-3:2/0/texture_origin = Vector2i(-8, 0)
-2:3/size_in_atlas = Vector2i(1, 2)
-2:3/0 = 0
-2:3/0/texture_origin = Vector2i(0, -8)
-3:3/size_in_atlas = Vector2i(2, 2)
-3:3/0 = 0
-3:3/0/texture_origin = Vector2i(-8, -8)
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_t0v4d"]
+texture = ExtResource("2_rk3tq")
 0:0/size_in_atlas = Vector2i(2, 2)
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(8, 8)
@@ -121,37 +109,45 @@ texture = SubResource("CompressedTexture2D_vjmws")
 3:0/size_in_atlas = Vector2i(2, 2)
 3:0/0 = 0
 3:0/0/texture_origin = Vector2i(-8, 8)
-0:3/size_in_atlas = Vector2i(2, 2)
-0:3/0 = 0
-0:3/0/texture_origin = Vector2i(8, -8)
+3:2/size_in_atlas = Vector2i(2, 1)
+3:2/0 = 0
+3:2/0/texture_origin = Vector2i(-8, 0)
+2:2/0 = 0
 0:2/size_in_atlas = Vector2i(2, 1)
 0:2/0 = 0
 0:2/0/texture_origin = Vector2i(8, 0)
-5:2/size_in_atlas = Vector2i(3, 1)
-5:2/0 = 0
-5:0/size_in_atlas = Vector2i(3, 2)
-5:0/0 = 0
-5:0/0/texture_origin = Vector2i(0, 8)
-5:3/size_in_atlas = Vector2i(3, 2)
-5:3/0 = 0
-5:3/0/texture_origin = Vector2i(0, -8)
-5:5/size_in_atlas = Vector2i(3, 3)
-5:5/0 = 0
+0:3/size_in_atlas = Vector2i(2, 2)
+0:3/0 = 0
+0:3/0/texture_origin = Vector2i(8, -8)
+2:3/size_in_atlas = Vector2i(1, 2)
+2:3/0 = 0
+2:3/0/texture_origin = Vector2i(0, -8)
+3:3/size_in_atlas = Vector2i(2, 2)
+3:3/0 = 0
+3:3/0/texture_origin = Vector2i(-8, -8)
+3:5/size_in_atlas = Vector2i(2, 3)
+3:5/0 = 0
+3:5/0/texture_origin = Vector2i(-8, 0)
 2:5/size_in_atlas = Vector2i(1, 3)
 2:5/0 = 0
 0:5/size_in_atlas = Vector2i(2, 3)
 0:5/0 = 0
 0:5/0/texture_origin = Vector2i(8, 0)
-3:5/size_in_atlas = Vector2i(2, 3)
-3:5/0 = 0
-3:5/0/texture_origin = Vector2i(-8, 0)
-8:0/0 = 0
+5:5/size_in_atlas = Vector2i(3, 3)
+5:5/0 = 0
+5:3/size_in_atlas = Vector2i(3, 2)
+5:3/0 = 0
+5:3/0/texture_origin = Vector2i(0, -8)
+5:2/size_in_atlas = Vector2i(3, 1)
+5:2/0 = 0
+5:0/size_in_atlas = Vector2i(3, 2)
+5:0/0 = 0
+5:0/0/texture_origin = Vector2i(0, 8)
 9:2/0 = 0
-9:2/0/z_index = 1
 
 [sub_resource type="TileSet" id="TileSet_x3nnn"]
 sources/1 = SubResource("TileSetAtlasSource_svfqs")
-sources/2 = SubResource("TileSetAtlasSource_oaajj")
+sources/2 = SubResource("TileSetAtlasSource_t0v4d")
 pattern_0 = SubResource("TileMapPattern_wyfgc")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bkkls"]
@@ -241,15 +237,19 @@ texture_region_size = Vector2i(16, 26)
 4:4/0/texture_origin = Vector2i(0, 5)
 
 [sub_resource type="TileSet" id="TileSet_oaajj"]
+occlusion_layer_0/light_mask = 1
 physics_layer_0/collision_layer = 1
 sources/1 = SubResource("TileSetAtlasSource_bkkls")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_v76aw"]
 texture = ExtResource("5_wyfgc")
 0:0/size_in_atlas = Vector2i(3, 4)
+0:0/next_alternative_id = 4
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(0, 24)
 0:0/0/y_sort_origin = 8
+0:0/3 = 3
+0:0/3/modulate = Color(0.8509804, 0.8509804, 0.8509804, 1)
 
 [sub_resource type="TileSet" id="TileSet_bkkls"]
 sources/1 = SubResource("TileSetAtlasSource_v76aw")
@@ -257,6 +257,7 @@ sources/1 = SubResource("TileSetAtlasSource_v76aw")
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qcvye"]
 texture = ExtResource("5_bkkls")
 texture_region_size = Vector2i(16, 26)
+use_texture_padding = false
 1:2/0 = 0
 1:2/0/texture_origin = Vector2i(0, 5)
 0:0/0 = 0
@@ -275,6 +276,8 @@ texture_region_size = Vector2i(16, 26)
 2:0/0/texture_origin = Vector2i(0, 5)
 1:1/0 = 0
 1:1/0/texture_origin = Vector2i(0, 5)
+1:1/0/z_index = 100
+1:1/0/y_sort_origin = 8
 0:2/0 = 0
 0:2/0/texture_origin = Vector2i(0, 5)
 8:1/0 = 0
@@ -363,42 +366,42 @@ texture = ExtResource("10_qcvye")
 [sub_resource type="TileSet" id="TileSet_t0v4d"]
 sources/0 = SubResource("TileSetAtlasSource_w76ww")
 
-[node name="ChunkManager" type="Node2D"]
+[node name="ChunkManager" type="Node2D" unique_id=411183760]
 y_sort_enabled = true
 script = ExtResource("1_ottdo")
 noise_tex = SubResource("NoiseTexture2D_oaajj")
 
-[node name="GroundLayer" type="TileMapLayer" parent="."]
+[node name="GroundLayer" type="TileMapLayer" parent="." unique_id=192670671]
 z_index = -3
 y_sort_enabled = true
 tile_set = SubResource("TileSet_x3nnn")
 
-[node name="WallLayer" type="TileMapLayer" parent="."]
+[node name="WallLayer" type="TileMapLayer" parent="." unique_id=1991163307]
 y_sort_enabled = true
 tile_set = SubResource("TileSet_oaajj")
 
-[node name="ObjectLayer" type="TileMapLayer" parent="."]
+[node name="ObjectLayer" type="TileMapLayer" parent="." unique_id=853290522]
 y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
-[node name="ShadowLayer" type="TileMapLayer" parent="."]
-z_index = 100
+[node name="ShadowLayer" type="TileMapLayer" parent="." unique_id=173325590]
+y_sort_enabled = true
 tile_set = SubResource("TileSet_rk3tq")
 
-[node name="Autotiling" type="Node" parent="."]
+[node name="Autotiling" type="Node" parent="." unique_id=1313433194]
 script = ExtResource("5_6k28p")
 
-[node name="ObjectGenerator" type="Node" parent="."]
+[node name="ObjectGenerator" type="Node" parent="." unique_id=2144634255]
 script = ExtResource("6_vjmws")
 noise_tex = SubResource("NoiseTexture2D_wyfgc")
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1170775642]
 replication_config = SubResource("SceneReplicationConfig_wyfgc")
 
-[node name="debug" type="Node2D" parent="."]
+[node name="debug" type="Node2D" parent="." unique_id=1924030067]
 z_index = 1000
 script = ExtResource("8_v76aw")
 
-[node name="DebugLayer" type="TileMapLayer" parent="."]
+[node name="DebugLayer" type="TileMapLayer" parent="." unique_id=210837922]
 z_index = 1000
 tile_set = SubResource("TileSet_t0v4d")

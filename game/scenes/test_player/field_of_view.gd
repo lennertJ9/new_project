@@ -8,8 +8,8 @@ var debug_layer: TileMapLayer
 
 
 var timer: float = 0
-var radius_x = 16
-var radius_y = 16
+var radius_x = 12
+var radius_y = 10
 
 
 # lijst van alle zichtbare tiles
@@ -65,13 +65,21 @@ var shadow_edge_lookup: Dictionary[int, Vector2i] = {
 	48: Vector2i(2,2),
 }
 
-
+var shadow_edge_mask: Dictionary[Vector2i, Dictionary] = {
+	Vector2i(4,1): {Vector2i(-1,0): Vector2i(2,2), Vector2i(1,0): Vector2i(3,2)}
+	
+	
+}
 
 func _ready() -> void:
+	set_process(false)
 	shadow_layer = get_node("/root/World/ChunkManager").shadow_layer
 	wall_layer = get_node("/root/World/ChunkManager").wall_layer
 	debug_layer = get_node("/root/World/ChunkManager").debug_layer
 	
+	var vari = shadow_edge_mask[Vector2i(4,1)]
+	print(typeof(vari[Vector2i(-1,0)]))
+	print(vari[Vector2i(-1,0)])
 
 
 func _process(delta: float) -> void:
@@ -81,7 +89,7 @@ func _process(delta: float) -> void:
 		calculate_fov()
 	
 
-# bug met player coords, deze moeten nog omgezet worden van global naar local tile coords (denk ik)
+
 func calculate_fov():
 	edge_tiles.clear()
 	visible_tiles.clear()
@@ -112,6 +120,7 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 	var y0 = start.y
 	var x1 = end.x
 	var y1 = end.y
+	var previous_tile: Vector2i
 	
 	var dx = abs(x1 - x0)
 	var dy = abs(y1 - y0)
@@ -136,45 +145,7 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 			shadow_layer.erase_cell(Vector2i(x0, y0))
 		
 		
-		if not visible_tiles.has(Vector2i(x0, y0 -1)):
-			visible_tiles[Vector2i(x0, y0 -1)] = 1
-			shadow_layer.erase_cell(Vector2i(x0, y0 -1))
 		
-		
-		if not visible_tiles.has(Vector2i(x0 +1, y0)):
-			visible_tiles[Vector2i(x0 +1, y0)] = 1
-			shadow_layer.erase_cell(Vector2i(x0 +1, y0))
-		
-			
-		
-		if not visible_tiles.has(Vector2i(x0, y0 +1)):
-			visible_tiles[Vector2i(x0, y0 +1)] = 1
-			shadow_layer.erase_cell(Vector2i(x0, y0 +1))
-		
-		
-		if not visible_tiles.has(Vector2i(x0 -1, y0)):
-			visible_tiles[Vector2i(x0 -1, y0)] = 1
-			shadow_layer.erase_cell(Vector2i(x0 -1, y0))
-		#
-		#
-		###
-		#if not visible_tiles.has(Vector2i(x0 +1, y0 -1)):
-			#visible_tiles[Vector2i(x0 +1, y0 -1)] = 1
-			#shadow_layer.erase_cell(Vector2i(x0 +1, y0 -1))
-		#
-		#if not visible_tiles.has(Vector2i(x0 +1, y0 +1)):
-			#visible_tiles[Vector2i(x0 +1, y0 +1)] = 1
-			#shadow_layer.erase_cell(Vector2i(x0 +1, y0 +1))
-		#
-		#if not visible_tiles.has(Vector2i(x0 -1, y0 -1)):
-			#visible_tiles[Vector2i(x0 -1, y0 -1)] = 1
-			#shadow_layer.erase_cell(Vector2i(x0 -1, y0 -1))
-		#
-		#if not visible_tiles.has(Vector2i(x0 -1, y0 +1)):
-			#visible_tiles[Vector2i(x0 -1, y0 +1)] = 1
-			#shadow_layer.erase_cell(Vector2i(x0 -1, y0 +1))
-		
-
 		if x0 == x1 and y0 == y1:
 			break
 		
@@ -188,6 +159,44 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 			err += dx
 			y0 += sy
 	
+		var previous_x = x0
+		var previous_y = y0
+		if wall_layer.get_cell_atlas_coords(previous_tile):
+			if not visible_tiles.has(Vector2i(previous_x, previous_y - 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x, previous_y - 1))
+				visible_tiles[Vector2i(previous_x, previous_y - 1)] = 1
+			
+			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y )):
+				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y))
+				visible_tiles[Vector2i(previous_x + 1, previous_y)] = 1
+				
+			if not visible_tiles.has(Vector2i(previous_x, previous_y + 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x, previous_y + 1))
+				visible_tiles[Vector2i(previous_x, previous_y + 1)] = 1
+				
+			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y)):
+				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y))
+				visible_tiles[Vector2i(previous_x - 1, previous_y)] = 1
+			
+			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y - 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y - 1))
+				visible_tiles[Vector2i(previous_x + 1, previous_y - 1)] = 1
+				
+			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y + 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y + 1))
+				visible_tiles[Vector2i(previous_x + 1, previous_y + 1)] = 1
+				
+			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y + 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y + 1))
+				visible_tiles[Vector2i(previous_x - 1, previous_y + 1)] = 1
+				
+			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y - 1)):
+				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y - 1))
+				visible_tiles[Vector2i(previous_x - 1, previous_y - 1)] = 1
+			
+			
+			
+			
 
 
 ## deze functie zorgt dat shadows geupdate worden
@@ -235,8 +244,8 @@ func calculate_edge_tiles():
 				var atlas_coord = shadow_edge_lookup[bitmask]
 				shadow_layer.set_cell(tile, 2, atlas_coord)
 				#shadow_layer.set_cell(tile, 2, Vector2i(0,2))
-			else:
-				shadow_layer.set_cell(tile, 2, Vector2i(0,2))
+			#else:
+				#shadow_layer.set_cell(tile, 2, Vector2i(0,2))
 
 
 #momenteel ongebruikt
@@ -277,3 +286,7 @@ func _input(event: InputEvent) -> void:
 		if visible_tiles.has(pos):
 			print("is visble")
 		print("---------------")
+
+
+func _on_timer_timeout() -> void:
+	set_process(true)

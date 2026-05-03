@@ -1,0 +1,404 @@
+[gd_scene load_steps=30 format=3 uid="uid://q3ni4pr1836"]
+
+[ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://scenes/manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
+[ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
+[ext_resource type="Script" uid="uid://c81vs3p2r58jy" path="res://scenes/manager/chunk_manager/autotiling/autotiling.gd" id="5_6k28p"]
+[ext_resource type="Texture2D" uid="uid://cs5y622gsnsk7" path="res://scenes/manager/chunk_manager/assets/shadow_wall_map.png" id="5_bkkls"]
+[ext_resource type="Texture2D" uid="uid://d2t7xr604y6hv" path="res://scenes/manager/chunk_manager/assets/wall_tileset_version_2.png" id="5_v76aw"]
+[ext_resource type="Texture2D" uid="uid://dcoc8q2811px8" path="res://assets/trees.png" id="5_wyfgc"]
+[ext_resource type="Texture2D" uid="uid://c0kr610xw7yuu" path="res://scenes/manager/chunk_manager/assets/shadow_wall_edges.png" id="6_bkkls"]
+[ext_resource type="Script" uid="uid://jhgw6s8mcqsw" path="res://scenes/manager/chunk_manager/object_generator.gd" id="6_vjmws"]
+[ext_resource type="Script" uid="uid://bsy2ihhomhnjq" path="res://scenes/manager/chunk_manager/debug.gd" id="8_v76aw"]
+[ext_resource type="Texture2D" uid="uid://buhg8r6ptqsdl" path="res://assets/debug/debug_rect.png" id="10_qcvye"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
+noise_type = 3
+seed = 4
+frequency = 0.0722
+fractal_type = 0
+fractal_lacunarity = 0.0
+fractal_gain = 0.9
+domain_warp_type = 2
+domain_warp_amplitude = 5.615
+domain_warp_fractal_type = 0
+domain_warp_fractal_octaves = 10
+domain_warp_fractal_lacunarity = 1.28
+domain_warp_fractal_gain = 7.175
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_oaajj"]
+noise = SubResource("FastNoiseLite_wt20s")
+seamless = true
+
+[sub_resource type="TileMapPattern" id="TileMapPattern_wyfgc"]
+tile_data = PackedInt32Array(0, 131073, 2, 65536, 131073, 2, 131072, 131073, 2, 196608, 131073, 2, 262144, 131073, 2, 1, 131073, 2, 65537, 131073, 2, 131073, 131073, 2, 196609, 131073, 2, 262145, 131073, 2, 2, 131073, 2, 65538, 131073, 2, 131074, 131073, 2, 196610, 131073, 2, 262146, 131073, 2, 3, 131073, 2, 65539, 131073, 2, 131075, 131073, 2, 196611, 131073, 2, 262147, 131073, 2, 4, 131073, 2, 65540, 131073, 2, 131076, 131073, 2, 196612, 131073, 2, 262148, 131073, 2, 5, 131073, 2, 65541, 131073, 2, 131077, 131073, 2, 196613, 131073, 2, 262149, 131073, 2, 6, 131073, 2, 65542, 131073, 2, 131078, 131073, 2, 196614, 131073, 2, 262150, 131073, 2, 7, 131073, 2, 65543, 131073, 2, 131079, 131073, 2, 196615, 131073, 2, 262151, 131073, 2)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_svfqs"]
+texture = ExtResource("2_oaajj")
+8:0/0 = 0
+0:0/size_in_atlas = Vector2i(2, 2)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(8, 8)
+0:0/0/z_index = 1
+2:0/size_in_atlas = Vector2i(1, 2)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 8)
+2:0/0/z_index = 1
+3:0/size_in_atlas = Vector2i(2, 2)
+3:0/0 = 0
+3:0/0/texture_origin = Vector2i(-8, 8)
+3:0/0/z_index = 1
+3:2/size_in_atlas = Vector2i(2, 1)
+3:2/0 = 0
+3:2/0/texture_origin = Vector2i(-8, 0)
+3:2/0/z_index = 1
+2:2/0 = 0
+2:2/0/z_index = 1
+0:2/size_in_atlas = Vector2i(2, 1)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(8, 0)
+0:2/0/z_index = 1
+0:3/size_in_atlas = Vector2i(2, 2)
+0:3/0 = 0
+0:3/0/texture_origin = Vector2i(8, -8)
+0:3/0/z_index = 1
+2:3/size_in_atlas = Vector2i(1, 2)
+2:3/0 = 0
+2:3/0/texture_origin = Vector2i(0, -8)
+2:3/0/z_index = 1
+3:3/size_in_atlas = Vector2i(2, 2)
+3:3/0 = 0
+3:3/0/texture_origin = Vector2i(-8, -8)
+3:3/0/z_index = 1
+5:0/size_in_atlas = Vector2i(3, 2)
+5:0/0 = 0
+5:0/0/texture_origin = Vector2i(0, 8)
+5:0/0/z_index = 1
+5:2/size_in_atlas = Vector2i(3, 1)
+5:2/0 = 0
+5:2/0/z_index = 1
+5:3/size_in_atlas = Vector2i(3, 2)
+5:3/0 = 0
+5:3/0/texture_origin = Vector2i(0, -8)
+5:3/0/z_index = 1
+0:5/size_in_atlas = Vector2i(2, 3)
+0:5/0 = 0
+0:5/0/texture_origin = Vector2i(8, 0)
+0:5/0/z_index = 1
+2:5/size_in_atlas = Vector2i(1, 3)
+2:5/0 = 0
+2:5/0/z_index = 1
+3:5/size_in_atlas = Vector2i(2, 3)
+3:5/0 = 0
+3:5/0/texture_origin = Vector2i(-8, 0)
+3:5/0/z_index = 1
+5:5/size_in_atlas = Vector2i(3, 3)
+5:5/0 = 0
+5:5/0/z_index = 1
+9:2/0 = 0
+9:2/0/z_index = 1
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_vjmws"]
+load_path = "res://.godot/imported/grass_tilemap.png-1ebb6d799997ff255cb0edc04aa12967.ctex"
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_oaajj"]
+texture = SubResource("CompressedTexture2D_vjmws")
+2:2/0 = 0
+3:2/size_in_atlas = Vector2i(2, 1)
+3:2/0 = 0
+3:2/0/texture_origin = Vector2i(-8, 0)
+2:3/size_in_atlas = Vector2i(1, 2)
+2:3/0 = 0
+2:3/0/texture_origin = Vector2i(0, -8)
+3:3/size_in_atlas = Vector2i(2, 2)
+3:3/0 = 0
+3:3/0/texture_origin = Vector2i(-8, -8)
+0:0/size_in_atlas = Vector2i(2, 2)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(8, 8)
+2:0/size_in_atlas = Vector2i(1, 2)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 8)
+3:0/size_in_atlas = Vector2i(2, 2)
+3:0/0 = 0
+3:0/0/texture_origin = Vector2i(-8, 8)
+0:3/size_in_atlas = Vector2i(2, 2)
+0:3/0 = 0
+0:3/0/texture_origin = Vector2i(8, -8)
+0:2/size_in_atlas = Vector2i(2, 1)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(8, 0)
+5:2/size_in_atlas = Vector2i(3, 1)
+5:2/0 = 0
+5:0/size_in_atlas = Vector2i(3, 2)
+5:0/0 = 0
+5:0/0/texture_origin = Vector2i(0, 8)
+5:3/size_in_atlas = Vector2i(3, 2)
+5:3/0 = 0
+5:3/0/texture_origin = Vector2i(0, -8)
+5:5/size_in_atlas = Vector2i(3, 3)
+5:5/0 = 0
+2:5/size_in_atlas = Vector2i(1, 3)
+2:5/0 = 0
+0:5/size_in_atlas = Vector2i(2, 3)
+0:5/0 = 0
+0:5/0/texture_origin = Vector2i(8, 0)
+3:5/size_in_atlas = Vector2i(2, 3)
+3:5/0 = 0
+3:5/0/texture_origin = Vector2i(-8, 0)
+8:0/0 = 0
+9:2/0 = 0
+9:2/0/z_index = 1
+
+[sub_resource type="TileSet" id="TileSet_x3nnn"]
+sources/1 = SubResource("TileSetAtlasSource_svfqs")
+sources/2 = SubResource("TileSetAtlasSource_oaajj")
+pattern_0 = SubResource("TileMapPattern_wyfgc")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bkkls"]
+texture = ExtResource("5_v76aw")
+texture_region_size = Vector2i(16, 26)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 5)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(0, 5)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 5)
+2:1/0 = 0
+2:1/0/texture_origin = Vector2i(0, 5)
+1:1/0 = 0
+1:1/0/texture_origin = Vector2i(0, 5)
+0:1/0 = 0
+0:1/0/texture_origin = Vector2i(0, 5)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(0, 5)
+1:2/0 = 0
+1:2/0/texture_origin = Vector2i(0, 5)
+2:2/0 = 0
+2:2/0/texture_origin = Vector2i(0, 5)
+4:0/0 = 0
+4:0/0/texture_origin = Vector2i(0, 5)
+4:1/0 = 0
+4:1/0/texture_origin = Vector2i(0, 5)
+4:2/0 = 0
+4:2/0/texture_origin = Vector2i(0, 5)
+2:4/0 = 0
+2:4/0/texture_origin = Vector2i(0, 5)
+1:4/0 = 0
+1:4/0/texture_origin = Vector2i(0, 5)
+0:4/0 = 0
+0:4/0/texture_origin = Vector2i(0, 5)
+0:6/0 = 0
+0:6/0/texture_origin = Vector2i(0, 5)
+2:6/0 = 0
+2:6/0/texture_origin = Vector2i(0, 5)
+2:8/0 = 0
+2:8/0/texture_origin = Vector2i(0, 5)
+0:8/0 = 0
+0:8/0/texture_origin = Vector2i(0, 5)
+6:6/0 = 0
+6:6/0/texture_origin = Vector2i(0, 5)
+8:6/0 = 0
+8:6/0/texture_origin = Vector2i(0, 5)
+8:5/0 = 0
+8:5/0/texture_origin = Vector2i(0, 5)
+6:5/0 = 0
+6:5/0/texture_origin = Vector2i(0, 5)
+6:4/0 = 0
+6:4/0/texture_origin = Vector2i(0, 5)
+8:4/0 = 0
+8:4/0/texture_origin = Vector2i(0, 5)
+8:3/0 = 0
+8:3/0/texture_origin = Vector2i(0, 5)
+6:3/0 = 0
+6:3/0/texture_origin = Vector2i(0, 5)
+6:2/0 = 0
+6:2/0/texture_origin = Vector2i(0, 5)
+6:1/0 = 0
+6:1/0/texture_origin = Vector2i(0, 5)
+8:1/0 = 0
+8:1/0/texture_origin = Vector2i(0, 5)
+8:2/0 = 0
+8:2/0/texture_origin = Vector2i(0, 5)
+8:0/0 = 0
+8:0/0/texture_origin = Vector2i(0, 5)
+6:0/0 = 0
+6:0/0/texture_origin = Vector2i(0, 5)
+10:1/0 = 0
+10:1/0/texture_origin = Vector2i(0, 5)
+10:2/0 = 0
+10:2/0/texture_origin = Vector2i(0, 5)
+10:3/0 = 0
+10:3/0/texture_origin = Vector2i(0, 5)
+12:1/0 = 0
+12:1/0/texture_origin = Vector2i(0, 5)
+12:2/0 = 0
+12:2/0/texture_origin = Vector2i(0, 5)
+12:3/0 = 0
+12:3/0/texture_origin = Vector2i(0, 5)
+3:0/0 = 0
+3:0/0/texture_origin = Vector2i(0, 5)
+4:4/0 = 0
+4:4/0/texture_origin = Vector2i(0, 5)
+
+[sub_resource type="TileSet" id="TileSet_oaajj"]
+physics_layer_0/collision_layer = 1
+sources/1 = SubResource("TileSetAtlasSource_bkkls")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_v76aw"]
+texture = ExtResource("5_wyfgc")
+0:0/size_in_atlas = Vector2i(3, 4)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 24)
+0:0/0/y_sort_origin = 8
+
+[sub_resource type="TileSet" id="TileSet_bkkls"]
+sources/1 = SubResource("TileSetAtlasSource_v76aw")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qcvye"]
+texture = ExtResource("5_bkkls")
+texture_region_size = Vector2i(16, 26)
+1:2/0 = 0
+1:2/0/texture_origin = Vector2i(0, 5)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 5)
+2:2/0 = 0
+2:2/0/texture_origin = Vector2i(0, 5)
+6:1/0 = 0
+6:1/0/texture_origin = Vector2i(0, 5)
+2:1/0 = 0
+2:1/0/texture_origin = Vector2i(0, 5)
+0:1/0 = 0
+0:1/0/texture_origin = Vector2i(0, 5)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(0, 5)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 5)
+1:1/0 = 0
+1:1/0/texture_origin = Vector2i(0, 5)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(0, 5)
+8:1/0 = 0
+8:1/0/texture_origin = Vector2i(0, 5)
+2:4/0 = 0
+2:4/0/texture_origin = Vector2i(0, 5)
+1:4/0 = 0
+1:4/0/texture_origin = Vector2i(0, 5)
+0:4/0 = 0
+0:4/0/texture_origin = Vector2i(0, 5)
+6:2/0 = 0
+6:2/0/texture_origin = Vector2i(0, 5)
+8:2/0 = 0
+8:2/0/texture_origin = Vector2i(0, 5)
+10:2/0 = 0
+10:2/0/texture_origin = Vector2i(0, 5)
+12:2/0 = 0
+12:2/0/texture_origin = Vector2i(0, 5)
+4:0/0 = 0
+4:0/0/texture_origin = Vector2i(0, 5)
+4:1/0 = 0
+4:1/0/texture_origin = Vector2i(0, 5)
+4:2/0 = 0
+4:2/0/texture_origin = Vector2i(0, 5)
+10:1/0 = 0
+10:1/0/texture_origin = Vector2i(0, 5)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_rk3tq"]
+texture = ExtResource("6_bkkls")
+texture_region_size = Vector2i(16, 26)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(0, 5)
+2:0/0 = 0
+2:0/0/texture_origin = Vector2i(0, 5)
+3:0/0 = 0
+3:0/0/texture_origin = Vector2i(0, 5)
+4:0/0 = 0
+4:0/0/texture_origin = Vector2i(0, 5)
+5:0/0 = 0
+5:0/0/texture_origin = Vector2i(0, 5)
+6:0/0 = 0
+6:0/0/texture_origin = Vector2i(0, 5)
+6:1/0 = 0
+6:1/0/texture_origin = Vector2i(0, 5)
+6:2/0 = 0
+6:2/0/texture_origin = Vector2i(0, 5)
+5:2/0 = 0
+5:2/0/texture_origin = Vector2i(0, 5)
+4:2/0 = 0
+4:2/0/texture_origin = Vector2i(0, 5)
+3:2/0 = 0
+3:2/0/texture_origin = Vector2i(0, 5)
+2:2/0 = 0
+2:2/0/texture_origin = Vector2i(0, 5)
+1:2/0 = 0
+1:2/0/texture_origin = Vector2i(0, 5)
+1:1/0 = 0
+1:1/0/texture_origin = Vector2i(0, 5)
+2:1/0 = 0
+2:1/0/texture_origin = Vector2i(0, 5)
+3:1/0 = 0
+3:1/0/texture_origin = Vector2i(0, 5)
+4:1/0 = 0
+4:1/0/texture_origin = Vector2i(0, 5)
+5:1/0 = 0
+5:1/0/texture_origin = Vector2i(0, 5)
+0:2/0 = 0
+0:2/0/texture_origin = Vector2i(0, 5)
+
+[sub_resource type="TileSet" id="TileSet_rk3tq"]
+sources/1 = SubResource("TileSetAtlasSource_qcvye")
+sources/2 = SubResource("TileSetAtlasSource_rk3tq")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_vjmws"]
+frequency = 0.0641
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wyfgc"]
+noise = SubResource("FastNoiseLite_vjmws")
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_wyfgc"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w76ww"]
+texture = ExtResource("10_qcvye")
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_t0v4d"]
+sources/0 = SubResource("TileSetAtlasSource_w76ww")
+
+[node name="ChunkManager" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_ottdo")
+noise_tex = SubResource("NoiseTexture2D_oaajj")
+
+[node name="GroundLayer" type="TileMapLayer" parent="."]
+z_index = -3
+y_sort_enabled = true
+tile_set = SubResource("TileSet_x3nnn")
+
+[node name="WallLayer" type="TileMapLayer" parent="."]
+y_sort_enabled = true
+tile_set = SubResource("TileSet_oaajj")
+
+[node name="ObjectLayer" type="TileMapLayer" parent="."]
+y_sort_enabled = true
+tile_set = SubResource("TileSet_bkkls")
+
+[node name="ShadowLayer" type="TileMapLayer" parent="."]
+z_index = 100
+tile_set = SubResource("TileSet_rk3tq")
+
+[node name="Autotiling" type="Node" parent="."]
+script = ExtResource("5_6k28p")
+
+[node name="ObjectGenerator" type="Node" parent="."]
+script = ExtResource("6_vjmws")
+noise_tex = SubResource("NoiseTexture2D_wyfgc")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_wyfgc")
+
+[node name="debug" type="Node2D" parent="."]
+z_index = 1000
+script = ExtResource("8_v76aw")
+
+[node name="DebugLayer" type="TileMapLayer" parent="."]
+z_index = 1000
+tile_set = SubResource("TileSet_t0v4d")
