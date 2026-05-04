@@ -248,10 +248,13 @@ texture = ExtResource("5_wyfgc")
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(0, 24)
 0:0/0/y_sort_origin = 8
+0:0/0/custom_data_0 = Vector2i(3, 3)
 0:0/3 = 3
 0:0/3/modulate = Color(0.8509804, 0.8509804, 0.8509804, 1)
 
 [sub_resource type="TileSet" id="TileSet_bkkls"]
+custom_data_layer_0/name = "size"
+custom_data_layer_0/type = 6
 sources/1 = SubResource("TileSetAtlasSource_v76aw")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qcvye"]
@@ -385,6 +388,7 @@ y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
 [node name="ShadowLayer" type="TileMapLayer" parent="." unique_id=173325590]
+z_index = 100
 y_sort_enabled = true
 tile_set = SubResource("TileSet_rk3tq")
 

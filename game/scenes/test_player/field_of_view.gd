@@ -4,12 +4,13 @@ extends Node2D
 
 var shadow_layer: TileMapLayer
 var wall_layer: TileMapLayer
+var object_layer: TileMapLayer
 var debug_layer: TileMapLayer
 
 
 var timer: float = 0
-var radius_x = 12
-var radius_y = 10
+var radius_x = 10
+var radius_y = 8
 
 
 # lijst van alle zichtbare tiles
@@ -75,6 +76,7 @@ func _ready() -> void:
 	set_process(false)
 	shadow_layer = get_node("/root/World/ChunkManager").shadow_layer
 	wall_layer = get_node("/root/World/ChunkManager").wall_layer
+	object_layer = get_node("/root/World/ChunkManager").object_layer
 	debug_layer = get_node("/root/World/ChunkManager").debug_layer
 	
 	var vari = shadow_edge_mask[Vector2i(4,1)]
@@ -84,10 +86,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	timer += delta
-	if timer > 0.25:
+	if timer > 0.9:
 		timer = 0
 		calculate_fov()
-	
+
 
 
 func calculate_fov():
@@ -115,6 +117,7 @@ func calculate_fov():
 	calculate_edge_tiles()
 
 
+
 func bresenham_line(start: Vector2i, end: Vector2i):
 	var x0 = start.x
 	var y0 = start.y
@@ -136,15 +139,11 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 		
 		if wall_layer.get_cell_source_id(Vector2i(x0, y0)) != -1:
 			if not visible_tiles.has(Vector2i(x0, y0)):
-				visible_tiles[Vector2i(x0, y0)] = 1
-				shadow_layer.erase_cell(Vector2i(x0, y0))
+				make_tile_visible(Vector2i(x0, y0))
 			break
 		
 		if not visible_tiles.has(Vector2i(x0, y0)):
-			visible_tiles[Vector2i(x0, y0)] = 1
-			shadow_layer.erase_cell(Vector2i(x0, y0))
-		
-		
+			make_tile_visible(Vector2i(x0, y0))
 		
 		if x0 == x1 and y0 == y1:
 			break
@@ -163,40 +162,42 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 		var previous_y = y0
 		if wall_layer.get_cell_atlas_coords(previous_tile):
 			if not visible_tiles.has(Vector2i(previous_x, previous_y - 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x, previous_y - 1))
-				visible_tiles[Vector2i(previous_x, previous_y - 1)] = 1
+				make_tile_visible(Vector2i(previous_x, previous_y - 1))
 			
 			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y )):
-				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y))
-				visible_tiles[Vector2i(previous_x + 1, previous_y)] = 1
+				make_tile_visible(Vector2i(previous_x, previous_y - 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x, previous_y + 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x, previous_y + 1))
-				visible_tiles[Vector2i(previous_x, previous_y + 1)] = 1
+				make_tile_visible(Vector2i(previous_x, previous_y + 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y)):
-				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y))
-				visible_tiles[Vector2i(previous_x - 1, previous_y)] = 1
+				make_tile_visible(Vector2i(previous_x - 1, previous_y))
 			
 			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y - 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y - 1))
-				visible_tiles[Vector2i(previous_x + 1, previous_y - 1)] = 1
+				make_tile_visible(Vector2i(previous_x + 1, previous_y - 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y + 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x + 1, previous_y + 1))
-				visible_tiles[Vector2i(previous_x + 1, previous_y + 1)] = 1
+				make_tile_visible(Vector2i(previous_x + 1, previous_y - 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y + 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y + 1))
-				visible_tiles[Vector2i(previous_x - 1, previous_y + 1)] = 1
+				make_tile_visible(Vector2i(previous_x - 1, previous_y + 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y - 1)):
-				shadow_layer.erase_cell(Vector2i(previous_x - 1, previous_y - 1))
-				visible_tiles[Vector2i(previous_x - 1, previous_y - 1)] = 1
-			
-			
-			
-			
+				make_tile_visible(Vector2i(previous_x - 1, previous_y - 1))
+
+
+func make_tile_visible(tile: Vector2i):
+	visible_tiles[tile] = 1
+	shadow_layer.erase_cell(tile)
+	if object_layer.get_cell_tile_data(tile):
+		var tiledata = object_layer.get_cell_tile_data(tile)
+		var tile_size = tiledata.get_custom_data("size")
+		for size_y in range(tile.y, tile.y -  tile_size.y, -1):
+			for size_x in range(tile.x - 1, tile.x + tile_size.x -1):
+				shadow_layer.erase_cell(Vector2i(size_x, size_y))
+				visible_tiles[Vector2i(size_x, size_y)] = 1
+				print(Vector2i(size_x, size_y))
+		print("--------")
 
 
 ## deze functie zorgt dat shadows geupdate worden
@@ -285,6 +286,7 @@ func _input(event: InputEvent) -> void:
 		print(pos)
 		if visible_tiles.has(pos):
 			print("is visble")
+		shadow_layer.erase_cell(pos)
 		print("---------------")
 
 

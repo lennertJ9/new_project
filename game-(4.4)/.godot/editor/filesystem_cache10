@@ -1,0 +1,16 @@
+ea4bc82a6ad023ab7ee23ee620429895
+::res://::1758890518
+icon.svg::CompressedTexture2D/CompressedTexture2D::6431606031788218704::1757185623::1757185628::1::::<><><>0<>0<>880007958227fe680f274903e71f0473<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+::res://player/::1757874846
+player.tscn::PackedScene/PackedScene::98115450801931184::1757874846::0::1::::<><><>0<>0<><>::uid://dtmxk2nuno4ve::::res://player/assets/player_body.png<>uid://bejwsw5iasvg6::::res://player/assets/player_head.png<>uid://6q86aapqocus::::res://player/assets/player_legs.png
+::res://player/assets/::1757255582
+player_body.png::CompressedTexture2D/CompressedTexture2D::8519038401162890050::1757255554::1757255555::1::::<><><>0<>0<>640ef0e0c339d19a8e912f9aad2e11c7<>res://.godot/imported/player_body.png-253e570c09befb9d7472b50765e12a51.ctex::
+player_head.png::CompressedTexture2D/CompressedTexture2D::2687124578384969935::1757254421::1757254513::1::::<><><>0<>0<>f973f6b8bba7f449c6c285812f3d051a<>res://.godot/imported/player_head.png-5b0e4e261ccce4398944b7bc17b61599.ctex::
+player_legs.png::CompressedTexture2D/CompressedTexture2D::2210943217919771410::1757255582::1757255582::1::::<><><>0<>0<>bc9966594e366874b0a9849372335e86<>res://.godot/imported/player_legs.png-5516656ccf609b6edc607f96d75ffcdb.ctex::
+::res://world/::1758741572
+camera_2d.gd::GDScript/GDScript::6042963334267086017::1758464546::0::1::::<>Camera2D<><>0<>0<><>::
+experimental_tileset.png::CompressedTexture2D/CompressedTexture2D::5654667767126782428::1758477929::1758477932::1::::<><><>0<>0<>f19bfd397b6016205a8a8ebea5480e20<>res://.godot/imported/experimental_tileset.png-a14fb05a2cc1c6e6a89c2b1663d955d7.ctex::
+testbitmask.png::CompressedTexture2D/CompressedTexture2D::2833062566382917831::1758465940::1758465941::1::::<><><>0<>0<>548f9b5bc204d849f4714de02c73c9fc<>res://.godot/imported/testbitmask.png-365743b52f3174a0fa7d80aa11fae641.ctex::
+wall_tileset.png::CompressedTexture2D/CompressedTexture2D::6954759590986888520::1758740092::1758740094::1::::<><><>0<>0<>009ff4c6adade949b234b6e67ff3f6a3<>res://.godot/imported/wall_tileset.png-1baa9890a243519ef123c5867e315478.ctex::
+world.gd::GDScript::8799167566249220246::1758741524::0::1::::<>Node2D<><>0<>0<><>::
+world.tscn::PackedScene::3775749675022368762::1758741572::0::1::::<><><>0<>0<><>::uid://dxmnae5yjmh1w::::res://world/world.gd<>uid://cmtfs1cr0kqxo::::res://world/experimental_tileset.png<>uid://csdiyuby17k3b::::res://world/camera_2d.gd<>uid://c6c64y04mj0wq::::res://world/wall_tileset.png
