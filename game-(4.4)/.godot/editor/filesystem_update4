@@ -1,5 +1,0 @@
-res://world/world.tscn
-res://world/world.gd
-res://manager/chunk_manager/ChunkManager.tscn
-res://manager/chunk_manager/chunk/chunk.gd
-res://manager/chunk_manager/chunk_manager.gd

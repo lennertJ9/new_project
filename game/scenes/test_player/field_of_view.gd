@@ -150,6 +150,9 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 		
 		var e2 = err * 2
 		
+		var previous_x = x0
+		var previous_y = y0
+		
 		if e2 > -dy:
 			err -= dy
 			x0 += sx
@@ -158,14 +161,13 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 			err += dx
 			y0 += sy
 	
-		var previous_x = x0
-		var previous_y = y0
+		
 		if wall_layer.get_cell_atlas_coords(previous_tile):
 			if not visible_tiles.has(Vector2i(previous_x, previous_y - 1)):
 				make_tile_visible(Vector2i(previous_x, previous_y - 1))
 			
 			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y )):
-				make_tile_visible(Vector2i(previous_x, previous_y - 1))
+				make_tile_visible(Vector2i(previous_x + 1, previous_y))
 				
 			if not visible_tiles.has(Vector2i(previous_x, previous_y + 1)):
 				make_tile_visible(Vector2i(previous_x, previous_y + 1))
@@ -177,7 +179,7 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 				make_tile_visible(Vector2i(previous_x + 1, previous_y - 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x + 1, previous_y + 1)):
-				make_tile_visible(Vector2i(previous_x + 1, previous_y - 1))
+				make_tile_visible(Vector2i(previous_x + 1, previous_y + 1))
 				
 			if not visible_tiles.has(Vector2i(previous_x - 1, previous_y + 1)):
 				make_tile_visible(Vector2i(previous_x - 1, previous_y + 1))
@@ -189,16 +191,14 @@ func bresenham_line(start: Vector2i, end: Vector2i):
 func make_tile_visible(tile: Vector2i):
 	visible_tiles[tile] = 1
 	shadow_layer.erase_cell(tile)
-	if object_layer.get_cell_tile_data(tile):
-		var tiledata = object_layer.get_cell_tile_data(tile)
-		var tile_size = tiledata.get_custom_data("size")
-		for size_y in range(tile.y, tile.y -  tile_size.y, -1):
-			for size_x in range(tile.x - 1, tile.x + tile_size.x -1):
-				shadow_layer.erase_cell(Vector2i(size_x, size_y))
-				visible_tiles[Vector2i(size_x, size_y)] = 1
-				print(Vector2i(size_x, size_y))
-		print("--------")
-
+	#if object_layer.get_cell_tile_data(tile):
+		#var tiledata = object_layer.get_cell_tile_data(tile)
+		#var tile_size = tiledata.get_custom_data("size")
+		#for size_y in range(tile.y, tile.y -  tile_size.y, -1):
+			#for size_x in range(tile.x - 1, tile.x + tile_size.x -1):
+				#shadow_layer.erase_cell(Vector2i(size_x, size_y))
+				#visible_tiles[Vector2i(size_x, size_y)] = 1
+				
 
 ## deze functie zorgt dat shadows geupdate worden
 func check_old_shadows(): 
@@ -243,10 +243,9 @@ func calculate_edge_tiles():
 			var bitmask = calculate_bitmask(tile)
 			if shadow_edge_lookup.has(bitmask):
 				var atlas_coord = shadow_edge_lookup[bitmask]
-				shadow_layer.set_cell(tile, 2, atlas_coord)
-				#shadow_layer.set_cell(tile, 2, Vector2i(0,2))
-			#else:
-				#shadow_layer.set_cell(tile, 2, Vector2i(0,2))
+				#shadow_layer.set_cell(tile, 2, atlas_coord)
+				shadow_layer.set_cell(tile, 2, Vector2i(0,2))
+				
 
 
 #momenteel ongebruikt
