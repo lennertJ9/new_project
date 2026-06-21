@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ds1wh5uf5jdxv"
-path="res://.godot/imported/debug_rect.png-52801e52742e3874b7d3d63dbb5084bb.ctex"
+uid="uid://fgghj5sofq1m"
+path="res://.godot/imported/cliff.png-7b2113efe59491c4a3778dab2b604707.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://scenes/manager/chunk_manager/assets/debug_rect.png"
-dest_files=["res://.godot/imported/debug_rect.png-52801e52742e3874b7d3d63dbb5084bb.ctex"]
+source_file="res://assets/cliff.png"
+dest_files=["res://.godot/imported/cliff.png-7b2113efe59491c4a3778dab2b604707.ctex"]
 
 [params]
 

@@ -3,19 +3,17 @@
 [ext_resource type="Script" uid="uid://b7jsybnvwwsqg" path="res://scenes/manager/chunk_manager/chunk_manager.gd" id="1_ottdo"]
 [ext_resource type="Texture2D" uid="uid://cj2odx85i4wyo" path="res://scenes/manager/chunk_manager/assets/dark_grass_tilemap.png" id="2_oaajj"]
 [ext_resource type="Texture2D" uid="uid://b5f04rllcoogf" path="res://scenes/manager/chunk_manager/assets/grass_tilemap.png" id="2_rk3tq"]
+[ext_resource type="Texture2D" uid="uid://fgghj5sofq1m" path="res://assets/cliff.png" id="4_qcvye"]
 [ext_resource type="Script" uid="uid://c81vs3p2r58jy" path="res://scenes/manager/chunk_manager/autotiling/autotiling.gd" id="5_6k28p"]
-[ext_resource type="Texture2D" uid="uid://cs5y622gsnsk7" path="res://scenes/manager/chunk_manager/assets/shadow_wall_map.png" id="5_bkkls"]
 [ext_resource type="Texture2D" uid="uid://d2t7xr604y6hv" path="res://scenes/manager/chunk_manager/assets/wall_tileset_version_2.png" id="5_v76aw"]
 [ext_resource type="Texture2D" uid="uid://dcoc8q2811px8" path="res://assets/trees.png" id="5_wyfgc"]
-[ext_resource type="Texture2D" uid="uid://c0kr610xw7yuu" path="res://scenes/manager/chunk_manager/assets/shadow_wall_edges.png" id="6_bkkls"]
 [ext_resource type="Script" uid="uid://jhgw6s8mcqsw" path="res://scenes/manager/chunk_manager/object_generator.gd" id="6_vjmws"]
 [ext_resource type="Script" uid="uid://bsy2ihhomhnjq" path="res://scenes/manager/chunk_manager/debug.gd" id="8_v76aw"]
 [ext_resource type="Texture2D" uid="uid://buhg8r6ptqsdl" path="res://assets/debug/debug_rect.png" id="10_qcvye"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wt20s"]
-noise_type = 3
-seed = 4
-frequency = 0.0722
+noise_type = 4
+frequency = 0.1351
 fractal_type = 0
 fractal_lacunarity = 0.0
 fractal_gain = 0.9
@@ -28,6 +26,14 @@ domain_warp_fractal_gain = 7.175
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_oaajj"]
 noise = SubResource("FastNoiseLite_wt20s")
+seamless = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_bkkls"]
+frequency = 0.0506
+metadata/_preview_in_3d_space_ = true
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_qcvye"]
+noise = SubResource("FastNoiseLite_bkkls")
 seamless = true
 
 [sub_resource type="TileMapPattern" id="TileMapPattern_wyfgc"]
@@ -145,9 +151,16 @@ texture = ExtResource("2_rk3tq")
 5:0/0/texture_origin = Vector2i(0, 8)
 9:2/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_rk3tq"]
+texture = ExtResource("4_qcvye")
+0:0/0 = 0
+0:1/0 = 0
+0:2/0 = 0
+
 [sub_resource type="TileSet" id="TileSet_x3nnn"]
 sources/1 = SubResource("TileSetAtlasSource_svfqs")
 sources/2 = SubResource("TileSetAtlasSource_t0v4d")
+sources/3 = SubResource("TileSetAtlasSource_rk3tq")
 pattern_0 = SubResource("TileMapPattern_wyfgc")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bkkls"]
@@ -251,6 +264,10 @@ texture = ExtResource("5_wyfgc")
 0:0/0/custom_data_0 = Vector2i(3, 3)
 0:0/3 = 3
 0:0/3/modulate = Color(0.85098, 0.85098, 0.85098, 1)
+3:0/size_in_atlas = Vector2i(3, 4)
+3:0/0 = 0
+6:0/size_in_atlas = Vector2i(3, 4)
+6:0/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_bkkls"]
 custom_data_layer_0/name = "size"
@@ -258,108 +275,20 @@ custom_data_layer_0/type = 6
 sources/1 = SubResource("TileSetAtlasSource_v76aw")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qcvye"]
-texture = ExtResource("5_bkkls")
-texture_region_size = Vector2i(16, 26)
-use_texture_padding = false
-1:2/0 = 0
-1:2/0/texture_origin = Vector2i(0, 5)
+texture = ExtResource("4_qcvye")
 0:0/0 = 0
-0:0/0/texture_origin = Vector2i(0, 5)
-2:2/0 = 0
-2:2/0/texture_origin = Vector2i(0, 5)
-6:1/0 = 0
-6:1/0/texture_origin = Vector2i(0, 5)
-2:1/0 = 0
-2:1/0/texture_origin = Vector2i(0, 5)
 0:1/0 = 0
-0:1/0/texture_origin = Vector2i(0, 5)
-1:0/0 = 0
-1:0/0/texture_origin = Vector2i(0, 5)
-2:0/0 = 0
-2:0/0/texture_origin = Vector2i(0, 5)
-1:1/0 = 0
-1:1/0/texture_origin = Vector2i(0, 5)
 0:2/0 = 0
-0:2/0/texture_origin = Vector2i(0, 5)
-8:1/0 = 0
-8:1/0/texture_origin = Vector2i(0, 5)
-2:4/0 = 0
-2:4/0/texture_origin = Vector2i(0, 5)
-1:4/0 = 0
-1:4/0/texture_origin = Vector2i(0, 5)
-0:4/0 = 0
-0:4/0/texture_origin = Vector2i(0, 5)
-6:2/0 = 0
-6:2/0/texture_origin = Vector2i(0, 5)
-8:2/0 = 0
-8:2/0/texture_origin = Vector2i(0, 5)
-10:2/0 = 0
-10:2/0/texture_origin = Vector2i(0, 5)
-12:2/0 = 0
-12:2/0/texture_origin = Vector2i(0, 5)
-4:0/0 = 0
-4:0/0/texture_origin = Vector2i(0, 5)
-4:1/0 = 0
-4:1/0/texture_origin = Vector2i(0, 5)
-4:2/0 = 0
-4:2/0/texture_origin = Vector2i(0, 5)
-10:1/0 = 0
-10:1/0/texture_origin = Vector2i(0, 5)
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_rk3tq"]
-texture = ExtResource("6_bkkls")
-texture_region_size = Vector2i(16, 26)
 1:0/0 = 0
-1:0/0/texture_origin = Vector2i(0, 5)
-2:0/0 = 0
-2:0/0/texture_origin = Vector2i(0, 5)
-3:0/0 = 0
-3:0/0/texture_origin = Vector2i(0, 5)
-4:0/0 = 0
-4:0/0/texture_origin = Vector2i(0, 5)
-5:0/0 = 0
-5:0/0/texture_origin = Vector2i(0, 5)
-6:0/0 = 0
-6:0/0/texture_origin = Vector2i(0, 5)
-6:1/0 = 0
-6:1/0/texture_origin = Vector2i(0, 5)
-6:2/0 = 0
-6:2/0/texture_origin = Vector2i(0, 5)
-5:2/0 = 0
-5:2/0/texture_origin = Vector2i(0, 5)
-4:2/0 = 0
-4:2/0/texture_origin = Vector2i(0, 5)
-3:2/0 = 0
-3:2/0/texture_origin = Vector2i(0, 5)
-2:2/0 = 0
-2:2/0/texture_origin = Vector2i(0, 5)
-1:2/0 = 0
-1:2/0/texture_origin = Vector2i(0, 5)
-1:1/0 = 0
-1:1/0/texture_origin = Vector2i(0, 5)
-2:1/0 = 0
-2:1/0/texture_origin = Vector2i(0, 5)
-3:1/0 = 0
-3:1/0/texture_origin = Vector2i(0, 5)
-4:1/0 = 0
-4:1/0/texture_origin = Vector2i(0, 5)
-5:1/0 = 0
-5:1/0/texture_origin = Vector2i(0, 5)
-0:2/0 = 0
-0:2/0/texture_origin = Vector2i(0, 5)
-0:2/0/z_index = 100
 
 [sub_resource type="TileSet" id="TileSet_rk3tq"]
 sources/1 = SubResource("TileSetAtlasSource_qcvye")
-sources/2 = SubResource("TileSetAtlasSource_rk3tq")
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_vjmws"]
 frequency = 0.0641
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wyfgc"]
 noise = SubResource("FastNoiseLite_vjmws")
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_wyfgc"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w76ww"]
 texture = ExtResource("10_qcvye")
@@ -372,6 +301,7 @@ sources/0 = SubResource("TileSetAtlasSource_w76ww")
 y_sort_enabled = true
 script = ExtResource("1_ottdo")
 noise_tex = SubResource("NoiseTexture2D_oaajj")
+noise_tex_cliff = SubResource("NoiseTexture2D_qcvye")
 
 [node name="GroundLayer" type="TileMapLayer" parent="." unique_id=2032111653]
 z_index = -3
@@ -386,8 +316,8 @@ tile_set = SubResource("TileSet_oaajj")
 y_sort_enabled = true
 tile_set = SubResource("TileSet_bkkls")
 
-[node name="ShadowLayer" type="TileMapLayer" parent="." unique_id=7177699]
-y_sort_enabled = true
+[node name="CliffLayer" type="TileMapLayer" parent="." unique_id=366577588]
+z_index = -1000
 tile_set = SubResource("TileSet_rk3tq")
 
 [node name="Autotiling" type="Node" parent="." unique_id=1689223986]
@@ -396,9 +326,6 @@ script = ExtResource("5_6k28p")
 [node name="ObjectGenerator" type="Node" parent="." unique_id=182462347]
 script = ExtResource("6_vjmws")
 noise_tex = SubResource("NoiseTexture2D_wyfgc")
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1866259996]
-replication_config = SubResource("SceneReplicationConfig_wyfgc")
 
 [node name="debug" type="Node2D" parent="." unique_id=1213203851]
 z_index = 1000

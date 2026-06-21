@@ -13,14 +13,20 @@ signal chunk_deloaded
 signal neighbours_checked
 
 
-@export var player: Node2D
+@export var player: CharacterBody2D
+
+# NOISES -----------------------------------#
 @export var noise_tex: NoiseTexture2D
+@export var noise_tex_cliff: NoiseTexture2D
 var noise: Noise
+var noise_cliff: Noise
+
+# ---------------------- #
 
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var wall_layer: TileMapLayer = $WallLayer
 @onready var object_layer: TileMapLayer = $ObjectLayer
-@onready var shadow_layer: TileMapLayer = $ShadowLayer
+@onready var cliff_layer: TileMapLayer = $CliffLayer
 
 
 
@@ -71,12 +77,14 @@ var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2
 
 
 func _ready() -> void:
-	set_process(false)
+	await get_tree().physics_frame
+	set_process(true)
 	thread_chunk_generator.start(chunk_generator)
 	thread_neighbour_checker.start(chunk_neighbour_checker)
 	
-	player = get_tree().get_first_node_in_group("world").camera
+	#player = get_tree().get_first_node_in_group("world").camera
 	noise = noise_tex.noise
+	noise_cliff = noise_tex_cliff.noise
 
 
 
@@ -113,7 +121,7 @@ func chunk_generator():
 				for x in range(16):
 					chunk.walkable[i] = 1
 					var global_pos = chunk.position * 16 + Vector2i(x,y)
-					var walls_atlas_id = 0
+					
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
 					var ground_id: int
@@ -121,17 +129,8 @@ func chunk_generator():
 						wall_id = 1 << 16 # dirt wall
 						chunk.walkable[i] = 0
 						
-					else:
-						chunk.shadow_layer[i] =  1 << 16
-						wall_id = 0
-						
-					# dark grass
-					if random < -0.08:
-						ground_id = 2 << 16 # aanetten van 
-						
-					else:
-						ground_id = 1 << 16
 					
+					ground_id = 2 << 16 
 					
 					chunk.ground_layer[i] = ground_id
 					chunk.wall_layer[i] = wall_id
@@ -142,6 +141,8 @@ func chunk_generator():
 			AStarManager.generate_a_star_points(chunk) 
 			
 			generated_chunks[chunk.position] = chunk 
+			generate_cliffs(chunk)
+			
 			chunk.is_generated = true
 			
 			neighbourless_chunks.append(chunk_pos) # hier loopt thread en kijkt als buren generated zijn
@@ -193,13 +194,14 @@ func chunk_loader():
 		for y_pos in range(16):
 			for x_pos in range(16):
 				
-				if chunk.shadow_layer[i] >> 16 == 1:
-					shadow_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, Vector2i(1,1))
 				
 				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
 					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, chunk.get_tile_coord(chunk.wall_layer[i])) 
 				if chunk.object_layer[i] > 65000:
 					object_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.object_layer[i] >> 16, chunk.get_tile_coord(chunk.object_layer[i]))
+				if chunk.cliff_layer[i] != 0:
+					print("place cliff")
+					cliff_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.cliff_layer[i] >> 16, chunk.get_tile_coord(chunk.cliff_layer[i]))
 				
 				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.ground_layer[i]))
 				i += 1
@@ -267,8 +269,17 @@ func chunk_unloader():
 
 
 
-
-
+func generate_cliffs(chunk: Chunk):
+	var i = 0
+	for y in range(16):
+		for x in range(16):
+			var global_pos = chunk.position * 16 + Vector2i(x,y)
+			var random = noise_cliff.get_noise_2dv(global_pos)
+			if random > 0.05 and chunk.wall_layer[i] == 0:
+				chunk.ground_layer[i] = 0
+				chunk.cliff_layer[i] |= 1 << 16 
+				chunk.has_cliffs = true
+			i += 1
 
 
 

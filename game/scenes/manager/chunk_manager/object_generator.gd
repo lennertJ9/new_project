@@ -38,8 +38,9 @@ func generate_trees(chunk: Chunk):
 			cells[1] = cell_y * 16 + (cell_x + 1)
 			cells[2] = (cell_y + 1) * 16 + cell_x
 			cells[3] = (cell_y + 1) * 16 + (cell_x + 1)
-			var random = number_generator.randi_range(0,3)
+			var random = number_generator.randi_range(0,3) 
 			var noise_value = noise.get_noise_2dv(position)
 			if noise_value > 0.3 and chunk.wall_layer[cells[random]] >> 16 == 0:
-				var id = 1 << 16 | 0 << 8 | 0
+				var random_int = randi_range(0,2) * 3
+				var id = 1 << 16 | random_int << 8 | 0
 				chunk.object_layer[cells[random]] = id

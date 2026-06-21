@@ -10,8 +10,8 @@ var walkable: PackedInt32Array
 var ground_layer: PackedInt32Array 
 var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
+var cliff_layer: PackedInt32Array
 
-var shadow_layer: PackedInt32Array
 
 # ------ states ------- #        
 var is_generated: bool
@@ -25,8 +25,8 @@ var is_queued_unload: bool
 var last_accessed: float
 
 
-# ----- autotile ----- # 
-
+# ----- features ----- # 
+var has_cliffs: bool = false
 
 # ----- AStar ----- # 
 var a_star_id: int # een "start" id. 0,256,512,...
@@ -35,6 +35,8 @@ var a_star_is_ready: bool # als point generated en connected zijn
 # ----- Neighbour Data ----- # 
 var is_neigbhoured
 var neighbours: Array
+
+
 
 
 func _init(pos: Vector2i) -> void:
@@ -46,7 +48,7 @@ func _init(pos: Vector2i) -> void:
 	ground_layer.resize(256)
 	wall_layer.resize(256)
 	object_layer.resize(256)
-	shadow_layer.resize(256)
+	cliff_layer.resize(256)
 	neighbours.resize(8)
 	position = pos
 	global_position = pos * 16

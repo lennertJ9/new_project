@@ -5,16 +5,12 @@ extends Node2D
 
 
 @onready var label: Label = $CanvasLayer/Label # fps lable
-@onready var player_manager: Node2D = $PlayerManager
+
 
 @export var enemy_scene: PackedScene
 
 var debug_mode: bool = false
 
-# -------------- networking -------------------- #
-
-
-# ---------------------------------------------- #
 
 
 var shadow_grass_tiles: Array[Vector2i]
@@ -34,4 +30,6 @@ func _input(event: InputEvent) -> void:
 		var enemy: CharacterBody2D = enemy_scene.instantiate()
 		enemy.global_position = get_global_mouse_position()
 		add_child(enemy)
+	if event.is_action_pressed("left_click"):
+		print(get_global_mouse_position() / 16)
 		
