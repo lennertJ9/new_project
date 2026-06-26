@@ -180,7 +180,8 @@ func chunk_autotiler():
 			autotile_top_left_ground(chunk, top_chunk, left_chunk)
 			
 			if chunk.has_cliffs:
-				autotile_cliffs(chunk)
+				autotile_cliffs_center(chunk)
+				autotile_cliffs_top(chunk, top_chunk)
 				
 			chunk.is_autotiled = true
 			chunks_to_autotile.erase(chunk.position)
@@ -213,6 +214,7 @@ func autotile_inner(chunk: Chunk):
 			i = y * 16 + x
 			bitmask = 0
 			tile_id = chunk.wall_layer[i] >> 16 #omdat tile id 16 bits links staat
+			orthogonal = 0
 	
 			# orthogalen #
 			if tile_id != 0:
@@ -296,9 +298,13 @@ func autotile_top(chunk: Chunk, top_chunk: Chunk):
 		
 			if tile_lookup.has(bitmask):
 				var atlas_pos = tile_lookup[bitmask]
+				
+				if tile_id == 0:
+					assert(false, "Autotiling empty wall!")
+				
 				chunk.wall_layer[i] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 				
-				# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+				
 				
 			else:
 				chunk.wall_layer[i] = tile_id << 16 | 3 << 8 | 0
@@ -314,6 +320,7 @@ func autotile_right(chunk: Chunk, right_chunk: Chunk):
 	for i in range(1,15): 
 		index = 15 + i * 16
 		bitmask = 0
+		orthogonal = 0
 		tile_id = chunk.wall_layer[index] >> 16 
 		# orthogalen #
 		if tile_id != 0:
@@ -413,6 +420,7 @@ func autotile_left(chunk: Chunk, left_chunk: Chunk):
 	for i in range(1,15): 
 		index =  i * 16
 		bitmask = 0
+		orthogonal = 0
 		tile_id = chunk.wall_layer[index] >> 16 
 		
 		if tile_id != 0:
@@ -488,13 +496,13 @@ func autotile_top_right(chunk: Chunk, top_chunk: Chunk, top_right_chunk: Chunk, 
 				bitmask |= 128
 	
 	
-	if tile_lookup.has(bitmask):
-		var atlas_pos = tile_lookup[bitmask]
-		chunk.wall_layer[15] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+		if tile_lookup.has(bitmask):
+			var atlas_pos = tile_lookup[bitmask]
+			chunk.wall_layer[15] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
 
 
-	else:
-		chunk.wall_layer[15] = tile_id << 16 | 3 << 8 | 0
+		else:
+			chunk.wall_layer[15] = tile_id << 16 | 3 << 8 | 0
 
 
 
@@ -532,14 +540,14 @@ func autotile_bottom_right(chunk: Chunk, right_chunk: Chunk, bottom_right_chunk:
 			if chunk.wall_layer[238] >> 16 == tile_id:
 				bitmask |= 128
 	
-	if tile_lookup.has(bitmask):
-		var atlas_pos = tile_lookup[bitmask]
-		chunk.wall_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
-		
-		
-		
-	else:
-		chunk.wall_layer[255] = tile_id << 16 | 3 << 8 | 0
+		if tile_lookup.has(bitmask):
+			var atlas_pos = tile_lookup[bitmask]
+			chunk.wall_layer[255] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			
+			
+			
+		else:
+			chunk.wall_layer[255] = tile_id << 16 | 3 << 8 | 0
 
 
 
@@ -577,16 +585,16 @@ func autotile_bottom_left(chunk: Chunk, bottom_chunk: Chunk, bottom_left_chunk: 
 			if left_chunk.wall_layer[239] >> 16 == tile_id:
 				bitmask |= 128
 	
-	if tile_lookup.has(bitmask):
-		var atlas_pos = tile_lookup[bitmask]
-		#atlas_pos = Vector2i(3,0)
-		chunk.wall_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
-		
-		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
-		
-		
-	else:
-		chunk.wall_layer[240] = tile_id << 16 | 3 << 8 | 0
+		if tile_lookup.has(bitmask):
+			var atlas_pos = tile_lookup[bitmask]
+			#atlas_pos = Vector2i(3,0)
+			chunk.wall_layer[240] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			
+			# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+			
+			
+		else:
+			chunk.wall_layer[240] = tile_id << 16 | 3 << 8 | 0
 
 
 
@@ -626,14 +634,14 @@ func autotile_top_left(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk, top_le
 				bitmask |= 128
 	
 	
-	if tile_lookup.has(bitmask):
-		var atlas_pos = tile_lookup[bitmask]
-		chunk.wall_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
-		# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
-		
-		
-	else:
-		chunk.wall_layer[0] = tile_id << 16 | 3 << 8 | 0
+		if tile_lookup.has(bitmask):
+			var atlas_pos = tile_lookup[bitmask]
+			chunk.wall_layer[0] = tile_id << 16 | atlas_pos.x << 8 | atlas_pos.y
+			# rand muren moeten schaduw krijgen, midden is zwart maar niet op shadowlayer
+			
+			
+		else:
+			chunk.wall_layer[0] = tile_id << 16 | 3 << 8 | 0
 
 
 #  ------------------- GROUND LAYER --------------------------------- #
@@ -881,29 +889,54 @@ func autotile_top_left_ground(chunk: Chunk, top_chunk: Chunk, left_chunk: Chunk)
 
 
 
-func autotile_cliffs(chunk: Chunk):
-	var bitmask: int
-	var i: int = 0
+func autotile_cliffs_center(chunk: Chunk):
+	var i: int = 48
 	var offset: int = 16
-	var max_cliff_depth: int = 3
-	var depth: int 
+	var max_cliff_depth: int = 2
+	var depth = 1
 	
 	for x in range(0,16):
-		for y in range(0,16):
-			bitmask = 0
+		for y in range(0,13):
 			if chunk.cliff_layer[i] >> 16 != 0: # DIT IS EEN CLIFF
-				depth = 1
-				while depth < max_cliff_depth:
-					if chunk.ground_layer[i - 16 * depth] != 0:
-						chunk.cliff_layer[i] |= 0 << 8 | 0 
-						depth += 1
-						
-					else:
-						depth += 1
-						bitmask += 1
-						if depth == max_cliff_depth:
-							chunk.cliff_layer[i] |= 1 << 8 | 0 # LEEG
+				
 					
-			
+				if chunk.ground_layer[i - 16] != 0:
+					chunk.cliff_layer[i] |= 0 << 8 | 0
+					
+				elif chunk.ground_layer[i - 32] != 0:
+					chunk.cliff_layer[i] |= 0 << 8 | 1
+				
+				elif chunk.ground_layer[i - 48] != 0:
+					chunk.cliff_layer[i] |= 0 << 8 | 2
+					
+				else:
+					chunk.cliff_layer[i] |= 1 << 8 | 0
+					
+				
 			i += 1
-			
+
+
+func autotile_cliffs_top(chunk: Chunk, top_chunk: Chunk):
+	for i in range(48):
+		if chunk.cliff_layer[i] >> 16 == 0:
+			continue
+
+		var found_ground: bool = false
+
+		for depth in range(1, 4):
+			var index: int = i - depth * 16
+
+			if index >= 0:
+				if chunk.ground_layer[index] != 0:
+					chunk.cliff_layer[i] |= depth - 1
+					found_ground = true
+					break
+			else:
+				var top_index := 256 + index
+				if top_chunk.ground_layer[top_index] != 0:
+					chunk.cliff_layer[i] |= depth - 1
+					found_ground = true
+					break
+
+		if not found_ground:
+			chunk.cliff_layer[i] |= 1 << 8

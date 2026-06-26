@@ -24,6 +24,7 @@ noise_tex = SubResource("NoiseTexture2D_4717r")
 enemy_scene = ExtResource("2_bq33v")
 
 [node name="Player" parent="." unique_id=1496393512 instance=ExtResource("5_v5dby")]
+position = Vector2(200, 0)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1033845036]
 

@@ -200,7 +200,6 @@ func chunk_loader():
 				if chunk.object_layer[i] > 65000:
 					object_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.object_layer[i] >> 16, chunk.get_tile_coord(chunk.object_layer[i]))
 				if chunk.cliff_layer[i] != 0:
-					print("place cliff")
 					cliff_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.cliff_layer[i] >> 16, chunk.get_tile_coord(chunk.cliff_layer[i]))
 				
 				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.ground_layer[i]))
@@ -226,13 +225,6 @@ func chunk_check():
 				if not chunk.is_loaded and not chunk.is_queued_load and chunk.is_autotiled:
 					generated_chunks[chunk_pos].is_queued_load = true
 					chunks_to_load.append(generated_chunks[chunk_pos])
-				
-					
-					
-			#if generated_chunks.has(chunk_pos) and not generated_chunks[chunk_pos].is_loaded and generated_chunks[chunk_pos].is_autotiled and not generated_chunks[chunk_pos].is_queued_load:
-				#generated_chunks[chunk_pos].is_queued_load = true
-				#chunks_to_load.append(generated_chunks[chunk_pos])
-				# LOADING CHUNK
 			
 			else:
 				if not chunks_to_data_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
@@ -277,7 +269,8 @@ func generate_cliffs(chunk: Chunk):
 			var random = noise_cliff.get_noise_2dv(global_pos)
 			if random > 0.05 and chunk.wall_layer[i] == 0:
 				chunk.ground_layer[i] = 0
-				chunk.cliff_layer[i] |= 1 << 16 
+				chunk.cliff_layer[i] |= 1 << 16
+				
 				chunk.has_cliffs = true
 			i += 1
 
