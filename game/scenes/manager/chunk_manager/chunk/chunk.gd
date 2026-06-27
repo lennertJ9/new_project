@@ -12,6 +12,7 @@ var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
 var cliff_layer: PackedInt32Array
 
+var wall_health: Dictionary[int, int] # index : health
 
 # ------ states ------- #        
 var is_generated: bool
@@ -27,6 +28,7 @@ var last_accessed: float
 
 # ----- features ----- # 
 var has_cliffs: bool = false
+var max_health = 100
 
 # ----- AStar ----- # 
 var a_star_id: int # een "start" id. 0,256,512,...
@@ -52,6 +54,7 @@ func _init(pos: Vector2i) -> void:
 	neighbours.resize(8)
 	position = pos
 	global_position = pos * 16
+	
 
 
 
@@ -72,3 +75,7 @@ func index_to_xy(index: int):
 	var x = index % 16
 	var y = int(index/16)
 	return Vector2i(x,y)
+
+
+func local_vector_to_index(vector: Vector2i)-> int:
+	return vector.y * 16 + vector.x

@@ -136,12 +136,13 @@ func chunk_generator():
 					chunk.wall_layer[i] = wall_id
 					i += 1
 			
+			generate_cliffs(chunk)
 			object_generator.generate_trees(chunk)
 			# dit maakt alleen points, geen connecties. connecties pas na de neighbour checker
 			AStarManager.generate_a_star_points(chunk) 
 			
 			generated_chunks[chunk.position] = chunk 
-			generate_cliffs(chunk)
+			
 			
 			chunk.is_generated = true
 			
@@ -267,16 +268,9 @@ func generate_cliffs(chunk: Chunk):
 		for x in range(16):
 			var global_pos = chunk.position * 16 + Vector2i(x,y)
 			var random = noise_cliff.get_noise_2dv(global_pos)
-			if random > 0.05 and chunk.wall_layer[i] == 0:
+			if random > 0.18 and chunk.wall_layer[i] == 0:
 				chunk.ground_layer[i] = 0
 				chunk.cliff_layer[i] |= 1 << 16
 				
 				chunk.has_cliffs = true
 			i += 1
-
-
-
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("left_click"):
-		var atlas_pos = wall_layer.get_cell_atlas_coords(ground_layer.local_to_map(get_global_mouse_position()))
-		

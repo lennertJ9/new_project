@@ -279,14 +279,6 @@ func debug_stuff():
 			debug_layer.set_cell(tile,0, Vector2.ZERO)
 
 
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("left_click"):
-		var pos = shadow_layer.local_to_map(get_global_mouse_position())
-		print(pos)
-		if visible_tiles.has(pos):
-			print("is visble")
-		shadow_layer.erase_cell(pos)
-		print("---------------")
 
 
 func _on_timer_timeout() -> void:

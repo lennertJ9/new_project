@@ -910,7 +910,7 @@ func autotile_cliffs_center(chunk: Chunk):
 					chunk.cliff_layer[i] |= 0 << 8 | 2
 					
 				else:
-					chunk.cliff_layer[i] |= 1 << 8 | 0
+					chunk.cliff_layer[i] |= 2 << 8 | 0
 					
 				
 			i += 1
@@ -939,4 +939,4 @@ func autotile_cliffs_top(chunk: Chunk, top_chunk: Chunk):
 					break
 
 		if not found_ground:
-			chunk.cliff_layer[i] |= 1 << 8
+			chunk.cliff_layer[i] |= 2 << 8

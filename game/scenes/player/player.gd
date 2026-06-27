@@ -7,10 +7,6 @@ var last_input: Vector2
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 
 
-func _ready() -> void:
-	print("d")
-
-
 
 func _process(delta: float) -> void:
 	input = Input.get_vector("LEFT","RIGHT","UP","DOWN")
@@ -43,3 +39,38 @@ func _process(delta: float) -> void:
 				animation_player.play("IDLE_DOWN")
 			else:
 				animation_player.play("IDLE_UP")
+
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("left_click"):
+		
+		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")
+		
+		var tile_pos = chunkmanager_node.wall_layer.local_to_map(get_global_mouse_position())
+		var local_wall_pos = Vector2i(
+			posmod(tile_pos.x, 16),
+			posmod(tile_pos.y, 16)
+			)
+		#print(v)
+		
+		var chunk_pos = floor(get_global_mouse_position() / 256)
+		var chunk = chunkmanager_node.generated_chunks[chunk_pos]
+		var local_wall_index = chunk.local_vector_to_index(local_wall_pos)
+		if chunk.wall_layer[local_wall_index] != 0:
+			print("wall")
+			if chunk.wall_health.has(local_wall_index):
+				chunk.wall_health[local_wall_index] -=  30
+				if chunk.wall_health[local_wall_index] < 0:
+					print("kaport")
+					chunkmanager_node.wall_layer.erase_cell(tile_pos)
+			else:
+				chunk.wall_health[local_wall_index] = chunk.max_health - 30
+				if chunk.wall_health[local_wall_index] < 0:
+					print("kaport")
+					chunkmanager_node.wall_layer.erase_cell(tile_pos)
+			
+		else:
+			print("empty")
+		chunk.wall_health[local_wall_index]
+		
