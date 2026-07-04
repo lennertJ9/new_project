@@ -136,7 +136,7 @@ func chunk_generator():
 					chunk.wall_layer[i] = wall_id
 					i += 1
 			
-			generate_cliffs(chunk)
+			#generate_cliffs(chunk)
 			object_generator.generate_trees(chunk)
 			# dit maakt alleen points, geen connecties. connecties pas na de neighbour checker
 			AStarManager.generate_a_star_points(chunk) 
@@ -274,3 +274,41 @@ func generate_cliffs(chunk: Chunk):
 				
 				chunk.has_cliffs = true
 			i += 1
+
+
+func global_to_chunk_local(global_pos: Vector2):
+	var tile_pos = global_pos / 16
+	var chunk_local_pos = Vector2i(
+		posmod(tile_pos.x, 16),
+		posmod(tile_pos.y, 16)
+		)
+	return chunk_local_pos
+
+# bug local index klopt niet
+func damage_wall(global_pos: Vector2):
+	var chunk_pos = floor(global_pos / 256)
+	
+	var global_tile_pos = floor(global_pos / 16)
+	
+	
+	print(global_tile_pos)
+	
+	var chunk = generated_chunks[chunk_pos]
+	var chunk_local_tile_pos = global_to_chunk_local(global_pos)
+	var local_index = chunk.local_vector_to_index(chunk_local_tile_pos)
+	var wall_type_id = 1
+	
+	var damage = 40
+	print("local index: ", local_index)
+	if chunk.wall_health.has(local_index):
+		chunk.wall_health[local_index] -=  damage
+		if chunk.wall_health[local_index] < 0:
+			wall_layer.erase_cell(global_tile_pos)
+			print("al damaged")
+	else:
+		print("eerste damage")
+		chunk.wall_health[local_index] = chunk.max_health - damage
+		if chunk.wall_health[local_index] < 0:
+			wall_layer.erase_cell(global_tile_pos)
+	
+	

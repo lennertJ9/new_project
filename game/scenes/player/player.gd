@@ -5,6 +5,7 @@ var input: Vector2
 var last_input: Vector2
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+var bolt_scene: PackedScene = preload("res://scenes/spells/magic_bolt/MagicBolt.tscn")
 
 
 
@@ -58,19 +59,29 @@ func _input(event: InputEvent) -> void:
 		var chunk = chunkmanager_node.generated_chunks[chunk_pos]
 		var local_wall_index = chunk.local_vector_to_index(local_wall_pos)
 		if chunk.wall_layer[local_wall_index] != 0:
-			print("wall")
+			
 			if chunk.wall_health.has(local_wall_index):
 				chunk.wall_health[local_wall_index] -=  30
 				if chunk.wall_health[local_wall_index] < 0:
-					print("kaport")
+					
 					chunkmanager_node.wall_layer.erase_cell(tile_pos)
 			else:
 				chunk.wall_health[local_wall_index] = chunk.max_health - 30
 				if chunk.wall_health[local_wall_index] < 0:
-					print("kaport")
+					
 					chunkmanager_node.wall_layer.erase_cell(tile_pos)
 			
 		else:
 			print("empty")
-		chunk.wall_health[local_wall_index]
+	
+	if event.is_action_pressed("right_click"):
+		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")
+		var bolt = bolt_scene.instantiate()
+		bolt.position = global_position
+		bolt.direction = global_position.direction_to(get_global_mouse_position())
+		
+		
+		#bolt.direction = Vector2i.RIGHT
+		var projectiles = get_node("/root/World/Projectiles")
+		projectiles.add_child(bolt)
 		

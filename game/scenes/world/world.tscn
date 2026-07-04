@@ -17,6 +17,9 @@ width = 1
 height = 1
 noise = SubResource("FastNoiseLite_tcf2h")
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_v5dby"]
+radius = 18.027756
+
 [node name="World" type="Node2D" unique_id=1966301656 groups=["world"]]
 y_sort_enabled = true
 script = ExtResource("1_tcf2h")
@@ -42,3 +45,11 @@ scale = Vector2(0.25, 0.25)
 
 [node name="ChunkManager" parent="." unique_id=1324416088 node_paths=PackedStringArray("player") instance=ExtResource("8_j2gmx")]
 player = NodePath("../Player")
+
+[node name="Projectiles" type="Node2D" parent="." unique_id=1971961928]
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=167854466]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1944273956]
+position = Vector2(125, -19)
+shape = SubResource("CircleShape2D_v5dby")

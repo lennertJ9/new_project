@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://b0me067e7g01r"]
+
+[ext_resource type="Script" uid="uid://w6omjsnyqdu0" path="res://scenes/spells/magic_bolt/magic_bolt.gd" id="1_rku2o"]
+[ext_resource type="Texture2D" uid="uid://c1mlp0t4p7t2q" path="res://scenes/spells/magic_bolt/magic_bolt.png" id="2_2ipvc"]
+
+[sub_resource type="Animation" id="Animation_twjqm"]
+resource_name = "MOVING"
+length = 0.3
+step = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.03, 0.06, 0.09, 0.12, 0.15, 0.18, 0.21, 0.24),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+}
+
+[sub_resource type="Animation" id="Animation_fejgl"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hcegx"]
+_data = {
+&"MOVING": SubResource("Animation_twjqm"),
+&"RESET": SubResource("Animation_fejgl")
+}
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1mhpq"]
+radius = 2.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rku2o"]
+radius = 2.0
+
+[node name="MagicBolt" type="Area2D" unique_id=739867403]
+script = ExtResource("1_rku2o")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1203117191]
+texture = ExtResource("2_2ipvc")
+hframes = 9
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1500641259]
+libraries/ = SubResource("AnimationLibrary_hcegx")
+autoplay = &"MOVING"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=846333647]
+position = Vector2(1, 0)
+shape = SubResource("CircleShape2D_1mhpq")
+debug_color = Color(1, 0, 0.2166667, 0.62352943)
+
+[node name="ShapeCast2D" type="ShapeCast2D" parent="." unique_id=786900051]
+position = Vector2(1, 0)
+shape = SubResource("CircleShape2D_rku2o")
+target_position = Vector2(0, 0)
+
+[connection signal="area_shape_exited" from="." to="." method="_on_area_shape_exited"]
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_shape_entered" from="." to="." method="_on_body_shape_entered"]

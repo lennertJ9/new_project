@@ -11,8 +11,13 @@ var ground_layer: PackedInt32Array
 var wall_layer: PackedInt32Array
 var object_layer: PackedInt32Array
 var cliff_layer: PackedInt32Array
-
 var wall_health: Dictionary[int, int] # index : health
+
+### new ###
+var wall_id_layer: PackedByteArray
+var ground_id_layer: PackedByteArray
+
+###########
 
 # ------ states ------- #        
 var is_generated: bool
