@@ -1,23 +1,18 @@
 extends RefCounted
 class_name Chunk
-# ongebruikt  tile ID    tile_x       tile_y    --> 32 bit int
-# 00000000    00000000   00000000     00000000
+
 var position: Vector2i
 var global_position: Vector2i 
-var walkable: PackedInt32Array
 
-# ------ layers ----- #
-var ground_layer: PackedInt32Array 
-var wall_layer: PackedInt32Array
-var object_layer: PackedInt32Array
-var cliff_layer: PackedInt32Array
-var wall_health: Dictionary[int, int] # index : health
 
-### new ###
+
 var wall_id_layer: PackedByteArray
 var ground_id_layer: PackedByteArray
 
-###########
+# ongebruikt  ongebruikt   tile_x       tile_y    --> 32 bit int
+# 00000000    00000000     00000000     00000000
+var wall_atlas_coords: PackedInt32Array
+var ground_atlas_coords: PackedInt32Array
 
 # ------ states ------- #        
 var is_generated: bool
@@ -51,11 +46,12 @@ func _init(pos: Vector2i) -> void:
 	is_queued_unload = false
 	is_generated = false
 	is_neigbhoured = false
-	walkable.resize(256)
-	ground_layer.resize(256)
-	wall_layer.resize(256)
-	object_layer.resize(256)
-	cliff_layer.resize(256)
+	
+	ground_id_layer.resize(256)
+	wall_id_layer.resize(256)
+	ground_atlas_coords.resize(256)
+	wall_atlas_coords.resize(256)
+	
 	neighbours.resize(8)
 	position = pos
 	global_position = pos * 16
@@ -63,16 +59,13 @@ func _init(pos: Vector2i) -> void:
 
 
 
-func get_tile_coord(packed: int) -> Vector2i:
-	var x = (packed >> 8) & 0xFF
-	var y = packed & 0xFF
-	return Vector2i(x,y)
+func pack_atlas(pos: Vector2i) -> int:
+	return (pos.x << 8) | pos.y
 
 
+func unpack_atlas(packed: int) -> Vector2i:
+	return Vector2i((packed >> 8) & 0xFF,packed & 0xFF)
 
-func get_atlas_id(packed: int) -> int:
-	return 0
-	#return (packed >> ATLAS_SHIFT) & ATLAS_MASK
 
 
 

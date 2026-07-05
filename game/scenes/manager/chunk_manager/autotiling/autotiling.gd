@@ -7,6 +7,10 @@ var chunks_to_autotile: Dictionary[Vector2i, Chunk]
 var thread_chunk_autotiler: Thread = Thread.new()
 var cpu_autotile_delay: int = 25
 
+var chunk_manager_node: ChunkManager
+
+var tile_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1)]
+
 # -------------- LOOKUP TABLES -------------------------------------#
 var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	0: Vector2i(4,4),
@@ -119,7 +123,7 @@ var tile_lookup_ground: Dictionary[int, Dictionary] = {
 	7: {Vector2i(0,2): 100},
 	8: {Vector2i(3,5): 100},
 	9: {Vector2i(3,3): 100},
-	10:{Vector2i(2,5): 100},
+	10: {Vector2i(2,5): 100},
 	11: {Vector2i(2,3): 100},
 	12: {Vector2i(3,0): 100},
 	13: {Vector2i(3,2): 100},
@@ -130,9 +134,8 @@ var tile_lookup_ground: Dictionary[int, Dictionary] = {
 
 
 func _ready() -> void:
+	chunk_manager_node = get_node("/root/World/ChunkManager")
 	thread_chunk_autotiler.start(chunk_autotiler)
-
-
 
 
 func chunk_autotiler():
@@ -142,46 +145,14 @@ func chunk_autotiler():
 			
 			var chunk: Chunk = chunks_to_autotile.values()[0]
 			var chunk_pos = chunk.position
-			#var bitmask: int = 0
-			#var tile_id: int = 0
+			for y in range(0,16):
+				for x in range(0,16):
+					autotile_wall_tile(Vector2i(x,y) + chunk_pos * 16)
+					
 			
-			# ----------------- INNER ------------------------------------#
-			autotile_inner(chunk)
-			autotile_inner_ground(chunk)
 			
-			# ----------------- SIDES--------------------------------#
-			var top_chunk: Chunk = owner.generated_chunks[chunk_pos - Vector2i(0,1)]
-			autotile_top(chunk, top_chunk)
-			autotile_top_ground(chunk, top_chunk)
 			
-			var right_chunk: Chunk = owner.generated_chunks[chunk_pos + Vector2i(1,0)]
-			autotile_right(chunk, right_chunk)
-			autotile_right_ground(chunk, right_chunk)
 			
-			var bottom_chunk: Chunk = owner.generated_chunks[chunk_pos + Vector2i(0,1)]
-			autotile_bottom(chunk, bottom_chunk)
-			autotile_bottom_ground(chunk, bottom_chunk)
-			
-			var left_chunk: Chunk = owner.generated_chunks[chunk_pos - Vector2i(1,0)]
-			autotile_left(chunk, left_chunk)
-			autotile_left_ground(chunk, left_chunk)
-			
-			# ----------------- EDGES ------------------------------------#
-			autotile_top_right(chunk, owner.generated_chunks[chunk_pos + Vector2i(0,-1)], owner.generated_chunks[chunk_pos + Vector2i(1,-1)], owner.generated_chunks[chunk_pos + Vector2i(1,0)])
-			autotile_top_right_ground(chunk, top_chunk, right_chunk)
-			
-			autotile_bottom_right(chunk, owner.generated_chunks[chunk_pos + Vector2i(1,0)], owner.generated_chunks[chunk_pos + Vector2i(1,1)], owner.generated_chunks[chunk_pos + Vector2i(0,1)])
-			autotile_bottom_right_ground(chunk, right_chunk, bottom_chunk)
-			
-			autotile_bottom_left(chunk, owner.generated_chunks[chunk_pos + Vector2i(0,1)], owner.generated_chunks[chunk_pos + Vector2i(-1,1)], owner.generated_chunks[chunk_pos + Vector2i(-1,0)])
-			autotile_bottom_left_ground(chunk, bottom_chunk, left_chunk)
-			
-			autotile_top_left(chunk, owner.generated_chunks[chunk_pos + Vector2i(0,-1)], owner.generated_chunks[chunk_pos + Vector2i(-1,0)], owner.generated_chunks[chunk_pos + Vector2i(-1,-1)])
-			autotile_top_left_ground(chunk, top_chunk, left_chunk)
-			
-			if chunk.has_cliffs:
-				autotile_cliffs_center(chunk)
-				autotile_cliffs_top(chunk, top_chunk)
 				
 			chunk.is_autotiled = true
 			chunks_to_autotile.erase(chunk.position)
@@ -200,6 +171,70 @@ func pick_tile_variant(bitmask):
 		if sum > random:
 			return key
 
+
+
+func autotile_wall_tiles(tiles: Array[Vector2i]) -> void:
+	pass
+
+
+
+func autotile_wall_tile(tile: Vector2i) -> void:
+	var chunk: Chunk = chunk_manager_node.generated_chunks[get_chunk_pos(tile)]
+	var center_local_tile_pos = get_chunk_local_tile_pos(tile)
+	var center_index = get_chunk_local_index(center_local_tile_pos)
+	var center_id = chunk_manager_node.generated_chunks[chunk.position].wall_id_layer[center_index]
+	
+	if center_id == 0:
+		return
+
+	var bitmask: int = 0
+	var bit_value: int = 1
+
+	for neighbour in tile_neighbours:
+		var neighbour_tile = tile + neighbour
+		var neighbour_chunk_pos = get_chunk_pos(neighbour_tile)
+		var neighbour_local_tile_pos = get_chunk_local_tile_pos(neighbour_tile)
+		var neighbour_index = get_chunk_local_index(neighbour_local_tile_pos)
+		
+		var neighbour_id = chunk_manager_node.generated_chunks[neighbour_chunk_pos].wall_id_layer[neighbour_index]
+		
+		if neighbour_id == center_id:
+			bitmask |= bit_value
+		
+		bit_value *= 2
+	
+	if tile_lookup.has(bitmask):
+		chunk.wall_atlas_coords[center_index] = chunk.pack_atlas(tile_lookup[bitmask])
+		print(bitmask)
+
+
+
+
+func get_chunk_pos(tile: Vector2i) -> Vector2i:
+	return Vector2i(
+		floor(tile.x / 16.0),
+		floor(tile.y / 16.0)
+	)
+	
+
+
+func get_local_tile_pos(global_tile: Vector2i):
+	pass
+
+
+func get_chunk_local_tile_pos(global_tile_pos: Vector2i) -> Vector2i:
+	return Vector2i(
+		posmod(global_tile_pos.x, 16),
+		posmod(global_tile_pos.y, 16)
+	)
+
+
+func get_local_tile_index(tile: Vector2i):
+	var chunk_pos = floor(tile / 16)
+
+
+func get_chunk_local_index(local_tile: Vector2i) -> int:
+	return local_tile.x + local_tile.y * 16 
 
 
 # --------------- WALL LAYER -------------------------- #
@@ -655,7 +690,7 @@ func autotile_inner_ground(chunk: Chunk):
 		for x in range(1,15):
 			i = y * 16 + x
 			bitmask = 0
-			tile_id = chunk.ground_layer[i] >> 16
+			tile_id = chunk.ground_id_layer[i] 
 			
 			
 			if tile_id != 0: # 0 -> geen tile

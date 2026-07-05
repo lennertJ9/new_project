@@ -119,27 +119,22 @@ func chunk_generator():
 			var i = 0
 			for y in range(16):
 				for x in range(16):
-					chunk.walkable[i] = 1
+					
 					var global_pos = chunk.position * 16 + Vector2i(x,y)
 					
 					var random = noise.get_noise_2dv(global_pos)
 					var wall_id: int
 					var ground_id: int
 					if random > 0.1:
-						wall_id = 1 << 16 # dirt wall
-						chunk.walkable[i] = 0
+						chunk.wall_id_layer[i] = 1
 						
-					
-					ground_id = 2 << 16 
-					
-					chunk.ground_layer[i] = ground_id
-					chunk.wall_layer[i] = wall_id
+					chunk.ground_id_layer[i] = 2
 					i += 1
 			
 			#generate_cliffs(chunk)
-			object_generator.generate_trees(chunk)
+			#object_generator.generate_trees(chunk)
 			# dit maakt alleen points, geen connecties. connecties pas na de neighbour checker
-			AStarManager.generate_a_star_points(chunk) 
+			#AStarManager.generate_a_star_points(chunk) 
 			
 			generated_chunks[chunk.position] = chunk 
 			
@@ -196,14 +191,13 @@ func chunk_loader():
 			for x_pos in range(16):
 				
 				
-				if chunk.wall_layer[i] > 65000: # omdat niet elke x,y een wall heeft, anders overal muur
-					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, chunk.get_tile_coord(chunk.wall_layer[i])) 
-				if chunk.object_layer[i] > 65000:
-					object_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.object_layer[i] >> 16, chunk.get_tile_coord(chunk.object_layer[i]))
-				if chunk.cliff_layer[i] != 0:
-					cliff_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.cliff_layer[i] >> 16, chunk.get_tile_coord(chunk.cliff_layer[i]))
+				if chunk.wall_id_layer[i]: # omdat niet elke x,y een wall heeft, anders overal muur
+					wall_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, 1, chunk.unpack_atlas(chunk.wall_atlas_coords[i])) 
 				
-				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_layer[i] >> 16,chunk.get_tile_coord(chunk.ground_layer[i]))
+				#if chunk.cliff_layer[i] != 0:
+					#cliff_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.cliff_layer[i] >> 16, chunk.get_tile_coord(chunk.cliff_layer[i]))
+				
+				ground_layer.set_cell(Vector2i(x_pos,y_pos) + chunk.position * 16, chunk.ground_id_layer[i],Vector2i.ZERO)
 				i += 1
 				
 		chunk.is_loaded = true
@@ -284,7 +278,7 @@ func global_to_chunk_local(global_pos: Vector2):
 		)
 	return chunk_local_pos
 
-# bug local index klopt niet
+
 func damage_wall(global_pos: Vector2):
 	var chunk_pos = floor(global_pos / 256)
 	
