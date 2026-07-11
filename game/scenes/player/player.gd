@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-var speed = 150
+var speed = 120
 var input: Vector2
 var last_input: Vector2
 
@@ -45,34 +45,8 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("left_click"):
-		
 		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")
-		
-		var tile_pos = chunkmanager_node.wall_layer.local_to_map(get_global_mouse_position())
-		var local_wall_pos = Vector2i(
-			posmod(tile_pos.x, 16),
-			posmod(tile_pos.y, 16)
-			)
-		#print(v)
-		
-		var chunk_pos = floor(get_global_mouse_position() / 256)
-		var chunk = chunkmanager_node.generated_chunks[chunk_pos]
-		var local_wall_index = chunk.local_vector_to_index(local_wall_pos)
-		if chunk.wall_layer[local_wall_index] != 0:
-			
-			if chunk.wall_health.has(local_wall_index):
-				chunk.wall_health[local_wall_index] -=  30
-				if chunk.wall_health[local_wall_index] < 0:
-					
-					chunkmanager_node.wall_layer.erase_cell(tile_pos)
-			else:
-				chunk.wall_health[local_wall_index] = chunk.max_health - 30
-				if chunk.wall_health[local_wall_index] < 0:
-					
-					chunkmanager_node.wall_layer.erase_cell(tile_pos)
-			
-		else:
-			print("empty")
+		chunkmanager_node.damage_wall(get_global_mouse_position(), 30)
 	
 	if event.is_action_pressed("right_click"):
 		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")

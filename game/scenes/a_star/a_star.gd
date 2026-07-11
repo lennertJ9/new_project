@@ -94,7 +94,7 @@ func remove_a_star_points(chunk: Chunk):
 			if AStar.has_point(id):
 				AStar.remove_point(id)
 			id += 1
-	chunk.is_Astar_ready = false
+	
 
 
 func connect_AStar_center(chunk: Chunk):

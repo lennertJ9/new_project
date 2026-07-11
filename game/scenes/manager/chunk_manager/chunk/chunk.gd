@@ -10,20 +10,17 @@ var wall_id_layer: PackedByteArray
 var ground_id_layer: PackedByteArray
 var cliff_id_layer: PackedByteArray
 
+# Health is only relevant for walls, but keeping it per tile makes it save-ready
+# and avoids a Dictionary allocation for every damaged wall.
+var wall_health_layer: PackedInt32Array
+
 # ongebruikt  ongebruikt   tile_x       tile_y    --> 32 bit int
 # 00000000    00000000     00000000     00000000
 var wall_atlas_coords: PackedInt32Array
 var ground_atlas_coords: PackedInt32Array
 var cliff_atlas_coords: PackedInt32Array
 
-# ------ states ------- #        
-var is_generated: bool
-var is_autotiled: bool
-var is_Astar_ready: bool
-var is_loaded: bool
-var is_queued_load: bool
-var is_queued_unload: bool
-var last_accessed: float
+
 
 var state: ChunkState = ChunkState.EMPTY
 enum ChunkState {
@@ -37,8 +34,11 @@ enum ChunkState {
 	AUTOTILED,
 	QUEUED_LOAD,
 	LOADED,
+	UNLOADED,
 	QUEUED_UNLOAD,
 }
+
+var last_accessed: float
 
 
 # ----- AStar ----- # 
@@ -53,14 +53,12 @@ var neighbours: Array
 
 
 func _init(pos: Vector2i) -> void:
-	is_autotiled = false
-	is_queued_unload = false
-	is_generated = false
-	is_neigbhoured = false
+	
 	
 	wall_id_layer.resize(256)
 	ground_id_layer.resize(256)
 	cliff_id_layer.resize(256)
+	wall_health_layer.resize(256)
 	
 	wall_atlas_coords.resize(256)
 	ground_atlas_coords.resize(256)

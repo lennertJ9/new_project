@@ -3,6 +3,8 @@ class_name autotiler
 
 
 var chunks_to_autotile: Dictionary[Vector2i, Chunk]
+var autotiled_chunks : Array[Chunk]
+
 
 var thread_chunk_autotiler: Thread = Thread.new()
 var cpu_autotile_delay: int = 25
@@ -12,6 +14,7 @@ var chunk_manager_node: ChunkManager
 var wall_tile_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1)]
 var ground_tile_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0)]
 
+var autotile_mutex := Mutex.new()
 
 # -------------- LOOKUP TABLES -------------------------------------#
 var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
@@ -28,6 +31,7 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	16: Vector2i(4,0),
 	17: Vector2i(4,1),
 	19: Vector2i(4,1),
+	20: Vector2i(4,1), # DEZE MOET AANGEPAST WORDEN 
 	21: Vector2i(6,5),
 	23: Vector2i(6,3),
 	24: Vector2i(4,0),
@@ -145,17 +149,34 @@ func _ready() -> void:
 func chunk_autotiler():
 	while true:
 		OS.delay_msec(cpu_autotile_delay)
+
+		var chunk: Chunk = null
+
+		autotile_mutex.lock()
 		if not chunks_to_autotile.is_empty():
-			
-			var chunk: Chunk = chunks_to_autotile.values()[0]
-			var chunk_pos = chunk.position
-			for y in range(0,16):
-				for x in range(0,16):
-					autotile_wall_tile(Vector2i(x,y) + chunk_pos * 16)
-					autotile_ground_tile((Vector2i(x,y) + chunk_pos * 16))
-					autotile_cliff_tile((Vector2i(x,y) + chunk_pos * 16))
-			chunk.is_autotiled = true
-			chunks_to_autotile.erase(chunk.position)
+			var chunk_pos: Vector2i = chunks_to_autotile.keys()[0]
+			chunk = chunks_to_autotile[chunk_pos]
+			chunks_to_autotile.erase(chunk_pos)
+		autotile_mutex.unlock()
+
+		if chunk == null:
+			continue
+
+		chunk_manager_node.world_data_mutex.lock()
+		chunk.state = Chunk.ChunkState.AUTOTILING
+
+		var chunk_pos := chunk.position
+		for y in range(16):
+			for x in range(16):
+				var tile := Vector2i(x, y) + chunk_pos * 16
+				autotile_wall_tile(tile)
+				autotile_ground_tile(tile)
+				autotile_cliff_tile(tile)
+		chunk_manager_node.world_data_mutex.unlock()
+
+		autotile_mutex.lock()
+		autotiled_chunks.append(chunk)
+		autotile_mutex.unlock()
 
 
 
@@ -183,6 +204,9 @@ enum TileLayer {
 
 func get_id(layer: TileLayer, tile: Vector2i) -> int:
 	var chunk_pos := get_chunk_pos(tile)
+	if not chunk_manager_node.generated_chunks.has(chunk_pos):
+		return 0
+
 	var local_pos := get_chunk_local_tile_pos(tile)
 	var index := get_chunk_local_index(local_pos)
 	var chunk: Chunk = chunk_manager_node.generated_chunks[chunk_pos]
@@ -201,6 +225,9 @@ func get_id(layer: TileLayer, tile: Vector2i) -> int:
 
 func set_atlas(layer: TileLayer, tile: Vector2i, atlas_pos: Vector2i) -> void:
 	var chunk_pos := get_chunk_pos(tile)
+	if not chunk_manager_node.generated_chunks.has(chunk_pos):
+		return
+
 	var local_pos := get_chunk_local_tile_pos(tile)
 	var index := get_chunk_local_index(local_pos)
 	var chunk: Chunk = chunk_manager_node.generated_chunks[chunk_pos]
@@ -221,7 +248,7 @@ func autotile_wall_tile(tile: Vector2i) -> void:
 		return
 
 	var bitmask := calculate_wall_bitmask(tile, center_id)
-	set_atlas(TileLayer.WALL, tile, tile_lookup[bitmask])
+	set_atlas(TileLayer.WALL, tile, tile_lookup.get(bitmask, Vector2i(4, 4)))
 
 
 
