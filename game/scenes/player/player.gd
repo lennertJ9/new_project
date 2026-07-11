@@ -1,15 +1,32 @@
 extends CharacterBody2D
+class_name Player
 
-var speed = 120
+var speed: int = 120
 var input: Vector2
 var last_input: Vector2
+var chunk_manager: ChunkManager
+var projectile_container: Node2D
+var controls_enabled: bool = false
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
-var bolt_scene: PackedScene = preload("res://scenes/spells/magic_bolt/MagicBolt.tscn")
+const BOLT_SCENE: PackedScene = preload("res://scenes/spells/magic_bolt/MagicBolt.tscn")
 
 
+func configure_world(chunk_manager_reference: ChunkManager, projectile_container_reference: Node2D) -> void:
+	chunk_manager = chunk_manager_reference
+	projectile_container = projectile_container_reference
 
-func _process(delta: float) -> void:
+
+func set_controls_enabled(value: bool) -> void:
+	controls_enabled = value
+	if not controls_enabled:
+		velocity = Vector2.ZERO
+
+
+func _process(_delta: float) -> void:
+	if not controls_enabled:
+		return
+
 	input = Input.get_vector("LEFT","RIGHT","UP","DOWN")
 	
 	
@@ -44,18 +61,23 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if not controls_enabled:
+		return
+
 	if event.is_action_pressed("left_click"):
-		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")
-		chunkmanager_node.damage_wall(get_global_mouse_position(), 30)
+		if chunk_manager != null:
+			chunk_manager.damage_wall(get_global_mouse_position(), 30)
 	
 	if event.is_action_pressed("right_click"):
-		var chunkmanager_node: ChunkManager = get_node("/root/World/ChunkManager")
-		var bolt = bolt_scene.instantiate()
-		bolt.position = global_position
+		if chunk_manager == null or projectile_container == null:
+			return
+
+		var bolt: MagicBolt = BOLT_SCENE.instantiate() as MagicBolt
+		if bolt == null:
+			return
+
+		bolt.global_position = global_position
 		bolt.direction = global_position.direction_to(get_global_mouse_position())
-		
-		
-		#bolt.direction = Vector2i.RIGHT
-		var projectiles = get_node("/root/World/Projectiles")
-		projectiles.add_child(bolt)
+		bolt.chunk_manager = chunk_manager
+		projectile_container.add_child(bolt)
 		

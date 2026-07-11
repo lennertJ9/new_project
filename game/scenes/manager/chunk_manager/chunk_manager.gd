@@ -10,12 +10,15 @@ class_name ChunkManager
 
 const WALL_DATABASE := preload("res://scenes/tile_database/wall_database.gd")
 const CHUNK_SIZE := 16
+const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
+const GENERATION_PADDING: int = 1
 
 signal chunk_generated
 signal chunk_deloaded
 signal neighbours_checked
 signal wall_damaged(tile_position: Vector2i, remaining_health: int)
 signal wall_destroyed(tile_position: Vector2i, wall_id: int)
+signal initial_area_loaded
 
 
 @export var player: CharacterBody2D
@@ -23,8 +26,8 @@ signal wall_destroyed(tile_position: Vector2i, wall_id: int)
 # NOISES -----------------------------------#
 @export var noise_tex: NoiseTexture2D
 @export var noise_tex_cliff: NoiseTexture2D
-var noise: Noise
-var noise_cliff: Noise
+var noise: FastNoiseLite
+var noise_cliff: FastNoiseLite
 
 # ---------------------- #
 
@@ -66,6 +69,10 @@ var chunks_to_unload: Array[Chunk] # chunks die unloaded moeten worden
 
 var generation_mutex := Mutex.new()
 var world_data_mutex := Mutex.new()
+var lifecycle_mutex := Mutex.new()
+
+var is_world_running: bool = false
+var initial_area_is_loaded: bool = false
 
 
 # ------------- Check Timers --------------#
@@ -79,8 +86,6 @@ var chunk_unload_timer: float = 0
 
 # -------------- threads ------------------------------------------- #
 var thread_chunk_generator: Thread = Thread.new()
-var thread_chunk_autotiler: Thread = Thread.new()
-var thread_neighbour_checker: Thread = Thread.new()
 # ------------------------------------------------------------------ #
 
 										 #top          #top-right      #right         #bottom-right   #bottom         #bottom-left     #left          #top-left
@@ -92,18 +97,61 @@ var chunk_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2
 
 
 func _ready() -> void:
-	await get_tree().physics_frame
-	set_process(true)
+	set_process(false)
+	noise = noise_tex.noise as FastNoiseLite
+	noise_cliff = noise_tex_cliff.noise as FastNoiseLite
+	autotiling.configure(self)
+
+
+func start_world(world_seed: int) -> void:
+	if is_running():
+		return
+
+	noise.seed = world_seed
+	noise_cliff.seed = world_seed + 1
+	initial_area_is_loaded = false
+
+	set_running(true)
+	autotiling.start_worker()
 	thread_chunk_generator.start(chunk_generator)
-	
-	
-	#player = get_tree().get_first_node_in_group("world").camera
-	noise = noise_tex.noise
-	noise_cliff = noise_tex_cliff.noise
+	set_process(true)
+	chunk_check()
+
+
+func shutdown() -> void:
+	if not is_running():
+		return
+
+	set_process(false)
+	set_running(false)
+	autotiling.stop_worker()
+
+	if thread_chunk_generator.is_started():
+		thread_chunk_generator.wait_to_finish()
+
+
+func _exit_tree() -> void:
+	shutdown()
+
+
+func set_running(value: bool) -> void:
+	lifecycle_mutex.lock()
+	is_world_running = value
+	lifecycle_mutex.unlock()
+
+
+func is_running() -> bool:
+	lifecycle_mutex.lock()
+	var running: bool = is_world_running
+	lifecycle_mutex.unlock()
+	return running
 
 
 
 func _process(delta: float) -> void:
+	if not is_running():
+		return
+
 	process_data_generated_chunks()
 	process_autotiled_chunks()
 	chunk_check_timer += delta
@@ -121,6 +169,10 @@ func _process(delta: float) -> void:
 	if chunk_unload_timer > chunk_unload_interval:
 		chunk_unloader()
 		chunk_unload_timer = 0
+
+	if not initial_area_is_loaded and are_visible_chunks_loaded():
+		initial_area_is_loaded = true
+		initial_area_loaded.emit()
 
 
 func process_data_generated_chunks():
@@ -191,8 +243,10 @@ func chunk_neighbour_checker():
 
 
 func chunk_generator():
-	while true:
+	while is_running():
 		OS.delay_msec(cpu_generator_delay)
+		if not is_running():
+			break
 
 		var chunk: Chunk = null
 
@@ -268,42 +322,101 @@ func chunk_loader():
 
 
 # chunk worden geload wanneer: in generated lijst | niet al loaded of queued voor loading zijn | autotiled zijn 
-func chunk_check():
-	var player_chunk_coord = floor(player.global_position / 256)
-	var start_coord: Vector2 = player_chunk_coord - Vector2(render_distance, render_distance) 
-	var end_coord: Vector2 = player_chunk_coord + Vector2(render_distance, render_distance) 
-	
+func chunk_check() -> void:
+	if player == null:
+		return
+
+	var player_chunk_position: Vector2i = get_player_chunk_position()
+	var data_generation_distance: int = render_distance + GENERATION_PADDING
+
+	queue_missing_chunk_data(player_chunk_position, data_generation_distance)
+	queue_chunks_for_load(player_chunk_position, render_distance)
+	queue_expired_chunks_for_unload()
+
+
+func get_player_chunk_position() -> Vector2i:
+	return Vector2i(
+		floori(player.global_position.x / float(CHUNK_PIXEL_SIZE)),
+		floori(player.global_position.y / float(CHUNK_PIXEL_SIZE))
+	)
+
+
+func queue_missing_chunk_data(center_chunk_position: Vector2i, distance: int) -> void:
 	world_data_mutex.lock()
-	for coord_x in range(start_coord.x, end_coord.x + 1):
-		for coord_y in range(start_coord.y, end_coord.y + 1):
-			var chunk_pos = Vector2i(coord_x, coord_y)
-			
-			if generated_chunks.has(chunk_pos):
-				var chunk: Chunk = generated_chunks[chunk_pos]
-				if chunk.state == Chunk.ChunkState.AUTOTILED or chunk.state == Chunk.ChunkState.UNLOADED:
-					generated_chunks[chunk_pos].state = chunk.ChunkState.QUEUED_LOAD
-					chunks_to_load.append(generated_chunks[chunk_pos])
-					# LOADING CHUNK
-			else:
-				generation_mutex.lock()
-				if not chunks_to_data_generate.has(chunk_pos) and not generated_chunks.has(chunk_pos):
-					chunks_to_data_generate[chunk_pos] = Chunk.new(chunk_pos)
-					# GENERATING CHUNK
-					
-				generation_mutex.unlock()
-					
-			if generated_chunks.has(chunk_pos):
-				generated_chunks[chunk_pos].last_accessed = Time.get_ticks_msec() / 1000
-				# SET CHUNK TIMER
+	generation_mutex.lock()
+
+	for x in range(center_chunk_position.x - distance, center_chunk_position.x + distance + 1):
+		for y in range(center_chunk_position.y - distance, center_chunk_position.y + distance + 1):
+			var chunk_position: Vector2i = Vector2i(x, y)
+			if generated_chunks.has(chunk_position):
+				continue
+			if chunks_to_data_generate.has(chunk_position):
+				continue
+
+			var chunk: Chunk = Chunk.new(chunk_position)
+			chunk.state = Chunk.ChunkState.QUEUED_GENERATE
+			chunks_to_data_generate[chunk_position] = chunk
+
+	generation_mutex.unlock()
 	world_data_mutex.unlock()
-	
-	for chunk in loaded_chunks:
-		if (Time.get_ticks_msec() /1000) - chunk.last_accessed > 2 and not chunk.state == chunk.ChunkState.QUEUED_UNLOAD:
-			chunk.state = chunk.ChunkState.QUEUED_UNLOAD
-			chunks_to_unload.append(chunk)
-			# verwijderen van chunk met call defered?
-			
-			loaded_chunks.erase.call_deferred(chunk)
+
+
+func queue_chunks_for_load(center_chunk_position: Vector2i, distance: int) -> void:
+	var current_time: float = Time.get_ticks_msec() / 1000.0
+
+	world_data_mutex.lock()
+	for x in range(center_chunk_position.x - distance, center_chunk_position.x + distance + 1):
+		for y in range(center_chunk_position.y - distance, center_chunk_position.y + distance + 1):
+			var chunk_position: Vector2i = Vector2i(x, y)
+			if not generated_chunks.has(chunk_position):
+				continue
+
+			var chunk: Chunk = generated_chunks[chunk_position]
+			if chunk.state == Chunk.ChunkState.AUTOTILED or chunk.state == Chunk.ChunkState.UNLOADED:
+				chunk.state = Chunk.ChunkState.QUEUED_LOAD
+				chunks_to_load.append(chunk)
+
+			chunk.last_accessed = current_time
+	world_data_mutex.unlock()
+
+
+func queue_expired_chunks_for_unload() -> void:
+	var current_time: float = Time.get_ticks_msec() / 1000.0
+
+	for i in range(loaded_chunks.size() - 1, -1, -1):
+		var chunk: Chunk = loaded_chunks[i]
+		var seconds_since_access: float = current_time - chunk.last_accessed
+		if seconds_since_access <= 2.0:
+			continue
+		if chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
+			continue
+
+		chunk.state = Chunk.ChunkState.QUEUED_UNLOAD
+		chunks_to_unload.append(chunk)
+		loaded_chunks.remove_at(i)
+
+
+func are_visible_chunks_loaded() -> bool:
+	if player == null:
+		return false
+
+	var player_chunk_position: Vector2i = get_player_chunk_position()
+
+	world_data_mutex.lock()
+	for x in range(player_chunk_position.x - render_distance, player_chunk_position.x + render_distance + 1):
+		for y in range(player_chunk_position.y - render_distance, player_chunk_position.y + render_distance + 1):
+			var chunk_position: Vector2i = Vector2i(x, y)
+			if not generated_chunks.has(chunk_position):
+				world_data_mutex.unlock()
+				return false
+
+			var chunk: Chunk = generated_chunks[chunk_position]
+			if chunk.state != Chunk.ChunkState.LOADED:
+				world_data_mutex.unlock()
+				return false
+	world_data_mutex.unlock()
+
+	return true
 
 
 
@@ -349,7 +462,7 @@ func global_to_chunk_local(global_pos: Vector2):
 
 
 func damage_wall(world_position: Vector2, damage: int = 40) -> bool:
-	var tile_position := wall_layer.local_to_map(wall_layer.to_local(world_position))
+	var tile_position: Vector2i = wall_layer.local_to_map(wall_layer.to_local(world_position))
 	return damage_wall_tile(tile_position, damage)
 
 

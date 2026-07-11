@@ -10,6 +10,8 @@ var thread_chunk_autotiler: Thread = Thread.new()
 var cpu_autotile_delay: int = 25
 
 var chunk_manager_node: ChunkManager
+var lifecycle_mutex: Mutex = Mutex.new()
+var worker_running: bool = false
 
 var wall_tile_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,-1), Vector2i(1,0), Vector2i(1,1), Vector2i(0,1), Vector2i(-1,1), Vector2i(-1,0), Vector2i(-1,-1)]
 var ground_tile_neighbours: Array[Vector2i] = [Vector2i(0,-1), Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0)]
@@ -140,15 +142,50 @@ var tile_lookup_ground: Dictionary[int, Dictionary] = {
 
 
 
-func _ready() -> void:
-	chunk_manager_node = get_node("/root/World/ChunkManager")
+func configure(chunk_manager: ChunkManager) -> void:
+	chunk_manager_node = chunk_manager
+
+
+func start_worker() -> void:
+	if is_worker_running():
+		return
+
+	set_worker_running(true)
 	thread_chunk_autotiler.start(chunk_autotiler)
+
+
+func stop_worker() -> void:
+	if not is_worker_running():
+		return
+
+	set_worker_running(false)
+	if thread_chunk_autotiler.is_started():
+		thread_chunk_autotiler.wait_to_finish()
+
+
+func _exit_tree() -> void:
+	stop_worker()
+
+
+func set_worker_running(value: bool) -> void:
+	lifecycle_mutex.lock()
+	worker_running = value
+	lifecycle_mutex.unlock()
+
+
+func is_worker_running() -> bool:
+	lifecycle_mutex.lock()
+	var running: bool = worker_running
+	lifecycle_mutex.unlock()
+	return running
 
 
 
 func chunk_autotiler():
-	while true:
+	while is_worker_running():
 		OS.delay_msec(cpu_autotile_delay)
+		if not is_worker_running():
+			break
 
 		var chunk: Chunk = null
 

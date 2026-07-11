@@ -13,6 +13,7 @@ extends Node2D
 var next_available_id: int # een waarde van een nog niet gebruikte a_star_id
 var AStar: AStar2D = AStar2D.new()
 var offset: Vector2i = Vector2i(8,8)
+var chunk_manager: ChunkManager
 
 var chunks_to_AStar: Array[Chunk]
 
@@ -22,10 +23,13 @@ var thread_point_connect: Thread = Thread.new() # deze thread legt astar connect
 
 
 func _ready() -> void:
-	#thread_point_generator.start(astar_point_generator)
-	get_node("/root/World/ChunkManager").chunk_deloaded.connect(on_chunk_deload)
-	get_node("/root/World/ChunkManager").neighbours_checked.connect(on_neighbours_checked)
-	
+	pass
+
+
+func configure(chunk_manager_reference: ChunkManager) -> void:
+	chunk_manager = chunk_manager_reference
+	chunk_manager.chunk_deloaded.connect(on_chunk_deload)
+	chunk_manager.neighbours_checked.connect(on_neighbours_checked)
 
 
 func on_chunk_deload(chunk):
@@ -114,14 +118,17 @@ func connect_AStar_center(chunk: Chunk):
 
 
 func connect_AStar_edges(chunk: Chunk):
-	var top_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(0,-1)].a_star_id 
-	var top_right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,-1)].a_star_id 
-	var right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,0)].a_star_id 
-	var bottom_right_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(1,1)].a_star_id
-	var bottom_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(0,1)].a_star_id 
-	var bottom_left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,1)].a_star_id 
-	var left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,0)].a_star_id 
-	var top_left_AStar_id = get_node("/root/World/ChunkManager").generated_chunks[chunk.position + Vector2i(-1,-1)].a_star_id 
+	if chunk_manager == null:
+		return
+
+	var top_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(0,-1)].a_star_id
+	var top_right_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(1,-1)].a_star_id
+	var right_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(1,0)].a_star_id
+	var bottom_right_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(1,1)].a_star_id
+	var bottom_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(0,1)].a_star_id
+	var bottom_left_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(-1,1)].a_star_id
+	var left_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(-1,0)].a_star_id
+	var top_left_AStar_id = chunk_manager.generated_chunks[chunk.position + Vector2i(-1,-1)].a_star_id
 	var id: int
 	var secondary_id: int
 	

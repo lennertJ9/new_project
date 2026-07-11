@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="game"
-run/main_scene="uid://bt2absuqhkyvq"
+run/main_scene="uid://boa5su5h3i1hf"
 config/features=PackedStringArray("4.6", "Forward Plus")
 run/max_fps=144
 config/icon="res://assets/icon.svg"
@@ -45,6 +45,7 @@ folder_colors={
 "res://assets/": "purple",
 "res://network/": "orange",
 "res://scenes/": "blue",
+"res://systems/": "red",
 "res://user_interface/": "green"
 }
 
