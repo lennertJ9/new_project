@@ -5,7 +5,7 @@ class_name World
 @export var camera: Camera2D
 
 
-@onready var label: Label = $CanvasLayer/Label # fps lable
+
 @onready var player: Player = $Player
 @onready var chunk_manager: ChunkManager = $ChunkManager
 @onready var projectiles: Node2D = $Projectiles
@@ -13,7 +13,8 @@ class_name World
 
 @export var enemy_scene: PackedScene
 
-var active_save_game: SaveGameData
+var active_world_data: WorldSaveData
+var active_player_data: Array[PlayerSaveData] = []
 
 var debug_mode: bool = false
 
@@ -33,33 +34,29 @@ func _ready() -> void:
 		a_star_manager.configure(chunk_manager)
 
 
-#func _process(delta: float) -> void:
-	#label.text = str(Engine.get_frames_per_second())
 
 
-func initialize(save_game: SaveGameData) -> void:
-	active_save_game = save_game
-	apply_player_save_data(save_game)
 
-	chunk_manager.start_world(save_game.world_seed)
+func initialize(start_data: WorldStartData) -> void:
+	active_world_data = start_data.world_data
+	active_player_data = start_data.players_data
+	apply_first_player_save_data()
+
+	chunk_manager.start_world(active_world_data.world_seed)
 	await chunk_manager.initial_area_loaded
 
 	player.set_controls_enabled(true)
 
 
-func apply_player_save_data(save_game: SaveGameData) -> void:
-	if save_game.player_data.is_empty():
+func apply_first_player_save_data() -> void:
+	if active_player_data.is_empty():
 		return
 
-	var first_player_data: Dictionary = save_game.player_data[0]
-	if not first_player_data.has("position"):
-		return
-
-	var saved_position: Variant = first_player_data["position"]
-	if saved_position is Vector2:
-		player.global_position = saved_position
-	elif saved_position is Vector2i:
-		player.global_position = Vector2(float(saved_position.x), float(saved_position.y))
+	var first_player_data: PlayerSaveData = active_player_data[0]
+	player.global_position = first_player_data.get_position_for_world(
+		active_world_data.world_id,
+		active_world_data.spawn_position
+	)
 
 
 

@@ -13,7 +13,7 @@ const CHUNK_SIZE := 16
 const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
 const GENERATION_PADDING: int = 1
 
-signal chunk_generated
+
 signal chunk_deloaded
 signal neighbours_checked
 signal wall_damaged(tile_position: Vector2i, remaining_health: int)

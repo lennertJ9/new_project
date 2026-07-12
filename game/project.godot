@@ -25,6 +25,7 @@ config/icon="res://assets/icon.svg"
 NetworkManager="*res://network/network_manager.gd"
 AStarManager="*res://scenes/a_star/AStar.tscn"
 WallDatabase="*uid://d17xmwe87tolp"
+SaveService="*uid://c45nrb201m614"
 
 [debug]
 

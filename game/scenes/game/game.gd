@@ -1,7 +1,7 @@
 extends Node
 class_name Game
 
-
+#preload van world
 const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
 
 
@@ -28,11 +28,17 @@ func _ready() -> void:
 
 
 func start_new_debug_world() -> void:
-	var save_game: SaveGameData = SaveGameData.create_new(debug_world_seed)
-	start_world(save_game)
+	var world_data: WorldSaveData = WorldSaveData.create_new(debug_world_seed)
+	var player_data: PlayerSaveData = PlayerSaveData.create_new()
+	var players_to_start: Array[PlayerSaveData] = [player_data]
+
+	var start_data: WorldStartData = WorldStartData.create(world_data,players_to_start)
+
+	start_world(start_data)
 
 
-func start_world(save_game: SaveGameData) -> void:
+
+func start_world(start_data: WorldStartData) -> void:
 	if is_starting_world:
 		return
 
@@ -48,7 +54,7 @@ func start_world(save_game: SaveGameData) -> void:
 	active_world = world
 	world_container.add_child(active_world)
 
-	await active_world.initialize(save_game)
+	await active_world.initialize(start_data)
 
 	loading_screen.hide()
 	is_starting_world = false
