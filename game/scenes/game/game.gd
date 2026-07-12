@@ -32,7 +32,7 @@ func start_new_debug_world() -> void:
 	var player_data: PlayerSaveData = PlayerSaveData.create_new()
 	var players_to_start: Array[PlayerSaveData] = [player_data]
 
-	var start_data: WorldStartData = WorldStartData.create(world_data,players_to_start)
+	var start_data: WorldStartData = WorldStartData.create(world_data, players_to_start)
 
 	start_world(start_data)
 

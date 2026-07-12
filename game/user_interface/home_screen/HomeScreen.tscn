@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://cb7pcw12vunvp"]
+
+[ext_resource type="Script" uid="uid://cgighmbeu8krs" path="res://user_interface/home_screen/home_screen.gd" id="1_cqwrl"]
+
+[node name="HomeScreen" type="Control" unique_id=900145580]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cqwrl")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1343406493]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -34.0
+offset_right = 128.0
+offset_bottom = 34.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="StartGameButton" type="Button" parent="VBoxContainer" unique_id=659368964]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Start Game"
+
+[node name="JoinGameButton" type="Button" parent="VBoxContainer" unique_id=638562458]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Join Game"
+
+[node name="Settings" type="Button" parent="VBoxContainer" unique_id=1436091923]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Settings"

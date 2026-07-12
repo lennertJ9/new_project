@@ -136,8 +136,12 @@ func load_player(character_id: String) -> PlayerSaveData:
 
 
 
-func create_and_save_new_world(new_world_seed: int) -> WorldSaveData:
-	var world_data: WorldSaveData = WorldSaveData.create_new(new_world_seed)
+func create_and_save_new_world(new_world_seed: int, world_name: String) -> WorldSaveData:
+	var clean_world_name: String = world_name.strip_edges()
+	if clean_world_name.is_empty():
+		return null
+
+	var world_data: WorldSaveData = WorldSaveData.create_new(new_world_seed, clean_world_name)
 
 	var save_error: Error = save_world(world_data)
 	if save_error != OK:
@@ -161,3 +165,48 @@ func create_and_save_new_player(character_name: String) -> PlayerSaveData:
 		return null
 
 	return player_data
+
+
+func get_saved_worlds() -> Array[WorldSaveData]:
+	var saved_worlds: Array[WorldSaveData] = []
+
+	var directory: DirAccess = DirAccess.open(WORLDS_DIRECTORY_PATH)
+	if directory == null:
+		return saved_worlds
+	
+	var file_names: PackedStringArray = directory.get_files()
+
+	for file_name: String in file_names:
+		if file_name.get_extension() != "save":
+			continue
+
+		var world_id: String = file_name.get_basename()
+		var world_data: WorldSaveData = load_world(world_id)
+
+		if world_data != null:
+			saved_worlds.append(world_data)
+
+	return saved_worlds
+
+
+
+func get_saved_players() -> Array[PlayerSaveData]:
+	var saved_players: Array[PlayerSaveData] = []
+
+	var directory: DirAccess = DirAccess.open(PLAYERS_DIRECTORY_PATH)
+	if directory == null:
+		return saved_players
+	
+	var file_names: PackedStringArray = directory.get_files()
+
+	for file_name: String in file_names:
+		if file_name.get_extension() != "save":
+			continue
+
+		var player_id: String = file_name.get_basename()
+		var player_data: PlayerSaveData = load_player(player_id)
+
+		if player_data != null:
+			saved_players.append(player_data)
+
+	return saved_players

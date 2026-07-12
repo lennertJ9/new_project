@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://k4in7sv8lbkx"]
+
+[node name="PlayerSelectionScreen" type="Control" unique_id=1970150469]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1144065752]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -32.0
+offset_right = 128.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextEdit" type="TextEdit" parent="VBoxContainer" unique_id=1928365689]
+layout_mode = 2
+
+[node name="TextEdit2" type="TextEdit" parent="VBoxContainer" unique_id=1741698218]
+layout_mode = 2
+
+[node name="TextEdit3" type="TextEdit" parent="VBoxContainer" unique_id=538060529]
+layout_mode = 2
+
+[node name="TextEdit4" type="TextEdit" parent="VBoxContainer" unique_id=81569595]
+layout_mode = 2
