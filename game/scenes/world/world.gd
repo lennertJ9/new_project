@@ -42,10 +42,11 @@ func initialize(start_data: WorldStartData) -> void:
 	active_player_data = start_data.players_data
 	apply_first_player_save_data()
 
-	chunk_manager.start_world(active_world_data.world_seed)
+	chunk_manager.start_world(active_world_data)
 	await chunk_manager.initial_area_loaded
 
 	player.set_controls_enabled(true)
+
 
 
 func apply_first_player_save_data() -> void:

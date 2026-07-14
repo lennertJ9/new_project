@@ -74,6 +74,7 @@ var lifecycle_mutex := Mutex.new()
 var is_world_running: bool = false
 var initial_area_is_loaded: bool = false
 
+var active_world_data: WorldSaveData
 
 # ------------- Check Timers --------------#
 var chunk_check_interval: float = 0.2
@@ -103,12 +104,14 @@ func _ready() -> void:
 	autotiling.configure(self)
 
 
-func start_world(world_seed: int) -> void:
+
+func start_world(world_data: WorldSaveData) -> void:
 	if is_running():
 		return
-
-	noise.seed = world_seed
-	noise_cliff.seed = world_seed + 1
+		
+	active_world_data = world_data
+	noise.seed = active_world_data.world_seed
+	noise_cliff.seed = active_world_data.world_seed + 1
 	initial_area_is_loaded = false
 
 	set_running(true)
@@ -283,10 +286,6 @@ func chunk_generator():
 		generation_mutex.lock()
 		data_generated_chunks.append(chunk)
 		generation_mutex.unlock()
-
-
-
-
 
 
 

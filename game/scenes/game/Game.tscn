@@ -6,7 +6,6 @@
 
 [node name="Game" type="Node" unique_id=331675235]
 script = ExtResource("1_vrspl")
-skip_menu_for_debug = true
 
 [node name="WorldContainer" type="Node2D" parent="." unique_id=217100502]
 
@@ -15,3 +14,5 @@ skip_menu_for_debug = true
 [node name="MainMenu" parent="Interface" unique_id=1317866072 instance=ExtResource("3_lyhax")]
 
 [node name="LoadingScreen" parent="Interface" unique_id=1372209602 instance=ExtResource("2_7qcb4")]
+
+[editable path="Interface/MainMenu"]

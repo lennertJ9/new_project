@@ -20,6 +20,7 @@ var is_starting_world: bool = false
 
 
 func _ready() -> void:
+	main_menu.world_start_requested.connect(start_world)
 	main_menu.show()
 	loading_screen.hide()
 	

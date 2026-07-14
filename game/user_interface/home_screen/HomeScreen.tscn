@@ -37,7 +37,7 @@ custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
 text = "Join Game"
 
-[node name="Settings" type="Button" parent="VBoxContainer" unique_id=1436091923]
+[node name="SettingsButton" type="Button" parent="VBoxContainer" unique_id=1436091923]
 custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
 text = "Settings"

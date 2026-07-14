@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://rnkcqd175wv4"]
+
+[ext_resource type="Script" uid="uid://bf81gophcx0r" path="res://user_interface/player_selection_screen/player_selection_screen.gd" id="1_jvkj4"]
+
+[node name="PlayerSelectionScreen" type="Control" unique_id=1970150469]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jvkj4")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1291752117]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer" unique_id=2117078463]
+custom_minimum_size = Vector2(360, 360)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterContainer/Content" unique_id=900529615]
+layout_mode = 2
+text = "Player Creation"
+
+[node name="PlayerScroll" type="ScrollContainer" parent="CenterContainer/Content" unique_id=1603606267]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/Content/PlayerScroll" unique_id=746425584]
+layout_mode = 2
+
+[node name="PlayerNameInput" type="LineEdit" parent="CenterContainer/Content" unique_id=957069555]
+layout_mode = 2
+
+[node name="CreatePlayerButton" type="Button" parent="CenterContainer/Content" unique_id=641665953]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Create Player"
+
+[node name="BackButton" type="Button" parent="CenterContainer/Content" unique_id=729795072]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Back"

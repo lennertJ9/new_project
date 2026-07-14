@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://nx0iq8j06dlb"]
+
+[ext_resource type="Script" uid="uid://cd5ys37msousn" path="res://user_interface/world_selection_screen/world_selection_screen.gd" id="1_qlatl"]
+
+[node name="WorldSelectionScreen" type="Control" unique_id=1970150469]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_qlatl")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=973854148]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer" unique_id=1241226617]
+custom_minimum_size = Vector2(360, 360)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterContainer/Content" unique_id=1079958238]
+layout_mode = 2
+text = "World Creation"
+
+[node name="WorldScroll" type="ScrollContainer" parent="CenterContainer/Content" unique_id=675621186]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="WorldList" type="VBoxContainer" parent="CenterContainer/Content/WorldScroll" unique_id=1433011708]
+layout_mode = 2
+
+[node name="WorldNameInput" type="LineEdit" parent="CenterContainer/Content" unique_id=1532731089]
+layout_mode = 2
+
+[node name="CreateWorldButton" type="Button" parent="CenterContainer/Content" unique_id=974630253]
+layout_mode = 2
+text = "Create World"
+
+[node name="BackButton" type="Button" parent="CenterContainer/Content" unique_id=1587694648]
+layout_mode = 2
+text = "Back"
