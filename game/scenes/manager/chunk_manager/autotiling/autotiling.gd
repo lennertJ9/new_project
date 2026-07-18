@@ -33,7 +33,7 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	16: Vector2i(4,0),
 	17: Vector2i(4,1),
 	19: Vector2i(4,1),
-	20: Vector2i(4,1), # DEZE MOET AANGEPAST WORDEN 
+	20: Vector2i(10,3),
 	21: Vector2i(6,5),
 	23: Vector2i(6,3),
 	24: Vector2i(4,0),
@@ -50,14 +50,15 @@ var tile_lookup: Dictionary[int, Vector2i] = { #bitmask: atlas_position }
 	62: Vector2i(0,0),
 	63: Vector2i(0,1),
 	64: Vector2i(2,4),
-	65: Vector2i(3,8),
+	65: Vector2i(2,8),
 	68: Vector2i(1,4),
 	70: Vector2i(1,4),
 	71: Vector2i(2,6),
 	76: Vector2i(1,4),
 	79: Vector2i(2,6),
+	80: Vector2i(12,3),
 	81: Vector2i(8,6),
-	84: Vector2i(12,1),
+	84: Vector2i(12,0),
 	92: Vector2i(8,0),
 	95: Vector2i(12,2),
 	96: Vector2i(2,4),
@@ -231,15 +232,7 @@ func pick_tile_variant(bitmask):
 
 
 
-enum TileLayer {
-	GROUND,
-	WALL,
-	CLIFF,
-}
-
-
-
-func get_id(layer: TileLayer, tile: Vector2i) -> int:
+func get_id(layer: Chunk.TileLayer, tile: Vector2i) -> int:
 	var chunk_pos := get_chunk_pos(tile)
 	if not chunk_manager_node.generated_chunks.has(chunk_pos):
 		return 0
@@ -249,18 +242,18 @@ func get_id(layer: TileLayer, tile: Vector2i) -> int:
 	var chunk: Chunk = chunk_manager_node.generated_chunks[chunk_pos]
 
 	match layer:
-		TileLayer.GROUND:
+		Chunk.TileLayer.GROUND:
 			return chunk.ground_id_layer[index]
-		TileLayer.WALL:
+		Chunk.TileLayer.WALL:
 			return chunk.wall_id_layer[index]
-		TileLayer.CLIFF:
+		Chunk.TileLayer.CLIFF:
 			return chunk.cliff_id_layer[index]
 
 	return 0
 
 
 
-func set_atlas(layer: TileLayer, tile: Vector2i, atlas_pos: Vector2i) -> void:
+func set_atlas(layer: Chunk.TileLayer, tile: Vector2i, atlas_pos: Vector2i) -> void:
 	var chunk_pos := get_chunk_pos(tile)
 	if not chunk_manager_node.generated_chunks.has(chunk_pos):
 		return
@@ -270,49 +263,49 @@ func set_atlas(layer: TileLayer, tile: Vector2i, atlas_pos: Vector2i) -> void:
 	var chunk: Chunk = chunk_manager_node.generated_chunks[chunk_pos]
 
 	match layer:
-		TileLayer.GROUND:
+		Chunk.TileLayer.GROUND:
 			chunk.ground_atlas_coords[index] = chunk.pack_atlas(atlas_pos)
-		TileLayer.WALL:
+		Chunk.TileLayer.WALL:
 			chunk.wall_atlas_coords[index] = chunk.pack_atlas(atlas_pos)
-		TileLayer.CLIFF:
+		Chunk.TileLayer.CLIFF:
 			chunk.cliff_atlas_coords[index] = chunk.pack_atlas(atlas_pos)
 
 
 
 func autotile_wall_tile(tile: Vector2i) -> void:
-	var center_id := get_id(TileLayer.WALL, tile)
+	var center_id := get_id(Chunk.TileLayer.WALL, tile)
 	if center_id == 0:
 		return
 
 	var bitmask := calculate_wall_bitmask(tile, center_id)
-	set_atlas(TileLayer.WALL, tile, tile_lookup.get(bitmask, Vector2i(4, 4)))
+	set_atlas(Chunk.TileLayer.WALL, tile, tile_lookup.get(bitmask, Vector2i(3, 0)))
 
 
 
 func autotile_ground_tile(tile: Vector2i) -> void:
-	var center_id := get_id(TileLayer.GROUND, tile)
+	var center_id := get_id(Chunk.TileLayer.GROUND, tile)
 	if center_id == 0:
 		return
 
 	var bitmask := calculate_ground_bitmask(tile, center_id)
-	set_atlas(TileLayer.GROUND, tile, pick_tile_variant(bitmask))
+	set_atlas(Chunk.TileLayer.GROUND, tile, pick_tile_variant(bitmask))
 
 
 
 func autotile_cliff_tile(tile: Vector2i) -> void:
-	var cliff_id := get_id(TileLayer.CLIFF, tile)
+	var cliff_id := get_id(Chunk.TileLayer.CLIFF, tile)
 	if cliff_id == 0:
-		set_atlas(TileLayer.CLIFF, tile, Vector2i(2, 0))
+		set_atlas(Chunk.TileLayer.CLIFF, tile, Vector2i(2, 0))
 		return
 
-	if get_id(TileLayer.GROUND, tile + Vector2i(0, -1)) != 0:
-		set_atlas(TileLayer.CLIFF, tile, Vector2i(0, 0))
-	elif get_id(TileLayer.GROUND, tile + Vector2i(0, -2)) != 0:
-		set_atlas(TileLayer.CLIFF, tile, Vector2i(0, 1))
-	elif get_id(TileLayer.GROUND, tile + Vector2i(0, -3)) != 0:
-		set_atlas(TileLayer.CLIFF, tile, Vector2i(0, 2))
+	if get_id(Chunk.TileLayer.GROUND, tile + Vector2i(0, -1)) != 0:
+		set_atlas(Chunk.TileLayer.CLIFF, tile, Vector2i(0, 0))
+	elif get_id(Chunk.TileLayer.GROUND, tile + Vector2i(0, -2)) != 0:
+		set_atlas(Chunk.TileLayer.CLIFF, tile, Vector2i(0, 1))
+	elif get_id(Chunk.TileLayer.GROUND, tile + Vector2i(0, -3)) != 0:
+		set_atlas(Chunk.TileLayer.CLIFF, tile, Vector2i(0, 2))
 	else:
-		set_atlas(TileLayer.CLIFF, tile, Vector2i(2, 0))
+		set_atlas(Chunk.TileLayer.CLIFF, tile, Vector2i(2, 0))
 
 
 
@@ -340,26 +333,26 @@ func get_chunk_local_index(local_tile: Vector2i) -> int:
 func calculate_wall_bitmask(tile: Vector2i, center_id: int) -> int:
 	var bitmask := 0
 
-	var top := get_id(TileLayer.WALL, tile + Vector2i(0, -1)) == center_id
-	var right := get_id(TileLayer.WALL, tile + Vector2i(1, 0)) == center_id
-	var bottom := get_id(TileLayer.WALL, tile + Vector2i(0, 1)) == center_id
-	var left := get_id(TileLayer.WALL, tile + Vector2i(-1, 0)) == center_id
+	var top := get_id(Chunk.TileLayer.WALL, tile + Vector2i(0, -1)) == center_id
+	var right := get_id(Chunk.TileLayer.WALL, tile + Vector2i(1, 0)) == center_id
+	var bottom := get_id(Chunk.TileLayer.WALL, tile + Vector2i(0, 1)) == center_id
+	var left := get_id(Chunk.TileLayer.WALL, tile + Vector2i(-1, 0)) == center_id
 
 	if top:
 		bitmask |= 1
-	if top and right and get_id(TileLayer.WALL, tile + Vector2i(1, -1)) == center_id:
+	if top and right and get_id(Chunk.TileLayer.WALL, tile + Vector2i(1, -1)) == center_id:
 		bitmask |= 2
 	if right:
 		bitmask |= 4
-	if right and bottom and get_id(TileLayer.WALL, tile + Vector2i(1, 1)) == center_id:
+	if right and bottom and get_id(Chunk.TileLayer.WALL, tile + Vector2i(1, 1)) == center_id:
 		bitmask |= 8
 	if bottom:
 		bitmask |= 16
-	if bottom and left and get_id(TileLayer.WALL, tile + Vector2i(-1, 1)) == center_id:
+	if bottom and left and get_id(Chunk.TileLayer.WALL, tile + Vector2i(-1, 1)) == center_id:
 		bitmask |= 32
 	if left:
 		bitmask |= 64
-	if left and top and get_id(TileLayer.WALL, tile + Vector2i(-1, -1)) == center_id:
+	if left and top and get_id(Chunk.TileLayer.WALL, tile + Vector2i(-1, -1)) == center_id:
 		bitmask |= 128
 
 	return bitmask
@@ -384,6 +377,6 @@ func calculate_ground_bitmask(tile: Vector2i, center_id: int) -> int:
 
 func is_ground_connected(tile: Vector2i, center_id: int) -> bool:
 	return (
-		get_id(TileLayer.GROUND, tile) == center_id
-		and get_id(TileLayer.WALL, tile) == 0
+		get_id(Chunk.TileLayer.GROUND, tile) == center_id
+		and get_id(Chunk.TileLayer.WALL, tile) == 0
 	)

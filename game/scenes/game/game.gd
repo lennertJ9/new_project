@@ -47,6 +47,7 @@ func start_world(start_data: WorldStartData) -> void:
 	main_menu.hide()
 	loading_screen.show()
 
+	SaveService
 	var world: World = WORLD_SCENE.instantiate() as World
 	if world == null:
 		is_starting_world = false

@@ -289,6 +289,9 @@ texture_region_size = Vector2i(16, 26)
 4:4/0 = 0
 4:4/0/texture_origin = Vector2i(0, 5)
 4:4/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+12:0/0 = 0
+12:0/0/texture_origin = Vector2i(0, 5)
+12:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 
 [sub_resource type="TileSet" id="TileSet_oaajj"]
 occlusion_layer_0/light_mask = 1

@@ -11,7 +11,9 @@ var world_name: String = "New World"
 var spawn_position: Vector2 = Vector2(-200.0, 0.0)
 
 # Only chunks changed by gameplay need to be persisted later.
-var modified_chunks: Dictionary[Vector2i, Dictionary] = {}
+var modified_wall_ids: Dictionary[Vector2i, Dictionary] = {}
+var modified_ground_ids: Dictionary[Vector2i, Dictionary] = {}
+var modified_cliff_ids: Dictionary[Vector2i, Dictionary] = {}
 
 
 static func create_new(new_world_seed: int, new_world_name: String = "new world") -> WorldSaveData:
@@ -29,7 +31,9 @@ func to_dictionary() -> Dictionary:
 		"world_seed": world_seed,
 		"world_name": world_name,
 		"spawn_position": spawn_position,
-		"modified_chunks": modified_chunks.duplicate(true),
+		"modified_wall_ids": modified_wall_ids.duplicate(true),
+		"modified_ground_ids": modified_ground_ids.duplicate(true),
+		"modified_cliff_ids": modified_cliff_ids.duplicate(true)
 	}
 
 
@@ -51,18 +55,12 @@ static func from_dictionary(data: Dictionary) -> WorldSaveData:
 	if saved_spawn_position is Vector2:
 		world_data.spawn_position = saved_spawn_position
 
-	var saved_modified_chunks: Variant = data.get("modified_chunks", {})
-	if saved_modified_chunks is Dictionary:
-		for raw_chunk_position in saved_modified_chunks:
-			if not raw_chunk_position is Vector2i:
-				continue
+	var saved_modified_wall_ids: Dictionary = data.get("modified_wall_ids", {})
+	var saved_modified_ground_ids: Dictionary = data.get("modified_ground_ids", {})
+	var saved_modified_cliff_ids: Dictionary = data.get("modified_cliff_ids", {})
 
-			var raw_chunk_data: Variant = saved_modified_chunks[raw_chunk_position]
-			if not raw_chunk_data is Dictionary:
-				continue
-
-			var chunk_position: Vector2i = raw_chunk_position
-			var chunk_data: Dictionary = raw_chunk_data
-			world_data.modified_chunks[chunk_position] = chunk_data
+	world_data.modified_wall_ids.assign(saved_modified_wall_ids)
+	world_data.modified_ground_ids.assign(saved_modified_ground_ids)
+	world_data.modified_cliff_ids.assign(saved_modified_cliff_ids)
 
 	return world_data

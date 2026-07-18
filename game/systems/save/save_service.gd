@@ -7,9 +7,12 @@ const WORLDS_DIRECTORY_PATH: String = SAVE_ROOT_PATH + "/worlds"
 const PLAYERS_DIRECTORY_PATH: String = SAVE_ROOT_PATH + "/players"
 
 
+
+
 func _ready() -> void:
 	ensure_save_directories()
 	print(OS.get_user_data_dir())
+
 
 
 # maken van de folder waar de saves van world en speler in komen te staan

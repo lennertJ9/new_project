@@ -1,10 +1,3 @@
-## idee voor later:
-##
-## tilemappattern
-## tijdens het generaten per chunk een tilemappattern maken
-## tijdens het laden is set_cell nietmeer nodig omdat we gwn een tilemappattern inladen
-##
-
 extends Node2D
 class_name ChunkManager
 
@@ -37,12 +30,15 @@ var noise_cliff: FastNoiseLite
 @onready var cliff_layer: TileMapLayer = $CliffLayer
 
 
-
 @onready var debug_layer: TileMapLayer = $DebugLayer
 
 
 @onready var autotiling: autotiler = $Autotiling
 @onready var object_generator: Node = $ObjectGenerator
+
+
+var save_interval: float = 5
+var save_timer: float 
 
 
 var render_distance: int = 3
@@ -154,6 +150,13 @@ func is_running() -> bool:
 func _process(delta: float) -> void:
 	if not is_running():
 		return
+
+	
+	save_timer += delta
+	if save_timer >= save_interval:
+		SaveService.save_world(active_world_data)
+		save_timer = 0
+		
 
 	process_data_generated_chunks()
 	process_autotiled_chunks()
@@ -280,12 +283,49 @@ func chunk_generator():
 				i += 1
 
 		generate_cliffs(chunk)
-
+		apply_modified_wall_ids(chunk)
 		chunk.state = Chunk.ChunkState.DATA_READY
 
 		generation_mutex.lock()
 		data_generated_chunks.append(chunk)
 		generation_mutex.unlock()
+
+
+# tijdens runtime overschijft deze de originele seed met de aanpassingen 
+func apply_modified_wall_ids(chunk: Chunk) -> void:
+	world_data_mutex.lock()
+	if active_world_data.modified_wall_ids.has(chunk.position):
+		var modified_tiles: Dictionary = active_world_data.modified_wall_ids[chunk.position]
+		for index in modified_tiles:
+			chunk.wall_id_layer[index] = modified_tiles[index]
+	world_data_mutex.unlock()
+
+
+# deze functie vult de tile aanpassingen in active world data aan zodat we dat object kunnen saven later
+func set_modified_tile_id_locked(layer: Chunk.TileLayer, tile_position: Vector2i, tile_id: int) -> void:
+	var modified_ids: Dictionary[Vector2i, Dictionary] = {}
+
+	match layer:
+		Chunk.TileLayer.GROUND:
+			modified_ids = active_world_data.modified_ground_ids
+		Chunk.TileLayer.WALL:
+			modified_ids = active_world_data.modified_wall_ids
+		Chunk.TileLayer.CLIFF:
+			modified_ids = active_world_data.modified_cliff_ids
+		_:
+			return
+
+	var chunk_position: Vector2i = get_chunk_position_from_tile(tile_position)
+	var local_position: Vector2i = get_local_tile_position(tile_position)
+	var local_index: int = local_position.y * CHUNK_SIZE + local_position.x
+
+	var modified_tiles: Dictionary = modified_ids.get(chunk_position, {})
+	modified_tiles[local_index] = tile_id
+	modified_ids[chunk_position] = modified_tiles
+
+
+
+
 
 
 
@@ -316,6 +356,7 @@ func chunk_loader():
 					ground_layer.erase_cell(tile_pos)
 				i += 1
 		
+		chunk.last_accessed = Time.get_ticks_msec() / 1000.0
 		chunk.state = Chunk.ChunkState.LOADED
 		loaded_chunks.append(chunk)
 
@@ -380,10 +421,21 @@ func queue_chunks_for_load(center_chunk_position: Vector2i, distance: int) -> vo
 
 
 func queue_expired_chunks_for_unload() -> void:
+	if player == null:
+		return
+
 	var current_time: float = Time.get_ticks_msec() / 1000.0
+	var player_chunk_position: Vector2i = get_player_chunk_position()
 
 	for i in range(loaded_chunks.size() - 1, -1, -1):
 		var chunk: Chunk = loaded_chunks[i]
+		var chunk_is_visible: bool = (
+			abs(chunk.position.x - player_chunk_position.x) <= render_distance
+			and abs(chunk.position.y - player_chunk_position.y) <= render_distance
+		)
+		if chunk_is_visible:
+			continue
+
 		var seconds_since_access: float = current_time - chunk.last_accessed
 		if seconds_since_access <= 2.0:
 			continue
@@ -460,11 +512,14 @@ func global_to_chunk_local(global_pos: Vector2):
 
 
 
+# deze functie word extern aangeroepen om een wall te damagen
 func damage_wall(world_position: Vector2, damage: int = 40) -> bool:
 	var tile_position: Vector2i = wall_layer.local_to_map(wall_layer.to_local(world_position))
 	return damage_wall_tile(tile_position, damage)
 
 
+
+# helper functie om wall tiles te damagen
 func damage_wall_tile(tile_position: Vector2i, damage: int) -> bool:
 	if damage <= 0:
 		return false
@@ -491,7 +546,7 @@ func damage_wall_tile(tile_position: Vector2i, damage: int) -> bool:
 		world_data_mutex.unlock()
 		return false
 
-	var current_health := chunk.wall_health_layer[local_index]
+	var current_health: int = chunk.wall_health_layer[local_index]
 	if current_health == 0:
 		current_health = int(wall_stats.get("max_health", 0))
 
@@ -504,6 +559,7 @@ func damage_wall_tile(tile_position: Vector2i, damage: int) -> bool:
 
 	chunk.wall_id_layer[local_index] = 0
 	chunk.wall_health_layer[local_index] = 0
+	set_modified_tile_id_locked(Chunk.TileLayer.WALL, tile_position, 0)
 	destroyed_wall_id = wall_id
 
 	# Only the destroyed tile and its neighbours can have a changed bitmask.
@@ -559,6 +615,7 @@ func refresh_wall_tiles(tile_positions: Array[Vector2i]) -> void:
 		else:
 			wall_layer.set_cell(tile_position, wall_id, chunk.unpack_atlas(chunk.wall_atlas_coords[index]))
 	world_data_mutex.unlock()
+
 
 
 func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:

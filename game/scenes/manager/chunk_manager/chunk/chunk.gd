@@ -38,6 +38,12 @@ enum ChunkState {
 	QUEUED_UNLOAD,
 }
 
+enum TileLayer {
+	GROUND,
+	WALL,
+	CLIFF,
+}
+
 var last_accessed: float
 
 
