@@ -1,7 +1,7 @@
 extends CharacterBody2D
 class_name Player
 
-var speed: int = 120
+var speed: int = 1200
 var input: Vector2
 var last_input: Vector2
 var chunk_manager: ChunkManager

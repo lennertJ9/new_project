@@ -5,6 +5,7 @@ const WALL_DATABASE := preload("res://scenes/tile_database/wall_database.gd")
 const CHUNK_SIZE := 16
 const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
 const GENERATION_PADDING: int = 1
+const DEBUG_CHUNK_POSITION: Vector2i = Vector2i(-3, 0)
 
 
 signal chunk_deloaded
@@ -52,6 +53,7 @@ var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
 
 #-------------- Chunk die processed moeten worden  --------------------#
 var chunks_to_data_generate: Dictionary[Vector2i, Chunk] # chunks die data generated moeten worden 
+var chunks_being_generated: Dictionary[Vector2i, Chunk] # chunks die momenteel eigendom zijn van de generator worker
 var data_generated_chunks: Array[Chunk]
 
 var chunks_to_autotile: Dictionary[Vector2i, Chunk] # chunks die autotiled moeten worden en waarvan alle 8 buren aanwezig zijn
@@ -151,6 +153,8 @@ func _process(delta: float) -> void:
 	if not is_running():
 		return
 
+	if Input.is_action_just_pressed("debug"):
+		debug_print_chunk_cells(DEBUG_CHUNK_POSITION)
 	
 	save_timer += delta
 	if save_timer >= save_interval:
@@ -194,10 +198,20 @@ func process_data_generated_chunks():
 
 	world_data_mutex.lock()
 	for chunk in results:
+		if generated_chunks.has(chunk.position):
+			continue
+
 		generated_chunks[chunk.position] = chunk
 		chunk.state = Chunk.ChunkState.WAITING_FOR_NEIGHBOURS
-		neighbourless_chunks.append(chunk.position)
+		if not neighbourless_chunks.has(chunk.position):
+			neighbourless_chunks.append(chunk.position)
 	world_data_mutex.unlock()
+
+	generation_mutex.lock()
+	for chunk in results:
+		if chunks_being_generated.get(chunk.position) == chunk:
+			chunks_being_generated.erase(chunk.position)
+	generation_mutex.unlock()
 	chunk_neighbour_checker()
 
 
@@ -213,8 +227,15 @@ func process_autotiled_chunks() -> void:
 	if results.is_empty():
 		return
 
+	world_data_mutex.lock()
 	for chunk in results:
+		if chunk.state != Chunk.ChunkState.AUTOTILING:
+			trace_debug_chunk(chunk, "ignored stale autotile result")
+			continue
+
 		chunk.state = Chunk.ChunkState.UNLOADED
+		trace_debug_chunk(chunk, "accepted autotile result")
+	world_data_mutex.unlock()
 
 
 
@@ -233,6 +254,10 @@ func chunk_neighbour_checker():
 
 		if is_neighboured:
 			var chunk = generated_chunks[chunk_pos]
+			if chunk.state != Chunk.ChunkState.WAITING_FOR_NEIGHBOURS:
+				neighbourless_chunks.remove_at(i)
+				continue
+
 			chunk.state = Chunk.ChunkState.QUEUED_AUTOTILE
 			ready_to_autotile.append(chunk)
 			neighbourless_chunks.remove_at(i)
@@ -262,6 +287,7 @@ func chunk_generator():
 			var chunk_pos: Vector2i = chunks_to_data_generate.keys()[0]
 			chunk = chunks_to_data_generate[chunk_pos]
 			chunks_to_data_generate.erase(chunk_pos)
+			chunks_being_generated[chunk_pos] = chunk
 
 		generation_mutex.unlock()
 
@@ -329,10 +355,14 @@ func set_modified_tile_id_locked(layer: Chunk.TileLayer, tile_position: Vector2i
 
 
 
-func chunk_loader():
+func chunk_loader() -> void:
 	if not chunks_to_load.is_empty():
 		var chunk: Chunk = chunks_to_load.pop_front()
-		var i = 0
+		if chunk.state != Chunk.ChunkState.QUEUED_LOAD:
+			return
+		trace_debug_chunk(chunk, "load started")
+
+		var i: int = 0
 		
 		for y_pos in range(16):
 			for x_pos in range(16):
@@ -358,10 +388,12 @@ func chunk_loader():
 		
 		chunk.last_accessed = Time.get_ticks_msec() / 1000.0
 		chunk.state = Chunk.ChunkState.LOADED
-		loaded_chunks.append(chunk)
+		if not loaded_chunks.has(chunk):
+			loaded_chunks.append(chunk)
+		trace_debug_chunk(chunk, "load completed")
 
 
-# chunk worden geload wanneer: in generated lijst | niet al loaded of queued voor loading zijn | autotiled zijn 
+# Alleen volledig verwerkte chunks die niet getekend zijn, kunnen geladen worden.
 func chunk_check() -> void:
 	if player == null:
 		return
@@ -392,6 +424,8 @@ func queue_missing_chunk_data(center_chunk_position: Vector2i, distance: int) ->
 				continue
 			if chunks_to_data_generate.has(chunk_position):
 				continue
+			if chunks_being_generated.has(chunk_position):
+				continue
 
 			var chunk: Chunk = Chunk.new(chunk_position)
 			chunk.state = Chunk.ChunkState.QUEUED_GENERATE
@@ -412,9 +446,15 @@ func queue_chunks_for_load(center_chunk_position: Vector2i, distance: int) -> vo
 				continue
 
 			var chunk: Chunk = generated_chunks[chunk_position]
-			if chunk.state == Chunk.ChunkState.AUTOTILED or chunk.state == Chunk.ChunkState.UNLOADED:
+			if chunk.state == Chunk.ChunkState.UNLOADED:
 				chunk.state = Chunk.ChunkState.QUEUED_LOAD
-				chunks_to_load.append(chunk)
+				if not chunks_to_load.has(chunk):
+					chunks_to_load.append(chunk)
+				trace_debug_chunk(chunk, "queued for load")
+			elif chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
+				# The chunk is still drawn until chunk_unloader() erases it.
+				chunk.state = Chunk.ChunkState.LOADED
+				trace_debug_chunk(chunk, "unload cancelled by visibility")
 
 			chunk.last_accessed = current_time
 	world_data_mutex.unlock()
@@ -429,22 +469,32 @@ func queue_expired_chunks_for_unload() -> void:
 
 	for i in range(loaded_chunks.size() - 1, -1, -1):
 		var chunk: Chunk = loaded_chunks[i]
-		var chunk_is_visible: bool = (
-			abs(chunk.position.x - player_chunk_position.x) <= render_distance
-			and abs(chunk.position.y - player_chunk_position.y) <= render_distance
-		)
+		var chunk_is_visible: bool = is_chunk_visible(chunk.position, player_chunk_position)
 		if chunk_is_visible:
+			if chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
+				chunk.state = Chunk.ChunkState.LOADED
+				trace_debug_chunk(chunk, "unload cancelled during expiry check")
+			continue
+		if chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
+			continue
+		if chunk.state != Chunk.ChunkState.LOADED:
+			loaded_chunks.remove_at(i)
 			continue
 
 		var seconds_since_access: float = current_time - chunk.last_accessed
 		if seconds_since_access <= 2.0:
 			continue
-		if chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
-			continue
 
 		chunk.state = Chunk.ChunkState.QUEUED_UNLOAD
 		chunks_to_unload.append(chunk)
-		loaded_chunks.remove_at(i)
+		trace_debug_chunk(chunk, "queued for unload")
+
+
+func is_chunk_visible(chunk_position: Vector2i, center_chunk_position: Vector2i) -> bool:
+	return (
+		abs(chunk_position.x - center_chunk_position.x) <= render_distance
+		and abs(chunk_position.y - center_chunk_position.y) <= render_distance
+	)
 
 
 func are_visible_chunks_loaded() -> bool:
@@ -474,13 +524,27 @@ func are_visible_chunks_loaded() -> bool:
 func chunk_unloader():
 	if not chunks_to_unload.is_empty():
 		var chunk = chunks_to_unload.pop_front()
+		if chunk.state != Chunk.ChunkState.QUEUED_UNLOAD:
+			return
+		trace_debug_chunk(chunk, "unload dequeued")
+
+		if player != null and is_chunk_visible(chunk.position, get_player_chunk_position()):
+			chunk.state = Chunk.ChunkState.LOADED
+			chunk.last_accessed = Time.get_ticks_msec() / 1000.0
+			trace_debug_chunk(chunk, "unload cancelled by final visibility check")
+			return
+
+		trace_debug_chunk(chunk, "erasing TileMap cells")
 		for x in range(16):
 			for y in range(16):
 				var tile_pos = (chunk.position * 16) + Vector2i(x,y)
 				ground_layer.erase_cell(tile_pos)
 				wall_layer.erase_cell(tile_pos)
 				cliff_layer.erase_cell(tile_pos)
-		chunk.state = chunk.ChunkState.UNLOADED
+		while loaded_chunks.has(chunk):
+			loaded_chunks.erase(chunk)
+		chunk.state = Chunk.ChunkState.UNLOADED
+		trace_debug_chunk(chunk, "unload completed")
 		chunk_deloaded.emit(chunk)
 
 
@@ -636,3 +700,47 @@ func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:
 		else:
 			ground_layer.set_cell(tile_position, ground_id, chunk.unpack_atlas(chunk.ground_atlas_coords[index]))
 	world_data_mutex.unlock()
+
+
+func debug_print_chunk_cells(chunk_position: Vector2i) -> void:
+	if not generated_chunks.has(chunk_position):
+		return
+
+	var chunk: Chunk = generated_chunks[chunk_position]
+	var sample_tiles: Array[Vector2i] = [
+		Vector2i(0, 0),
+		Vector2i(8, 8),
+		Vector2i(15, 15),
+	]
+
+	for local_tile: Vector2i in sample_tiles:
+		var index: int = local_tile.y * CHUNK_SIZE + local_tile.x
+		var tile_position: Vector2i = chunk_position * CHUNK_SIZE + local_tile
+
+		print(
+			"Tile: ", tile_position,
+			" | data ground id: ", chunk.ground_id_layer[index],
+			" | data atlas: ", chunk.unpack_atlas(chunk.ground_atlas_coords[index]),
+			" | TileMap source id: ", ground_layer.get_cell_source_id(tile_position),
+			" | TileMap atlas: ", ground_layer.get_cell_atlas_coords(tile_position)
+		)
+
+
+func trace_debug_chunk(chunk: Chunk, event_name: String) -> void:
+	if chunk.position != DEBUG_CHUNK_POSITION:
+		return
+
+	var loaded_reference_count: int = 0
+	for loaded_chunk in loaded_chunks:
+		if loaded_chunk == chunk:
+			loaded_reference_count += 1
+
+	var first_tile_position: Vector2i = chunk.position * CHUNK_SIZE
+	print(
+		"[Chunk trace] ", event_name,
+		" | state: ", chunk.state,
+		" | ground source: ", ground_layer.get_cell_source_id(first_tile_position),
+		" | loaded references: ", loaded_reference_count,
+		" | queued load: ", chunks_to_load.has(chunk),
+		" | queued unload: ", chunks_to_unload.has(chunk)
+	)
