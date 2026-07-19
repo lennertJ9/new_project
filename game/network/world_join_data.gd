@@ -1,6 +1,8 @@
 class_name WorldJoinData
 extends RefCounted
 
+# WorldJoinData is de metadata over een wereld
+# worldSaveData is de data van een wereld zelf
 
 const NETWORK_PROTOCOL_VERSION: int = 1
 
@@ -21,6 +23,7 @@ static func from_world_save_data(world_data: WorldSaveData) -> WorldJoinData:
 	return join_data
 
 
+
 func to_dictionary() -> Dictionary:
 	return {
 		"protocol_version": protocol_version,
@@ -29,6 +32,7 @@ func to_dictionary() -> Dictionary:
 		"world_name": world_name,
 		"spawn_position": spawn_position,
 	}
+
 
 
 static func from_dictionary(data: Dictionary) -> WorldJoinData:

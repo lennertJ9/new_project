@@ -14,14 +14,17 @@ signal client_hello_received(peer_id: int)
 signal client_session_approved(peer_id: int)
 signal session_approved_by_host
 
+signal connection_rejected(reason: int)
+
 const DEFAULT_PORT: int = 25001
 const MAX_CLIENTS: int = 4
+const ENET_CHANNEL_COUNT: int = 3
 
 @onready var scene_multiplayer: SceneMultiplayer = multiplayer as SceneMultiplayer
 
 var approved_client_peer_ids: Dictionary[int, bool] = {}
 var is_approved_by_host: bool = false
-
+var accepting_new_clients: bool = true
 
 enum SessionMode {
 	OFFLINE,
@@ -95,6 +98,7 @@ func _on_peer_packet(from_peer_id: int, bytes: PackedByteArray) -> void:
 	var message_type: int = raw_message_type
 	var payload: Dictionary = raw_payload
 
+	var role: String = "host" if is_host() else "client"
 	packet_received.emit(from_peer_id, message_type, payload)
 
 
@@ -107,11 +111,20 @@ func _on_packet_received(from_peer_id: int, message_type: int, payload: Dictiona
 		NetworkProtocol.MessageType.HELLO_ACCEPTED:
 			if is_client():
 				_handle_hello_accepted(from_peer_id, payload)
+		NetworkProtocol.MessageType.REJECT:
+			if is_client():
+				_handle_reject(from_peer_id, payload)
 
 
 
 func _handle_hello(from_peer_id: int, _payload: Dictionary) -> void:
 	if approved_client_peer_ids.has(from_peer_id):
+		return
+
+	var rejection_reason: int = validate_client(from_peer_id)
+
+	if rejection_reason != NetworkProtocol.RejectReason.NONE:
+		_reject_client(from_peer_id, rejection_reason)
 		return
 
 	print("Peer %d heeft HELLO gestuurd." % from_peer_id)
@@ -148,11 +161,30 @@ func _handle_hello_accepted(from_peer_id: int, _payload: Dictionary) -> void:
 
 
 
+func validate_client(_peer_id: int) -> int:
+	if not accepting_new_clients:
+		return NetworkProtocol.RejectReason.HOST_NOT_ACCEPTING_NEW_CLIENTS
+
+	if approved_client_peer_ids.size() >= MAX_CLIENTS:
+		return NetworkProtocol.RejectReason.SESSION_FULL
+	
+	return NetworkProtocol.RejectReason.NONE
+
+
+
+func is_client_approved(peer_id: int) -> bool:
+	if not is_host():
+		return false
+
+	return approved_client_peer_ids.has(peer_id)
+
+
+
 func start_host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Error:
 	stop_session()
 
 	var new_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
-	var start_error: Error = new_peer.create_server(port, max_clients)
+	var start_error: Error = new_peer.create_server(port, max_clients, ENET_CHANNEL_COUNT)
 
 	if start_error != OK:
 		return start_error
@@ -166,7 +198,7 @@ func start_host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Err
 
 
 
-func join_host(address: String, port: int = DEFAULT_PORT) -> Error:
+func join_host(address: String, port: int = DEFAULT_PORT, ) -> Error:
 	var clean_address: String = address.strip_edges()
 	if clean_address.is_empty():
 		return ERR_INVALID_PARAMETER
@@ -174,7 +206,7 @@ func join_host(address: String, port: int = DEFAULT_PORT) -> Error:
 	stop_session()
 
 	var new_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
-	var connect_error: Error = new_peer.create_client(clean_address, port)
+	var connect_error: Error = new_peer.create_client(clean_address, port, ENET_CHANNEL_COUNT)
 
 	if connect_error != OK:
 		return connect_error
@@ -276,3 +308,48 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 		print("Verbinding met lokale host wordt gemaakt.")
+
+
+
+func _reject_client(peer_id: int, reason: int) -> void:
+	var reject_error: Error = send_packet(
+		peer_id,
+		NetworkProtocol.MessageType.REJECT,
+		{"reason": reason},
+		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+		NetworkProtocol.CHANNEL_CONTROL
+	)
+
+	if reject_error != OK:
+		print("REJECT kon niet verstuurd worden: %s" % error_string(reject_error))
+		return
+
+	print("Peer %d is afgewezen." % peer_id)
+
+
+
+func _handle_reject(from_peer_id: int, payload: Dictionary) -> void:
+	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
+		return
+
+	var raw_reason: Variant = payload.get("reason")
+	if not raw_reason is int:
+		return
+
+	var reason: int = raw_reason
+
+	print("Host heeft de verbinding afgewezen: %s" % _get_reject_reason_text(reason))
+
+	stop_session()
+	connection_rejected.emit(reason)
+
+
+
+func _get_reject_reason_text(reason: int) -> String:
+	match reason:
+		NetworkProtocol.RejectReason.HOST_NOT_ACCEPTING_NEW_CLIENTS:
+			return "De host laat momenteel geen nieuwe spelers toe."
+		NetworkProtocol.RejectReason.SESSION_FULL:
+			return "Session is full."
+		_:
+			return "Onbekende reden."
