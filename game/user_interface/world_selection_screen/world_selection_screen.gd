@@ -22,7 +22,6 @@ func refresh_worlds() -> void:
 		child.queue_free()
 
 	var saved_worlds: Array[WorldSaveData] = SaveService.get_saved_worlds()
-	print(saved_worlds)
 	for world_data: WorldSaveData in saved_worlds:
 		var world_button: Button = Button.new()
 		world_button.custom_minimum_size = Vector2(0.0, 36.0)
@@ -34,10 +33,7 @@ func refresh_worlds() -> void:
 
 func _on_create_world_button_pressed() -> void:
 	var new_world_seed: int = randi()
-	var world_data: WorldSaveData = SaveService.create_and_save_new_world(
-		new_world_seed,
-		world_name_input.text
-	)
+	var world_data: WorldSaveData = SaveService.create_and_save_new_world(new_world_seed, world_name_input.text)
 
 	if world_data == null:
 		return

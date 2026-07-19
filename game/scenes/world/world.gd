@@ -24,6 +24,9 @@ var width: int = 250
 var height: int = 250
 var values: Array
 
+var save_interval: float = 3
+var save_timer: float
+
 
 func _ready() -> void:
 	player.configure_world(chunk_manager, projectiles)
@@ -34,6 +37,21 @@ func _ready() -> void:
 		a_star_manager.configure(chunk_manager)
 
 
+func _process(delta: float) -> void:
+	save_timer += delta
+	if save_timer > save_interval:
+		save_timer = 0
+		save_active_state()
+
+
+
+func save_active_state():
+	
+	var player_data: PlayerSaveData = active_player_data[0]
+	player_data.set_position_for_world(active_world_data.world_id, player.global_position)
+	
+	SaveService.save_player(active_player_data[0])
+	SaveService.save_world(active_world_data)
 
 
 
@@ -54,7 +72,4 @@ func apply_first_player_save_data() -> void:
 		return
 
 	var first_player_data: PlayerSaveData = active_player_data[0]
-	player.global_position = first_player_data.get_position_for_world(
-		active_world_data.world_id,
-		active_world_data.spawn_position
-	)
+	player.global_position = first_player_data.get_position_for_world(active_world_data.world_id, active_world_data.spawn_position)
