@@ -37,7 +37,10 @@ func _ready() -> void:
 		a_star_manager.configure(chunk_manager)
 
 
+
 func _process(delta: float) -> void:
+	if NetworkManager.is_client():
+		return
 	save_timer += delta
 	if save_timer > save_interval:
 		save_timer = 0

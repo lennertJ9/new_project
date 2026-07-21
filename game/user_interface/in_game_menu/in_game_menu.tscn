@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://xqwj4q768074"]
+
+[ext_resource type="Script" uid="uid://thq7fy6verm0" path="res://user_interface/in_game_menu/in_game_menu.gd" id="1_2evbp"]
+
+[node name="InGameMenu" type="Control" unique_id=474093509]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_2evbp")
+
+[node name="MenuContainer" type="VBoxContainer" parent="." unique_id=1601248548]
+layout_mode = 0
+offset_left = 65.0
+offset_top = 130.0
+offset_right = 218.0
+offset_bottom = 231.0
+theme_override_constants/separation = 16
+
+[node name="ContinueButton" type="Button" parent="MenuContainer" unique_id=1083721746]
+layout_mode = 2
+text = "Continue"
+
+[node name="SettingsButton" type="Button" parent="MenuContainer" unique_id=1210259033]
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="MenuContainer" unique_id=1696477105]
+layout_mode = 2
+text = "Quit"
+
+[node name="MultiplayerSettingContainer" type="HBoxContainer" parent="." unique_id=1898075299]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 1.0
+offset_right = 639.0
+offset_bottom = 41.0
+
+[node name="MultiplayerLabel" type="Label" parent="MultiplayerSettingContainer" unique_id=1492878100]
+layout_mode = 2
+text = "Enable Multiplayer"
+
+[node name="CheckButton" type="CheckButton" parent="MultiplayerSettingContainer" unique_id=1191383773]
+layout_mode = 2
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="toggled" from="MultiplayerSettingContainer/CheckButton" to="." method="_on_check_button_toggled"]

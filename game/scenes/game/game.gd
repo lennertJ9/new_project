@@ -5,6 +5,7 @@ class_name Game
 const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
 
 
+
 @export var skip_menu_for_debug: bool = false
 @export var debug_world_seed: int = 12345
 
@@ -13,20 +14,30 @@ const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
 
 @onready var main_menu: Control = $Interface/MainMenu
 @onready var loading_screen: Control = $Interface/LoadingScreen
+@onready var in_game_menu: Control = $Interface/InGameMenu
 
 
 var active_world: World
-var is_starting_world: bool = false
+var is_starting_world: bool = false # geeft aan dat de wereld starting/loading is
 var pending_world_join_data: WorldJoinData
 var pending_world_snapshot_data: WorldSaveData
+var pending_join_player_data: PlayerSaveData
+var session_players_by_peer_id: Dictionary[int, SessionPlayer] = {}
+
+
 
 func _ready() -> void:
 	NetworkManager.session_approved_by_host.connect(_on_session_approved_by_host)
 	NetworkManager.packet_received.connect(_on_network_packet_received)
 	
+	NetworkManager.host_started.connect(_on_host_started)
+	NetworkManager.remote_peer_disconnected.connect(_on_remote_peer_disconnected)
+	
 	main_menu.world_start_requested.connect(start_world)
+	main_menu.world_join_requested.connect(_on_world_join_requested)
 	main_menu.show()
 	loading_screen.hide()
+	in_game_menu.hide()
 	
 	if OS.is_debug_build() and skip_menu_for_debug:
 		start_new_debug_world()
@@ -62,8 +73,25 @@ func start_world(start_data: WorldStartData) -> void:
 
 	await active_world.initialize(start_data)
 
+	if NetworkManager.is_host():
+		_register_host_session_player()
+
 	loading_screen.hide()
+	
+	if NetworkManager.is_client():
+		_send_client_world_ready()
+	
 	is_starting_world = false
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("escape"):
+		if active_world != null:
+			if in_game_menu.visible:
+				in_game_menu.hide()
+			else:
+				in_game_menu.show()
+
 
 
 
@@ -88,9 +116,71 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 		NetworkProtocol.MessageType.WORLD_SNAPSHOT:
 			if NetworkManager.is_client():
 				_handle_world_snapshot(from_peer_id, payload)
+				
+		NetworkProtocol.MessageType.CLIENT_WORLD_READY:
+			if NetworkManager.is_host():
+				_handle_client_world_ready(from_peer_id, payload)
 
 
 
+# uitgevoerd wanneer de server start
+func _on_host_started() -> void:
+	_register_host_session_player()
+
+
+
+func _register_host_session_player() -> void:
+	if not NetworkManager.is_host():
+		return
+	
+	if active_world == null or active_world.active_player_data.is_empty():
+		return
+
+	var host_peer_id: int = MultiplayerPeer.TARGET_PEER_SERVER
+
+	if session_players_by_peer_id.has(host_peer_id):
+		return
+
+	var host_player_data: PlayerSaveData = active_world.active_player_data[0]
+
+	var host_session_player: SessionPlayer = SessionPlayer.create(
+		host_peer_id,
+		host_player_data.character_id,
+		host_player_data.character_name,
+		active_world.player.global_position
+	)
+
+	session_players_by_peer_id[host_peer_id] = host_session_player
+
+	print("Hostspeler geregistreerd als sessiespeler.")
+
+
+
+func _on_remote_peer_disconnected(peer_id: int) -> void:
+	if not NetworkManager.is_host():
+		return
+
+	if not session_players_by_peer_id.has(peer_id):
+		return
+
+	session_players_by_peer_id.erase(peer_id)
+	print("Sessiespeler van peer %d verwijderd." % peer_id)
+
+
+
+# dit word uitgevoerd als je op de knop een wereld knop duwt
+func _on_world_join_requested(address: String, host_port: int, player_data: PlayerSaveData) -> void:
+	pending_join_player_data = player_data
+
+	var join_error: Error = NetworkManager.join_host(address, host_port)
+
+	if join_error != OK:
+		pending_join_player_data = null
+		print("Joinen van wereld mislukt: %s" % error_string(join_error))
+
+
+
+# word uitgevoerd door een joinende client nadat de server de sessie goedkeurd
 func _on_session_approved_by_host() -> void:
 	if not NetworkManager.is_client():
 		return
@@ -160,6 +250,7 @@ func _handle_world_join_data(from_peer_id: int, payload: Dictionary) -> void:
 		)
 
 
+
 # na het ontvangen van join data verzoekt de client de world snapshot
 func _request_world_snapshot() -> void:
 	var request_error: Error = NetworkManager.send_packet(
@@ -178,7 +269,7 @@ func _request_world_snapshot() -> void:
 
 
 
-# de server verstuurt world snapshot naar de peer
+# de server verstuurt world snapshot/WorldSaveData dictionary naar de client
 func _handle_world_snapshot_request(from_peer_id: int) -> void:
 	if not NetworkManager.is_client_approved(from_peer_id):
 		return
@@ -205,7 +296,7 @@ func _handle_world_snapshot_request(from_peer_id: int) -> void:
 
 
 
-
+# ontvangen door clients, de payload is de worldsavedata dictionary 
 func _handle_world_snapshot(from_peer_id: int, payload: Dictionary) -> void:
 	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
 		return
@@ -243,6 +334,74 @@ func _handle_world_snapshot(from_peer_id: int, payload: Dictionary) -> void:
 			snapshot_data.modified_cliff_ids.size(),
 		]
 	)
+	_start_received_world()
+
+
+
+# deze start een wereld ontvangen van het netwerk (de clients)
+func _start_received_world() -> void:
+	if pending_world_snapshot_data == null:
+		return
+
+	if active_world != null or is_starting_world:
+		return
+		
+	if pending_join_player_data == null:
+		print("Geen speler geselecteerd voor deze join.")
+		return
+
+	var players_to_start: Array[PlayerSaveData] = [pending_join_player_data]
+	var start_data: WorldStartData = WorldStartData.create(pending_world_snapshot_data, players_to_start)
+
+	print("Client start de ontvangen wereld.")
+	start_world(start_data)
+
+
+
+func _send_client_world_ready() -> void:
+	if active_world == null or active_world.active_player_data.is_empty():
+		return
+
+	var player_data: PlayerSaveData = active_world.active_player_data[0]
+
+	var send_error: Error = NetworkManager.send_packet(
+		MultiplayerPeer.TARGET_PEER_SERVER,
+		NetworkProtocol.MessageType.CLIENT_WORLD_READY,
+		{
+			"character_id": player_data.character_id,
+			"character_name": player_data.character_name,
+		},
+		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+		NetworkProtocol.CHANNEL_CONTROL
+	)
+
+	if send_error != OK:
+		print("CLIENT_WORLD_READY versturen mislukt: %s" % error_string(send_error))
+		return
+
+	print("Client meldt dat zijn wereld klaar is.")
+
+
+
+func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
+	if not NetworkManager.is_client_approved(from_peer_id):
+		return
+
+	if active_world == null or active_world.active_world_data == null:
+		return
+
+	if session_players_by_peer_id.has(from_peer_id):
+		return
+
+	var character_id: String = payload.get("character_id")
+	var character_name: String = payload.get("character_name")
+	
+	
+	var session_player: SessionPlayer = SessionPlayer.create(from_peer_id, character_id, character_name, active_world.active_world_data.spawn_position)
+
+	session_players_by_peer_id[from_peer_id] = session_player
+
+	print("Sessiespeler toegevoegd: peer %d bestuurt %s." % [from_peer_id, character_name])
 
 
 #endregion

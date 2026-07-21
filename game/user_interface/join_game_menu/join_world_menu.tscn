@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://4lk3t2dcysgd"]
+
+[ext_resource type="Script" uid="uid://yy0jgbs4eeds" path="res://user_interface/join_game_menu/join_world_menu.gd" id="1_07dfi"]
+
+[node name="JoinWorldMenu" type="Control" unique_id=974617921]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_07dfi")
+
+[node name="IPAdrress" type="LineEdit" parent="." unique_id=1444624917]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 0
+offset_left = 202.0
+offset_top = 150.0
+offset_right = 270.5
+offset_bottom = 181.0
+text = "127.0.0.1"
+
+[node name="Port" type="LineEdit" parent="." unique_id=631576373]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 0
+offset_left = 290.0
+offset_top = 150.0
+offset_right = 358.5
+offset_bottom = 181.0
+text = "25001"
+
+[node name="Colon" type="Label" parent="." unique_id=763341780]
+layout_mode = 0
+offset_left = 284.0
+offset_top = 153.0
+offset_right = 324.0
+offset_bottom = 176.0
+text = ":"
+
+[node name="Button" type="Button" parent="." unique_id=1976940891]
+layout_mode = 0
+offset_left = 202.0
+offset_top = 185.0
+offset_right = 358.0
+offset_bottom = 216.0
+text = "Join"
+
+[connection signal="pressed" from="Button" to="." method="_on_button_pressed"]

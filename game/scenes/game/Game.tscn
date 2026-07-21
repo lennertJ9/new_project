@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://boa5su5h3i1hf"]
 
 [ext_resource type="Script" uid="uid://vfka23oggex5" path="res://scenes/game/game.gd" id="1_vrspl"]
-[ext_resource type="PackedScene" uid="uid://bau0jfgfg5uo3" path="res://user_interface/loading_screen/LoadingScreen.tscn" id="2_7qcb4"]
-[ext_resource type="PackedScene" uid="uid://cr6b8xmu7bgtt" path="res://user_interface/main_menu/MainMenu.tscn" id="3_lyhax"]
+[ext_resource type="PackedScene" uid="uid://bau0jfgfg5uo3" path="res://user_interface/loading_screen/loading_screen.tscn" id="2_7qcb4"]
+[ext_resource type="PackedScene" uid="uid://cr6b8xmu7bgtt" path="res://user_interface/main_menu/main_menu.tscn" id="3_lyhax"]
+[ext_resource type="PackedScene" uid="uid://xqwj4q768074" path="res://user_interface/in_game_menu/in_game_menu.tscn" id="4_7qcb4"]
 
 [node name="Game" type="Node" unique_id=331675235]
 script = ExtResource("1_vrspl")
@@ -14,5 +15,7 @@ script = ExtResource("1_vrspl")
 [node name="MainMenu" parent="Interface" unique_id=1317866072 instance=ExtResource("3_lyhax")]
 
 [node name="LoadingScreen" parent="Interface" unique_id=1372209602 instance=ExtResource("2_7qcb4")]
+
+[node name="InGameMenu" parent="Interface" unique_id=474093509 instance=ExtResource("4_7qcb4")]
 
 [editable path="Interface/MainMenu"]
