@@ -5,6 +5,7 @@ var peer_id: int = 0
 var character_id: String = ""
 var character_name: String = ""
 var world_position: Vector2 = Vector2.ZERO
+var player_save_data: PlayerSaveData
 
 
 static func create(new_peer_id: int, new_character_id: String, new_character_name: String, new_world_position: Vector2) -> SessionPlayer:

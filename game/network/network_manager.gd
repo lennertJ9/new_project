@@ -353,3 +353,7 @@ func _get_reject_reason_text(reason: int) -> String:
 			return "Session is full."
 		_:
 			return "Onbekende reden."
+
+
+func get_local_peer_id() -> int:
+	return multiplayer.get_unique_id()

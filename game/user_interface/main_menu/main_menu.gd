@@ -75,8 +75,10 @@ func _on_player_selected(player_data: PlayerSaveData) -> void:
 		world_join_requested.emit(address, host_port, player_data)
 		return
 
-	var players_to_start: Array[PlayerSaveData] = [player_data]
-	var start_data: WorldStartData = WorldStartData.create(selected_world, players_to_start)
+	var start_data: WorldStartData = WorldStartData.create(
+		selected_world,
+		player_data
+	)
 
 	world_start_requested.emit(start_data)
 

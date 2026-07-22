@@ -25,6 +25,8 @@ enemy_scene = ExtResource("2_bq33v")
 [node name="Player" parent="." unique_id=1496393512 instance=ExtResource("5_v5dby")]
 position = Vector2(200, 0)
 
+[node name="RemotePlayers" type="Node2D" parent="." unique_id=1523988576]
+
 [node name="ChunkManager" parent="." unique_id=1324416088 node_paths=PackedStringArray("player") instance=ExtResource("8_j2gmx")]
 player = NodePath("../Player")
 

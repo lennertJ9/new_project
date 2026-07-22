@@ -1,7 +1,7 @@
 extends Control
 
 
-signal multiplayer_set_requested(enabled: bool)
+signal multiplayer_requested(enabled: bool)
 
 @onready var multiplayer_setting_container: HBoxContainer = $MultiplayerSettingContainer
 @onready var check_button: CheckButton = $MultiplayerSettingContainer/CheckButton
@@ -16,13 +16,11 @@ func _ready() -> void:
 	multiplayer_setting_container.hide()
 	if NetworkManager.is_host():
 		multiplayer_setting_container.show()
-		
 
 
 
 func _on_check_button_toggled(toggled_on: bool) -> void:
-	print("toggle")
-	multiplayer_set_requested.emit(toggled_on)
+	multiplayer_requested.emit(toggled_on)
 
 
 

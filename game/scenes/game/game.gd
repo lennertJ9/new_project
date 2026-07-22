@@ -33,6 +33,7 @@ func _ready() -> void:
 	NetworkManager.host_started.connect(_on_host_started)
 	NetworkManager.remote_peer_disconnected.connect(_on_remote_peer_disconnected)
 	
+	in_game_menu.multiplayer_requested.connect(_on_multiplayer_toggle)
 	main_menu.world_start_requested.connect(start_world)
 	main_menu.world_join_requested.connect(_on_world_join_requested)
 	main_menu.show()
@@ -46,14 +47,13 @@ func _ready() -> void:
 func start_new_debug_world() -> void:
 	var world_data: WorldSaveData = WorldSaveData.create_new(debug_world_seed)
 	var player_data: PlayerSaveData = PlayerSaveData.create_new()
-	var players_to_start: Array[PlayerSaveData] = [player_data]
 
-	var start_data: WorldStartData = WorldStartData.create(world_data, players_to_start)
+	var start_data: WorldStartData = WorldStartData.create(world_data, player_data)
 
 	start_world(start_data)
 
 
-
+# start een lokale wereld
 func start_world(start_data: WorldStartData) -> void:
 	if is_starting_world:
 		return
@@ -86,7 +86,7 @@ func start_world(start_data: WorldStartData) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("escape"):
-		if active_world != null:
+		if active_world != null and not is_starting_world:
 			if in_game_menu.visible:
 				in_game_menu.hide()
 			else:
@@ -120,6 +120,20 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 		NetworkProtocol.MessageType.CLIENT_WORLD_READY:
 			if NetworkManager.is_host():
 				_handle_client_world_ready(from_peer_id, payload)
+				
+		NetworkProtocol.MessageType.PLAYER_SPAWN:
+			if NetworkManager.is_client():
+				_handle_player_spawn(from_peer_id, payload)
+
+
+func _on_multiplayer_toggle(enabled: bool):
+	if enabled:
+		var host_error = NetworkManager.start_host()
+		if host_error != OK:
+			print("host starten mislukt:", error_string(host_error))
+			return
+		
+		print("host gestart op %d." % NetworkManager.DEFAULT_PORT)
 
 
 
@@ -133,7 +147,7 @@ func _register_host_session_player() -> void:
 	if not NetworkManager.is_host():
 		return
 	
-	if active_world == null or active_world.active_player_data.is_empty():
+	if active_world == null or active_world.local_player_data == null:
 		return
 
 	var host_peer_id: int = MultiplayerPeer.TARGET_PEER_SERVER
@@ -141,15 +155,16 @@ func _register_host_session_player() -> void:
 	if session_players_by_peer_id.has(host_peer_id):
 		return
 
-	var host_player_data: PlayerSaveData = active_world.active_player_data[0]
-
+	var host_player_data: PlayerSaveData = active_world.local_player_data
+	
 	var host_session_player: SessionPlayer = SessionPlayer.create(
 		host_peer_id,
 		host_player_data.character_id,
 		host_player_data.character_name,
 		active_world.player.global_position
 	)
-
+	host_session_player.player_save_data = host_player_data
+	
 	session_players_by_peer_id[host_peer_id] = host_session_player
 
 	print("Hostspeler geregistreerd als sessiespeler.")
@@ -350,26 +365,28 @@ func _start_received_world() -> void:
 		print("Geen speler geselecteerd voor deze join.")
 		return
 
-	var players_to_start: Array[PlayerSaveData] = [pending_join_player_data]
-	var start_data: WorldStartData = WorldStartData.create(pending_world_snapshot_data, players_to_start)
+	var start_data: WorldStartData = WorldStartData.create(
+		pending_world_snapshot_data,
+		pending_join_player_data
+	)
 
 	print("Client start de ontvangen wereld.")
 	start_world(start_data)
 
 
 
+# client send dit packet als zijn world geladen is
 func _send_client_world_ready() -> void:
-	if active_world == null or active_world.active_player_data.is_empty():
+	if active_world == null or active_world.local_player_data == null:
 		return
 
-	var player_data: PlayerSaveData = active_world.active_player_data[0]
+	var player_data: PlayerSaveData = active_world.local_player_data
 
 	var send_error: Error = NetworkManager.send_packet(
 		MultiplayerPeer.TARGET_PEER_SERVER,
 		NetworkProtocol.MessageType.CLIENT_WORLD_READY,
 		{
-			"character_id": player_data.character_id,
-			"character_name": player_data.character_name,
+			"player_save": player_data.to_dictionary(),
 		},
 		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
 		NetworkProtocol.CHANNEL_CONTROL
@@ -383,6 +400,7 @@ func _send_client_world_ready() -> void:
 
 
 
+# server behandeld het packet dat de client send als zijn world ingeladen is
 func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
 	if not NetworkManager.is_client_approved(from_peer_id):
 		return
@@ -393,15 +411,144 @@ func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
 	if session_players_by_peer_id.has(from_peer_id):
 		return
 
-	var character_id: String = payload.get("character_id")
-	var character_name: String = payload.get("character_name")
-	
-	
-	var session_player: SessionPlayer = SessionPlayer.create(from_peer_id, character_id, character_name, active_world.active_world_data.spawn_position)
+	var raw_player_save: Variant = payload.get("player_save")
 
+	if not raw_player_save is Dictionary:
+		print("CLIENT_WORLD_READY bevat geen PlayerSaveData.")
+		return
+
+	var player_save_dictionary: Dictionary = raw_player_save
+
+	if player_save_dictionary.get("format_version") != PlayerSaveData.FORMAT_VERSION:
+		print("CLIENT_WORLD_READY bevat een onjuiste PlayerSaveData-versie.")
+		return
+
+	var player_save_data: PlayerSaveData = PlayerSaveData.from_dictionary(player_save_dictionary)
+
+	if player_save_data.character_id.is_empty():
+		print("CLIENT_WORLD_READY bevat geen character_id.")
+		return
+
+	var spawn_position: Vector2 = player_save_data.get_position_for_world(
+		active_world.active_world_data.world_id,
+		active_world.active_world_data.spawn_position
+	)
+
+	var session_player: SessionPlayer = SessionPlayer.create(
+		from_peer_id,
+		player_save_data.character_id,
+		player_save_data.character_name,
+		spawn_position
+	)
+
+	session_player.player_save_data = player_save_data
 	session_players_by_peer_id[from_peer_id] = session_player
 
-	print("Sessiespeler toegevoegd: peer %d bestuurt %s." % [from_peer_id, character_name])
+	print(
+		"Sessiespeler toegevoegd: peer %d bestuurt %s."
+		% [from_peer_id, player_save_data.character_name]
+	)
+
+	active_world.spawn_remote_player(from_peer_id, spawn_position)
+
+	_send_all_session_player_spawns_to(from_peer_id)
+	_announce_session_player_to_other_clients(session_player)
+
+
+
+# Stuurt alle spelers die de host kent naar één net gejointe client.
+func _send_all_session_player_spawns_to(target_peer_id: int) -> void:
+	for session_player: SessionPlayer in session_players_by_peer_id.values():
+		_send_player_spawn(target_peer_id, session_player)
+
+
+
+# Vertelt elke bestaande client dat er één nieuwe speler is bijgekomen.
+func _announce_session_player_to_other_clients(new_session_player: SessionPlayer) -> void:
+	for target_session_player: SessionPlayer in session_players_by_peer_id.values():
+		var target_peer_id: int = target_session_player.peer_id
+
+		# Peer 1 is de host zelf: die heeft deze remote speler al lokaal aangemaakt.
+		if target_peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+			continue
+
+		# De joinende client kreeg zichzelf al via de eerste functie.
+		if target_peer_id == new_session_player.peer_id:
+			continue
+
+		_send_player_spawn(target_peer_id, new_session_player)
+
+
+
+func _send_player_spawn(target_peer_id: int, session_player: SessionPlayer) -> void:
+	if not NetworkManager.is_host():
+		return
+	
+	if active_world == null:
+		return
+
+	var spawn_position: Vector2 = session_player.world_position
+
+	if session_player.peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+		spawn_position = active_world.player.global_position
+
+	session_player.world_position = spawn_position
+
+	var send_error: Error = NetworkManager.send_packet(
+		target_peer_id,
+		NetworkProtocol.MessageType.PLAYER_SPAWN,
+		{
+			"peer_id": session_player.peer_id,
+			"character_id": session_player.character_id,
+			"character_name": session_player.character_name,
+			"position": spawn_position,
+		},
+		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+		NetworkProtocol.CHANNEL_CONTROL
+	)
+
+	if send_error != OK:
+		print("PLAYER_SPAWN versturen mislukt: %s" % error_string(send_error))
+
+
+
+# word uitgevoerd na send player spawn
+func _handle_player_spawn(from_peer_id: int, payload: Dictionary) -> void:
+	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
+		return
+
+	if active_world == null:
+		return
+
+	var raw_peer_id: Variant = payload.get("peer_id")
+	var raw_character_id: Variant = payload.get("character_id")
+	var raw_character_name: Variant = payload.get("character_name")
+	var raw_position: Variant = payload.get("position")
+
+	if not raw_peer_id is int or raw_peer_id <= 0:
+		return
+
+	if not raw_character_id is String or raw_character_id.is_empty():
+		return
+
+	if not raw_character_name is String:
+		return
+
+	if not raw_position is Vector2:
+		return
+
+	var spawned_peer_id: int = raw_peer_id
+	var spawn_position: Vector2 = raw_position
+
+	if spawned_peer_id == NetworkManager.get_local_peer_id():
+		active_world.player.global_position = spawn_position
+		print("Host bepaalde mijn spawnpositie: %s." % spawn_position)
+		return
+
+	active_world.spawn_remote_player(spawned_peer_id, spawn_position)
+
+	print("Remote speler ontvangen: peer %d (%s)." % [spawned_peer_id, raw_character_name])
+
 
 
 #endregion
