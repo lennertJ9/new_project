@@ -7,6 +7,11 @@ var character_name: String = ""
 var world_position: Vector2 = Vector2.ZERO
 var player_save_data: PlayerSaveData
 
+var latest_movement_input: Vector2 = Vector2.ZERO
+var last_received_input_sequence: int = -1
+var last_input_received_time_msec: int = 0
+
+
 
 static func create(new_peer_id: int, new_character_id: String, new_character_name: String, new_world_position: Vector2) -> SessionPlayer:
 	var session_player: SessionPlayer = SessionPlayer.new()

@@ -3,8 +3,8 @@ class_name Game
 
 #preload van world
 const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
-
-
+const PLAYER_INPUT_TIMEOUT_MSEC: int = 250
+const PLAYER_STATE_SEND_INTERVAL: float = 1.0 / 20.0
 
 @export var skip_menu_for_debug: bool = false
 @export var debug_world_seed: int = 12345
@@ -16,6 +16,7 @@ const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
 @onready var loading_screen: Control = $Interface/LoadingScreen
 @onready var in_game_menu: Control = $Interface/InGameMenu
 
+const PLAYER_INPUT_SEND_INTERVAL: float = 1.0 / 30.0 # hoevaak client zijn inputs verzend
 
 var active_world: World
 var is_starting_world: bool = false # geeft aan dat de wereld starting/loading is
@@ -24,6 +25,15 @@ var pending_world_snapshot_data: WorldSaveData
 var pending_join_player_data: PlayerSaveData
 var session_players_by_peer_id: Dictionary[int, SessionPlayer] = {}
 
+var local_movement_input: Vector2 = Vector2.ZERO
+var next_player_input_sequence: int = 0
+var player_input_send_timer: float = 0.0
+
+var player_state_send_timer: float = 0.0
+var latest_received_player_positions_by_peer_id: Dictionary[int, Vector2] = {}
+
+var next_player_state_sequence: int = 0
+var latest_received_player_state_sequence_by_peer_id: Dictionary[int, int] = {}
 
 
 func _ready() -> void:
@@ -42,6 +52,16 @@ func _ready() -> void:
 	
 	if OS.is_debug_build() and skip_menu_for_debug:
 		start_new_debug_world()
+
+
+
+func _physics_process(delta: float) -> void:
+	if NetworkManager.is_client():
+		_send_local_player_input_if_due(delta)
+
+	if NetworkManager.is_host():
+		_simulate_remote_client_players()
+		_send_player_states_if_due(delta)
 
 
 func start_new_debug_world() -> void:
@@ -71,7 +91,10 @@ func start_world(start_data: WorldStartData) -> void:
 	active_world = world
 	world_container.add_child(active_world)
 
+	# wachten totdat de wereld geladen is
 	await active_world.initialize(start_data)
+
+	active_world.player.movement_input_sampled.connect(_on_local_movement_input_sampled)
 
 	if NetworkManager.is_host():
 		_register_host_session_player()
@@ -82,6 +105,16 @@ func start_world(start_data: WorldStartData) -> void:
 		_send_client_world_ready()
 	
 	is_starting_world = false
+
+
+
+func _on_local_movement_input_sampled(movement_input: Vector2) -> void:
+	local_movement_input = movement_input
+
+
+
+
+
 
 
 func _input(event: InputEvent) -> void:
@@ -128,6 +161,13 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 		NetworkProtocol.MessageType.PLAYER_DESPAWN:
 			if NetworkManager.is_client():
 				_handle_player_despawn(from_peer_id, payload)
+		NetworkProtocol.MessageType.PLAYER_INPUT:
+			if NetworkManager.is_host():
+				_handle_player_input(from_peer_id, payload)
+		NetworkProtocol.MessageType.PLAYER_STATE:
+			if NetworkManager.is_client():
+				_handle_player_state(from_peer_id, payload)
+
 
 
 func _on_multiplayer_toggle(enabled: bool):
@@ -555,8 +595,24 @@ func _handle_player_spawn(from_peer_id: int, payload: Dictionary) -> void:
 		return
 
 	active_world.spawn_remote_player(spawned_peer_id, spawn_position)
-
+	_apply_cached_remote_player_state(spawned_peer_id)
 	print("Remote speler ontvangen: peer %d (%s)." % [spawned_peer_id, raw_character_name])
+
+
+
+func _apply_cached_remote_player_state(peer_id: int) -> void:
+	if active_world == null:
+		return
+
+	if peer_id == NetworkManager.get_local_peer_id():
+		return
+
+	if not latest_received_player_positions_by_peer_id.has(peer_id):
+		return
+
+	var cached_position: Vector2 = (latest_received_player_positions_by_peer_id[peer_id])
+
+	active_world.push_remote_player_position_snapshot(peer_id, cached_position)
 
 
 
@@ -604,6 +660,204 @@ func _send_player_despawn_to_remaining_clients(despawned_peer_id: int) -> void:
 
 		if send_error != OK:
 			print("PLAYER_DESPAWN versturen mislukt: %s." % error_string(send_error))
+
+
+
+func _handle_player_input(from_peer_id: int, payload: Dictionary) -> void:
+	if not NetworkManager.is_client_approved(from_peer_id):
+		return
+
+	if not session_players_by_peer_id.has(from_peer_id):
+		return
+
+	var raw_sequence: Variant = payload.get("sequence")
+	var raw_movement_input: Variant = payload.get("movement_input")
+
+	if not raw_sequence is int:
+		return
+
+	if not raw_movement_input is Vector2:
+		return
+
+	var input_sequence: int = raw_sequence
+	var movement_input: Vector2 = raw_movement_input.limit_length(1.0)
+	var session_player: SessionPlayer = session_players_by_peer_id[from_peer_id]
+
+	if input_sequence <= session_player.last_received_input_sequence:
+		return
+
+	var did_input_change: bool = (session_player.latest_movement_input != movement_input)
+
+	session_player.last_received_input_sequence = input_sequence
+	session_player.latest_movement_input = movement_input
+	session_player.last_input_received_time_msec = Time.get_ticks_msec()
+
+	if did_input_change:
+		print(
+			"Host ontving input van peer %d: %s."
+			% [from_peer_id, movement_input]
+		)
+
+
+
+func _send_player_input() -> void:
+	next_player_input_sequence += 1
+
+	var send_error: Error = NetworkManager.send_packet(
+		MultiplayerPeer.TARGET_PEER_SERVER,
+		NetworkProtocol.MessageType.PLAYER_INPUT,
+		{
+			"sequence": next_player_input_sequence,
+			"movement_input": local_movement_input,
+		},
+		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED,
+		NetworkProtocol.CHANNEL_MOVEMENT
+	)
+
+	if send_error != OK:
+		print("PLAYER_INPUT versturen mislukt: %s." % error_string(send_error))
+
+
+
+func _send_local_player_input_if_due(delta: float) -> void:
+	if active_world == null:
+		return
+
+	player_input_send_timer += delta
+
+	if player_input_send_timer < PLAYER_INPUT_SEND_INTERVAL:
+		return
+
+	player_input_send_timer = 0.0
+
+	_send_player_input()
+
+
+
+func _simulate_remote_client_players() -> void:
+	if active_world == null:
+		return
+
+	var current_time_msec: int = Time.get_ticks_msec()
+
+	for session_player: SessionPlayer in session_players_by_peer_id.values():
+		if session_player.peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+			continue
+
+		var remote_player: Player = active_world.get_remote_player(session_player.peer_id)
+
+		if remote_player == null:
+			continue
+
+		if not active_world.is_remote_player_simulation_ready(session_player.peer_id):
+			continue
+
+		var movement_input: Vector2 = session_player.latest_movement_input
+		var time_since_last_input_msec: int = (current_time_msec - session_player.last_input_received_time_msec)
+
+		if time_since_last_input_msec > PLAYER_INPUT_TIMEOUT_MSEC:
+			movement_input = Vector2.ZERO
+
+		remote_player.simulate_movement(movement_input)
+		session_player.world_position = remote_player.global_position
+
+
+
+func _send_player_states_if_due(delta: float) -> void:
+	if active_world == null:
+		return
+
+	player_state_send_timer += delta
+
+	if player_state_send_timer < PLAYER_STATE_SEND_INTERVAL:
+		return
+
+	player_state_send_timer = 0.0
+	next_player_state_sequence += 1
+	_update_host_session_player_position()
+
+	for state_session_player: SessionPlayer in session_players_by_peer_id.values():
+		for target_session_player: SessionPlayer in session_players_by_peer_id.values():
+			var target_peer_id: int = target_session_player.peer_id
+
+			# De host heeft zijn eigen officiële wereld al lokaal.
+			if target_peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+				continue
+
+			_send_player_state(target_peer_id, state_session_player, next_player_state_sequence)
+
+
+
+func _send_player_state(target_peer_id: int, state_session_player: SessionPlayer, state_sequence: int) -> void:
+	var send_error: Error = NetworkManager.send_packet(
+		target_peer_id,
+		NetworkProtocol.MessageType.PLAYER_STATE,
+		{
+			"state_sequence": state_sequence,
+			"peer_id": state_session_player.peer_id,
+			"position": state_session_player.world_position,
+		},
+		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED,
+		NetworkProtocol.CHANNEL_MOVEMENT
+	)
+
+	if send_error != OK:
+		print("PLAYER_STATE versturen mislukt: %s." % error_string(send_error))
+
+
+
+func _handle_player_state(from_peer_id: int, payload: Dictionary) -> void:
+	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
+		return
+
+	if active_world == null:
+		return
+	
+	var raw_state_sequence: Variant = payload.get("state_sequence")
+	if not raw_state_sequence is int or raw_state_sequence < 0:
+		return
+	
+	var raw_peer_id: Variant = payload.get("peer_id")
+	var raw_position: Variant = payload.get("position")
+	
+	if not raw_peer_id is int or raw_peer_id <= 0:
+		return
+	
+	if not raw_position is Vector2:
+		return
+	
+	var state_sequence: int = raw_state_sequence
+	var state_peer_id: int = raw_peer_id
+	var state_position: Vector2 = raw_position
+	var last_received_state_sequence: int = (latest_received_player_state_sequence_by_peer_id.get(state_peer_id, -1))
+	if state_sequence <= last_received_state_sequence:
+		return
+	
+	var is_first_state_for_peer: bool = (not latest_received_player_positions_by_peer_id.has(state_peer_id))
+	latest_received_player_state_sequence_by_peer_id[state_peer_id] = state_sequence
+	latest_received_player_positions_by_peer_id[state_peer_id] = state_position
+	if is_first_state_for_peer:
+		print("Eerste PLAYER_STATE ontvangen voor peer %d." % state_peer_id)
+	
+	if state_peer_id == NetworkManager.get_local_peer_id():
+		active_world.reconcile_local_player_position(state_position)
+		return
+
+	active_world.push_remote_player_position_snapshot(state_peer_id, state_position)
+
+
+
+func _update_host_session_player_position() -> void:
+	var host_peer_id: int = MultiplayerPeer.TARGET_PEER_SERVER
+
+	if not session_players_by_peer_id.has(host_peer_id):
+		return
+
+	var host_session_player: SessionPlayer = (
+		session_players_by_peer_id[host_peer_id]
+	)
+
+	host_session_player.world_position = active_world.player.global_position
 
 
 

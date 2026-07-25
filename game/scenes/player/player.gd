@@ -1,12 +1,28 @@
 extends CharacterBody2D
 class_name Player
 
-var speed: int = 250
-var input: Vector2
+class RemotePositionSnapshot:
+	var position: Vector2 = Vector2.ZERO
+	var received_time_msec: int = 0
+
+
+signal movement_input_sampled(movement_input: Vector2)
+
+const REMOTE_INTERPOLATION_DELAY_MSEC: int = 100
+const MAX_REMOTE_POSITION_SNAPSHOTS: int = 4
+
+# multiplayer correction voor clients
+const LOCAL_RECONCILIATION_TOLERANCE: float = 8.0
+const LOCAL_RECONCILIATION_HARD_DISTANCE: float = 64.0
+const LOCAL_RECONCILIATION_SOFT_FACTOR: float = 0.25
+
+var speed: int = 500
 var last_input: Vector2
 var chunk_manager: ChunkManager
 var projectile_container: Node2D
 var controls_enabled: bool = false
+var remote_position_snapshots: Array[RemotePositionSnapshot] = []
+
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 const BOLT_SCENE: PackedScene = preload("res://scenes/spells/magic_bolt/MagicBolt.tscn")
@@ -25,12 +41,18 @@ func set_controls_enabled(value: bool) -> void:
 
 
 
+func _process(_delta: float) -> void:
+	_interpolate_remote_position()
+
+
+
 func _physics_process(_delta: float) -> void:
 	if not controls_enabled:
 		return
 
 	var movement_input: Vector2 = Input.get_vector("LEFT", "RIGHT", "UP", "DOWN")
-
+	movement_input_sampled.emit(movement_input)
+	
 	simulate_movement(movement_input)
 
 
@@ -71,6 +93,9 @@ func _update_movement_animation(movement_input: Vector2) -> void:
 
 
 
+
+
+
 func _input(event: InputEvent) -> void:
 	if not controls_enabled:
 		return
@@ -91,3 +116,66 @@ func _input(event: InputEvent) -> void:
 		bolt.direction = global_position.direction_to(get_global_mouse_position())
 		bolt.chunk_manager = chunk_manager
 		projectile_container.add_child(bolt)
+
+
+
+#region network
+
+func push_remote_position_snapshot(position: Vector2) -> void:
+	var snapshot: RemotePositionSnapshot = RemotePositionSnapshot.new()
+
+	snapshot.position = position
+	snapshot.received_time_msec = Time.get_ticks_msec()
+
+	remote_position_snapshots.append(snapshot)
+
+	while remote_position_snapshots.size() > MAX_REMOTE_POSITION_SNAPSHOTS:
+		remote_position_snapshots.remove_at(0)
+
+
+
+func _interpolate_remote_position() -> void:
+	if remote_position_snapshots.size() < 2:
+		return
+
+	var render_time_msec: int = (Time.get_ticks_msec() - REMOTE_INTERPOLATION_DELAY_MSEC)
+
+	while remote_position_snapshots.size() >= 3:
+		var second_snapshot: RemotePositionSnapshot = (remote_position_snapshots[1])
+		
+		if second_snapshot.received_time_msec > render_time_msec:
+			break
+
+		remote_position_snapshots.remove_at(0)
+
+	var from_snapshot: RemotePositionSnapshot = remote_position_snapshots[0]
+	var to_snapshot: RemotePositionSnapshot = remote_position_snapshots[1]
+
+	var duration_msec: int = (to_snapshot.received_time_msec - from_snapshot.received_time_msec)
+
+	if duration_msec <= 0:
+		duration_msec = 1
+
+	var interpolation_weight: float = clampf(float(render_time_msec - from_snapshot.received_time_msec) / float(duration_msec), 0.0, 1.0)
+
+	global_position = from_snapshot.position.lerp(to_snapshot.position, interpolation_weight)
+
+
+
+func reconcile_to_authoritative_position(authoritative_position: Vector2) -> void:
+	var position_error: Vector2 = authoritative_position - global_position
+	var error_distance: float = position_error.length()
+
+	if error_distance <= LOCAL_RECONCILIATION_TOLERANCE:
+		return
+
+	if error_distance >= LOCAL_RECONCILIATION_HARD_DISTANCE:
+		global_position = authoritative_position
+		velocity = Vector2.ZERO
+
+		print("Lokale speler hard gecorrigeerd door host.")
+		return
+
+	global_position += position_error * LOCAL_RECONCILIATION_SOFT_FACTOR
+
+#endregion

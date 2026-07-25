@@ -1,11 +1,6 @@
 extends Node2D
 class_name ChunkManager
 
-const WALL_DATABASE := preload("res://scenes/tile_database/wall_database.gd")
-const CHUNK_SIZE := 16
-const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
-const GENERATION_PADDING: int = 1
-const DEBUG_CHUNK_POSITION: Vector2i = Vector2i(-3, 0)
 
 
 signal chunk_deloaded
@@ -13,6 +8,13 @@ signal neighbours_checked
 signal wall_damaged(tile_position: Vector2i, remaining_health: int)
 signal wall_destroyed(tile_position: Vector2i, wall_id: int)
 signal initial_area_loaded
+
+const WALL_DATABASE := preload("res://scenes/tile_database/wall_database.gd")
+const CHUNK_SIZE := 16
+const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
+const GENERATION_PADDING: int = 1
+const DEBUG_CHUNK_POSITION: Vector2i = Vector2i(-3, 0)
+const SIMULATION_READY_DISTANCE: int = 0
 
 
 @export var player: CharacterBody2D
@@ -46,7 +48,7 @@ var render_distance: int = 3
 var cpu_generator_delay: int = 25
 var cpu_load_delay: int = 25
 
-@export_range(1, 4) var simulation_distance: int = 2
+@export_range(1, 4) var simulation_distance: int = 3
 var simulation_anchors_by_id: Dictionary[int, Node2D] = {}
 
 #-------------- Chunks  --------------------#
@@ -521,20 +523,34 @@ func are_visible_chunks_loaded() -> bool:
 	if player == null:
 		return false
 
-	var player_chunk_position: Vector2i = get_player_chunk_position()
+	return are_chunk_area_loaded(get_player_chunk_position(),render_distance)
 
+
+
+func is_simulation_area_loaded(world_position: Vector2) -> bool:
+	var center_chunk_position: Vector2i = (get_chunk_position_from_world_position(world_position))
+	return are_chunk_area_loaded(center_chunk_position, SIMULATION_READY_DISTANCE)
+
+
+
+# checked of center chunk tot chunk + distance de loaded state heeft
+func are_chunk_area_loaded(center_chunk_position: Vector2i, distance: int) -> bool:
 	world_data_mutex.lock()
-	for x in range(player_chunk_position.x - render_distance, player_chunk_position.x + render_distance + 1):
-		for y in range(player_chunk_position.y - render_distance, player_chunk_position.y + render_distance + 1):
+
+	for x in range(center_chunk_position.x - distance,center_chunk_position.x + distance + 1):
+		for y in range(center_chunk_position.y - distance,center_chunk_position.y + distance + 1):
 			var chunk_position: Vector2i = Vector2i(x, y)
+
 			if not generated_chunks.has(chunk_position):
 				world_data_mutex.unlock()
 				return false
 
 			var chunk: Chunk = generated_chunks[chunk_position]
+
 			if chunk.state != Chunk.ChunkState.LOADED:
 				world_data_mutex.unlock()
 				return false
+
 	world_data_mutex.unlock()
 
 	return true

@@ -126,3 +126,53 @@ func despawn_remote_player(peer_id: int) -> void:
 		remote_player.queue_free()
 
 	print("Remote speler voor peer %d verwijderd." % peer_id)
+
+
+
+func get_remote_player(peer_id: int) -> Player:
+	if not remote_players_by_peer_id.has(peer_id):
+		return null
+
+	return remote_players_by_peer_id[peer_id]
+
+
+
+func is_remote_player_simulation_ready(peer_id: int) -> bool:
+	var remote_player: Player = get_remote_player(peer_id)
+
+	if remote_player == null:
+		return false
+
+	return chunk_manager.is_simulation_area_loaded(remote_player.global_position)
+
+
+
+func push_remote_player_position_snapshot(peer_id: int, position: Vector2) -> void:
+	var remote_player: Player = get_remote_player(peer_id)
+
+	if remote_player == null:
+		return
+
+	remote_player.push_remote_position_snapshot(position)
+
+
+
+func reconcile_local_player_position(authoritative_position: Vector2) -> void:
+	player.reconcile_to_authoritative_position(authoritative_position)
+
+
+
+func get_player_for_peer(peer_id: int) -> Player:
+	if peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+		return player
+
+	return get_remote_player(peer_id)
+
+
+func apply_remote_player_movement_animation(peer_id: int, movement_input: Vector2) -> void:
+	var remote_player: Player = get_remote_player(peer_id)
+
+	if remote_player == null:
+		return
+
+	remote_player.apply_remote_movement_animation(movement_input)
