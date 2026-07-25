@@ -1,7 +1,7 @@
 extends CharacterBody2D
 class_name Player
 
-var speed: int = 700
+var speed: int = 250
 var input: Vector2
 var last_input: Vector2
 var chunk_manager: ChunkManager
@@ -17,46 +17,57 @@ func configure_world(chunk_manager_reference: ChunkManager, projectile_container
 	projectile_container = projectile_container_reference
 
 
+
 func set_controls_enabled(value: bool) -> void:
 	controls_enabled = value
 	if not controls_enabled:
 		velocity = Vector2.ZERO
 
 
-func _process(_delta: float) -> void:
+
+func _physics_process(_delta: float) -> void:
 	if not controls_enabled:
 		return
 
-	input = Input.get_vector("LEFT","RIGHT","UP","DOWN")
-	
-	
-	velocity = input * speed
-	
+	var movement_input: Vector2 = Input.get_vector("LEFT", "RIGHT", "UP", "DOWN")
+
+	simulate_movement(movement_input)
+
+
+
+# Simuleert één movementstap op basis van een reeds gekozen richting.
+# Deze functie leest zelf geen toetsenbordinput.
+func simulate_movement(movement_input: Vector2) -> void:
+	velocity = movement_input * speed
 	move_and_slide()
-	
-	if input != Vector2.ZERO:
-		last_input = input
-		if input.x != 0:
-			if input.x > 0:
-				animation_player.play("RUN_RIGHT")
-			else:
-				animation_player.play("RUN_LEFT")
+
+	_update_movement_animation(movement_input)
+
+
+
+func _update_movement_animation(movement_input: Vector2) -> void:
+	if movement_input != Vector2.ZERO:
+		last_input = movement_input
+
+		if movement_input.x > 0:
+			animation_player.play("RUN_RIGHT")
+		elif movement_input.x < 0:
+			animation_player.play("RUN_LEFT")
+		elif movement_input.y > 0:
+			animation_player.play("RUN_DOWN")
 		else:
-			if input.y > 0:
-				animation_player.play("RUN_DOWN")
-			else:
-				animation_player.play("RUN_UP")
+			animation_player.play("RUN_UP")
+		return
+
+	if last_input.x > 0:
+		animation_player.play("IDLE_RIGHT")
+	elif last_input.x < 0:
+		animation_player.play("IDLE_LEFT")
+	elif last_input.y > 0:
+		animation_player.play("IDLE_DOWN")
 	else:
-		if last_input.x != 0:
-			if last_input.x > 0:
-				animation_player.play("IDLE_RIGHT")
-			else:
-				animation_player.play("IDLE_LEFT")
-		else:
-			if last_input.y > 0:
-				animation_player.play("IDLE_DOWN")
-			else:
-				animation_player.play("IDLE_UP")
+		animation_player.play("IDLE_UP")
+
 
 
 
@@ -80,4 +91,3 @@ func _input(event: InputEvent) -> void:
 		bolt.direction = global_position.direction_to(get_global_mouse_position())
 		bolt.chunk_manager = chunk_manager
 		projectile_container.add_child(bolt)
-		

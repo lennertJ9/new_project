@@ -124,6 +124,10 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 		NetworkProtocol.MessageType.PLAYER_SPAWN:
 			if NetworkManager.is_client():
 				_handle_player_spawn(from_peer_id, payload)
+				
+		NetworkProtocol.MessageType.PLAYER_DESPAWN:
+			if NetworkManager.is_client():
+				_handle_player_despawn(from_peer_id, payload)
 
 
 func _on_multiplayer_toggle(enabled: bool):
@@ -179,6 +183,11 @@ func _on_remote_peer_disconnected(peer_id: int) -> void:
 		return
 
 	session_players_by_peer_id.erase(peer_id)
+	if active_world != null:
+		active_world.despawn_remote_player(peer_id)
+
+	_send_player_despawn_to_remaining_clients(peer_id)
+
 	print("Sessiespeler van peer %d verwijderd." % peer_id)
 
 
@@ -548,6 +557,53 @@ func _handle_player_spawn(from_peer_id: int, payload: Dictionary) -> void:
 	active_world.spawn_remote_player(spawned_peer_id, spawn_position)
 
 	print("Remote speler ontvangen: peer %d (%s)." % [spawned_peer_id, raw_character_name])
+
+
+
+func _handle_player_despawn(from_peer_id: int, payload: Dictionary) -> void:
+	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
+		return
+	if active_world == null:
+		return
+
+	var raw_peer_id: Variant = payload.get("peer_id")
+
+	if not raw_peer_id is int or raw_peer_id <= 0:
+		return
+
+	var despawned_peer_id: int = raw_peer_id
+
+	# De host mag nooit onze lokale speler verwijderen.
+	if despawned_peer_id == NetworkManager.get_local_peer_id():
+		return
+
+	active_world.despawn_remote_player(despawned_peer_id)
+
+	print("Host verwijderde remote speler van peer %d." % despawned_peer_id)
+
+
+
+
+func _send_player_despawn_to_remaining_clients(despawned_peer_id: int) -> void:
+	for target_session_player: SessionPlayer in session_players_by_peer_id.values():
+		var target_peer_id: int = target_session_player.peer_id
+
+		# De host heeft zijn remote player al zelf verwijderd.
+		if target_peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+			continue
+
+		var send_error: Error = NetworkManager.send_packet(
+			target_peer_id,
+			NetworkProtocol.MessageType.PLAYER_DESPAWN,
+			{
+				"peer_id": despawned_peer_id,
+			},
+			MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+			NetworkProtocol.CHANNEL_CONTROL
+		)
+
+		if send_error != OK:
+			print("PLAYER_DESPAWN versturen mislukt: %s." % error_string(send_error))
 
 
 

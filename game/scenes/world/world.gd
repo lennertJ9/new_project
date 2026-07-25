@@ -105,6 +105,8 @@ func spawn_remote_player(peer_id: int, spawn_position: Vector2) -> Player:
 	remote_player.global_position = spawn_position
 	remote_players_by_peer_id[peer_id] = remote_player
 
+	if NetworkManager.is_host():
+		chunk_manager.register_simulation_anchor(peer_id, remote_player)
 	print("Remote speler voor peer %d gespawned." % peer_id)
 
 	return remote_player
@@ -118,6 +120,7 @@ func despawn_remote_player(peer_id: int) -> void:
 	var remote_player: Player = remote_players_by_peer_id[peer_id]
 
 	remote_players_by_peer_id.erase(peer_id)
+	chunk_manager.unregister_simulation_anchor(peer_id)
 
 	if remote_player != null:
 		remote_player.queue_free()

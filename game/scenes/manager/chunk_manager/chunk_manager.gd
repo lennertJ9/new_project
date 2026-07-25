@@ -46,6 +46,9 @@ var render_distance: int = 3
 var cpu_generator_delay: int = 25
 var cpu_load_delay: int = 25
 
+@export_range(1, 4) var simulation_distance: int = 2
+var simulation_anchors_by_id: Dictionary[int, Node2D] = {}
+
 #-------------- Chunks  --------------------#
 var generated_chunks: Dictionary[Vector2i, Chunk] # pure data, deze chunks zijn niet perse autotiled
 var loaded_chunks: Array[Chunk] # loaded chunks, actief en autotiled
@@ -294,7 +297,7 @@ func chunk_generator():
 				var global_pos = chunk.position * 16 + Vector2i(x, y)
 				var random = noise.get_noise_2dv(global_pos)
 
-				if random > 0.1:
+				if random > 0.2:
 					chunk.wall_id_layer[i] = 1
 
 				chunk.ground_id_layer[i] = 2
@@ -391,18 +394,25 @@ func chunk_check() -> void:
 		return
 
 	var player_chunk_position: Vector2i = get_player_chunk_position()
-	var data_generation_distance: int = render_distance + GENERATION_PADDING
+	var player_generation_distance: int = render_distance + GENERATION_PADDING
 
-	queue_missing_chunk_data(player_chunk_position, data_generation_distance)
+	# Lokale speler: volledige zichtbare wereld laden.
+	queue_missing_chunk_data(player_chunk_position, player_generation_distance)
 	queue_chunks_for_load(player_chunk_position, render_distance)
+
+	# Remote hostspelers: kleinere collision/simulatiezone laden.
+	for anchor_chunk_position: Vector2i in get_simulation_anchor_chunk_positions():
+		var simulation_generation_distance: int = (simulation_distance + GENERATION_PADDING)
+
+		queue_missing_chunk_data(anchor_chunk_position, simulation_generation_distance)
+		queue_chunks_for_load(anchor_chunk_position, simulation_distance)
+
 	queue_expired_chunks_for_unload()
 
 
+
 func get_player_chunk_position() -> Vector2i:
-	return Vector2i(
-		floori(player.global_position.x / float(CHUNK_PIXEL_SIZE)),
-		floori(player.global_position.y / float(CHUNK_PIXEL_SIZE))
-	)
+	return get_chunk_position_from_world_position(player.global_position)
 
 
 func queue_missing_chunk_data(center_chunk_position: Vector2i, distance: int) -> void:
@@ -457,11 +467,11 @@ func queue_expired_chunks_for_unload() -> void:
 		return
 
 	var current_time: float = Time.get_ticks_msec() / 1000.0
-	var player_chunk_position: Vector2i = get_player_chunk_position()
+	
 
 	for i in range(loaded_chunks.size() - 1, -1, -1):
 		var chunk: Chunk = loaded_chunks[i]
-		var chunk_is_visible: bool = is_chunk_visible(chunk.position, player_chunk_position)
+		var chunk_is_visible: bool = is_chunk_required(chunk.position)
 		if chunk_is_visible:
 			if chunk.state == Chunk.ChunkState.QUEUED_UNLOAD:
 				chunk.state = Chunk.ChunkState.LOADED
@@ -479,9 +489,27 @@ func queue_expired_chunks_for_unload() -> void:
 
 		chunk.state = Chunk.ChunkState.QUEUED_UNLOAD
 		chunks_to_unload.append(chunk)
-		
 
 
+
+func is_chunk_required(chunk_position: Vector2i) -> bool:
+	if player != null and is_chunk_visible(chunk_position, get_player_chunk_position()):
+		return true
+
+	for anchor_chunk_position: Vector2i in get_simulation_anchor_chunk_positions():
+		var is_near_simulation_anchor: bool = (
+			abs(chunk_position.x - anchor_chunk_position.x) <= simulation_distance
+			and abs(chunk_position.y - anchor_chunk_position.y) <= simulation_distance
+		)
+
+		if is_near_simulation_anchor:
+			return true
+
+	return false
+
+
+
+# berekend de afstand tussen een chunk en de origin, en bepaald als deze zichtbaar/renderd moet worden
 func is_chunk_visible(chunk_position: Vector2i, center_chunk_position: Vector2i) -> bool:
 	return (
 		abs(chunk_position.x - center_chunk_position.x) <= render_distance
@@ -520,7 +548,7 @@ func chunk_unloader():
 			return
 		
 
-		if player != null and is_chunk_visible(chunk.position, get_player_chunk_position()):
+		if is_chunk_required(chunk.position):
 			chunk.state = Chunk.ChunkState.LOADED
 			chunk.last_accessed = Time.get_ticks_msec() / 1000.0
 			
@@ -547,7 +575,7 @@ func generate_cliffs(chunk: Chunk):
 		for x in range(16):
 			var global_pos = chunk.position * 16 + Vector2i(x,y)
 			var random = noise_cliff.get_noise_2dv(global_pos)
-			if random > 0.18 and chunk.wall_id_layer[i] == 0:
+			if random > 0.22 and chunk.wall_id_layer[i] == 0:
 				chunk.ground_id_layer[i] = 0
 				chunk.cliff_id_layer[i] = 1
 				
@@ -692,3 +720,61 @@ func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:
 		else:
 			ground_layer.set_cell(tile_position, ground_id, chunk.unpack_atlas(chunk.ground_atlas_coords[index]))
 	world_data_mutex.unlock()
+
+
+
+############## NETWORK CODE ########################################################################
+#region Netwerk
+
+
+# anchor zijn punten waar chunk manager ook chunks laad (dit is voor remote players ook chunk te kunnen laten generaten)
+func register_simulation_anchor(anchor_id: int, anchor: Node2D) -> void:
+	if anchor == null:
+		return
+
+	simulation_anchors_by_id[anchor_id] = anchor
+
+	if is_running():
+		chunk_check()
+
+
+func unregister_simulation_anchor(anchor_id: int) -> void:
+	simulation_anchors_by_id.erase(anchor_id)
+
+
+
+func get_simulation_anchor_chunk_positions() -> Array[Vector2i]:
+	var chunk_positions: Array[Vector2i] = []
+	var invalid_anchor_ids: Array[int] = []
+
+	for anchor_id: int in simulation_anchors_by_id:
+		var anchor: Node2D = simulation_anchors_by_id[anchor_id]
+
+		if not is_instance_valid(anchor):
+			invalid_anchor_ids.append(anchor_id)
+			continue
+
+		var chunk_position: Vector2i = get_chunk_position_from_world_position(
+			anchor.global_position
+		)
+
+		if not chunk_positions.has(chunk_position):
+			chunk_positions.append(chunk_position)
+
+	for anchor_id: int in invalid_anchor_ids:
+		simulation_anchors_by_id.erase(anchor_id)
+
+	return chunk_positions
+
+
+
+func get_chunk_position_from_world_position(world_position: Vector2) -> Vector2i:
+	return Vector2i(
+		floori(world_position.x / float(CHUNK_PIXEL_SIZE)),
+		floori(world_position.y / float(CHUNK_PIXEL_SIZE))
+	)
+
+
+
+
+#endregion
