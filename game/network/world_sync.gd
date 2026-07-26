@@ -43,11 +43,7 @@ func clear_active_world() -> void:
 	active_world = null
 
 
-func handle_network_packet(
-	from_peer_id: int,
-	message_type: int,
-	payload: Dictionary
-) -> bool:
+func handle_network_packet(from_peer_id: int, message_type: int, payload: Dictionary) -> bool:
 	match message_type:
 		NetworkProtocol.MessageType.REQUEST_WORLD_JOIN_DATA:
 			if NetworkManager.is_host():
