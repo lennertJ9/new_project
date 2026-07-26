@@ -113,6 +113,9 @@ func spawn_remote_player(peer_id: int, spawn_position: Vector2) -> Player:
 
 
 
+## haalt Player uit de remote_players_by_peer_id lijst, verwijderd deze entry uit die lijst
+## haalt de anchor weg uit chunkmanager
+## en doet een queue free op de Player node
 func despawn_remote_player(peer_id: int) -> void:
 	if not remote_players_by_peer_id.has(peer_id):
 		return
@@ -129,6 +132,7 @@ func despawn_remote_player(peer_id: int) -> void:
 
 
 
+## haalt de Player uit de remote_players_by_peer_id lijst via ID
 func get_remote_player(peer_id: int) -> Player:
 	if not remote_players_by_peer_id.has(peer_id):
 		return null
@@ -137,6 +141,8 @@ func get_remote_player(peer_id: int) -> Player:
 
 
 
+## haalt speler uit de remote_players_by_peer_id lijst
+## en checked via is_simulation_area_loaded als de chunks rondom deze player loaded zijn
 func is_remote_player_simulation_ready(peer_id: int) -> bool:
 	var remote_player: Player = get_remote_player(peer_id)
 
@@ -147,13 +153,13 @@ func is_remote_player_simulation_ready(peer_id: int) -> bool:
 
 
 
-func push_remote_player_position_snapshot(peer_id: int, position: Vector2) -> void:
-	var remote_player: Player = get_remote_player(peer_id)
+func apply_remote_player_snapshot(player_snapshot: PlayerSnapshot) -> void:
+	var remote_player: Player = get_remote_player(player_snapshot.peer_id)
 
 	if remote_player == null:
 		return
 
-	remote_player.push_remote_position_snapshot(position)
+	remote_player.apply_remote_snapshot(player_snapshot)
 
 
 
@@ -162,6 +168,7 @@ func reconcile_local_player_position(authoritative_position: Vector2) -> void:
 
 
 
+## checkt als peer een client is en voert dan get_remote_player uit
 func get_player_for_peer(peer_id: int) -> Player:
 	if peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
 		return player

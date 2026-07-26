@@ -32,3 +32,4 @@ y_sort_enabled = true
 player = NodePath("../Player")
 
 [node name="Projectiles" type="Node2D" parent="." unique_id=1971961928]
+y_sort_enabled = true

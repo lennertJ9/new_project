@@ -16,8 +16,8 @@ const LOCAL_RECONCILIATION_TOLERANCE: float = 8.0
 const LOCAL_RECONCILIATION_HARD_DISTANCE: float = 64.0
 const LOCAL_RECONCILIATION_SOFT_FACTOR: float = 0.25
 
-var speed: int = 500
-var last_input: Vector2
+var speed: int = 120
+var facing_direction: Vector2 = Vector2.UP
 var chunk_manager: ChunkManager
 var projectile_container: Node2D
 var controls_enabled: bool = false
@@ -60,39 +60,51 @@ func _physics_process(_delta: float) -> void:
 # Simuleert één movementstap op basis van een reeds gekozen richting.
 # Deze functie leest zelf geen toetsenbordinput.
 func simulate_movement(movement_input: Vector2) -> void:
+	_update_facing_direction(movement_input)
+
 	velocity = movement_input * speed
 	move_and_slide()
 
-	_update_movement_animation(movement_input)
+	_update_movement_animation(velocity)
 
 
 
-func _update_movement_animation(movement_input: Vector2) -> void:
-	if movement_input != Vector2.ZERO:
-		last_input = movement_input
+func _update_facing_direction(direction: Vector2) -> void:
+	if direction != Vector2.ZERO:
+		facing_direction = direction
 
-		if movement_input.x > 0:
-			animation_player.play("RUN_RIGHT")
-		elif movement_input.x < 0:
-			animation_player.play("RUN_LEFT")
-		elif movement_input.y > 0:
-			animation_player.play("RUN_DOWN")
-		else:
-			animation_player.play("RUN_UP")
+
+
+## als movement_velocity 0 is, dan speelt de idle animation, als het niet 0 is word de run animation gespeeld
+func _update_movement_animation(movement_velocity: Vector2) -> void:
+	if not movement_velocity.is_zero_approx():
+		_play_directional_animation("RUN", movement_velocity)
 		return
 
-	if last_input.x > 0:
-		animation_player.play("IDLE_RIGHT")
-	elif last_input.x < 0:
-		animation_player.play("IDLE_LEFT")
-	elif last_input.y > 0:
-		animation_player.play("IDLE_DOWN")
+	_play_directional_animation("IDLE", facing_direction)
+
+
+
+## idle en run animations
+func _play_directional_animation(animation_prefix: String, direction: Vector2) -> void:
+	if direction.x > 0:
+		animation_player.play("%s_RIGHT" % animation_prefix)
+	elif direction.x < 0:
+		animation_player.play("%s_LEFT" % animation_prefix)
+	elif direction.y > 0:
+		animation_player.play("%s_DOWN" % animation_prefix)
 	else:
-		animation_player.play("IDLE_UP")
+		animation_player.play("%s_UP" % animation_prefix)
 
 
 
+func get_network_movement_velocity() -> Vector2:
+	return velocity
 
+
+
+func get_facing_direction() -> Vector2:
+	return facing_direction
 
 
 
@@ -121,6 +133,9 @@ func _input(event: InputEvent) -> void:
 
 #region network
 
+## toevoegen van positie aan de interpolatiebuffer
+## deze buffer is een lijst die de positie interpoleerd naar de nieuwste positie
+## remote_position_snapshots is de lijst waar _interpolate_remote_position() over looped
 func push_remote_position_snapshot(position: Vector2) -> void:
 	var snapshot: RemotePositionSnapshot = RemotePositionSnapshot.new()
 
@@ -134,6 +149,9 @@ func push_remote_position_snapshot(position: Vector2) -> void:
 
 
 
+## looped over _interpolate_remote_position()
+## interpolate naar de nieuwste value
+## value word toegewezen aan de Player
 func _interpolate_remote_position() -> void:
 	if remote_position_snapshots.size() < 2:
 		return
@@ -162,6 +180,7 @@ func _interpolate_remote_position() -> void:
 
 
 
+## controleerd de authoritative_position met zijn eigen positie en corrigeerd naar authoritative_position wanneer nodig
 func reconcile_to_authoritative_position(authoritative_position: Vector2) -> void:
 	var position_error: Vector2 = authoritative_position - global_position
 	var error_distance: float = position_error.length()
@@ -177,5 +196,14 @@ func reconcile_to_authoritative_position(authoritative_position: Vector2) -> voi
 		return
 
 	global_position += position_error * LOCAL_RECONCILIATION_SOFT_FACTOR
+
+
+
+func apply_remote_snapshot(player_snapshot: PlayerSnapshot) -> void:
+	push_remote_position_snapshot(player_snapshot.world_position)
+
+	facing_direction = player_snapshot.facing_direction
+	_update_movement_animation(player_snapshot.movement_velocity)
+
 
 #endregion

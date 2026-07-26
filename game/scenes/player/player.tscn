@@ -1575,6 +1575,7 @@ _data = {
 
 [node name="Player" type="CharacterBody2D" unique_id=1496393512]
 collision_layer = 0
+motion_mode = 1
 script = ExtResource("1_lvxji")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1984848441]

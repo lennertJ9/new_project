@@ -48,6 +48,7 @@ radius = 2.0
 radius = 2.0
 
 [node name="MagicBolt" type="Area2D" unique_id=739867403]
+y_sort_enabled = true
 script = ExtResource("1_rku2o")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1203117191]

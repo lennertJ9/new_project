@@ -12,7 +12,7 @@ var chunk_manager: ChunkManager
 
 func _physics_process(delta: float) -> void:
 	global_position += direction * speed * delta
-	
+
 
 
 

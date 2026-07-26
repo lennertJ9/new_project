@@ -30,10 +30,9 @@ var next_player_input_sequence: int = 0
 var player_input_send_timer: float = 0.0
 
 var player_state_send_timer: float = 0.0
-var latest_received_player_positions_by_peer_id: Dictionary[int, Vector2] = {}
 
 var next_player_state_sequence: int = 0
-var latest_received_player_state_sequence_by_peer_id: Dictionary[int, int] = {}
+var latest_received_player_snapshots_by_peer_id: Dictionary[int, PlayerSnapshot] = {}
 
 
 func _ready() -> void:
@@ -205,7 +204,6 @@ func _register_host_session_player() -> void:
 		host_peer_id,
 		host_player_data.character_id,
 		host_player_data.character_name,
-		active_world.player.global_position
 	)
 	host_session_player.player_save_data = host_player_data
 	
@@ -487,7 +485,6 @@ func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
 		from_peer_id,
 		player_save_data.character_id,
 		player_save_data.character_name,
-		spawn_position
 	)
 
 	session_player.player_save_data = player_save_data
@@ -532,16 +529,15 @@ func _announce_session_player_to_other_clients(new_session_player: SessionPlayer
 func _send_player_spawn(target_peer_id: int, session_player: SessionPlayer) -> void:
 	if not NetworkManager.is_host():
 		return
-	
+
 	if active_world == null:
 		return
 
-	var spawn_position: Vector2 = session_player.world_position
+	var player_to_spawn: Player = active_world.get_player_for_peer(session_player.peer_id)
 
-	if session_player.peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
-		spawn_position = active_world.player.global_position
-
-	session_player.world_position = spawn_position
+	if player_to_spawn == null:
+		print("Kan PLAYER_SPAWN niet sturen: speler bestaat niet voor peer %d." % session_player.peer_id)
+		return
 
 	var send_error: Error = NetworkManager.send_packet(
 		target_peer_id,
@@ -550,7 +546,7 @@ func _send_player_spawn(target_peer_id: int, session_player: SessionPlayer) -> v
 			"peer_id": session_player.peer_id,
 			"character_id": session_player.character_id,
 			"character_name": session_player.character_name,
-			"position": spawn_position,
+			"position": player_to_spawn.global_position,
 		},
 		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
 		NetworkProtocol.CHANNEL_CONTROL
@@ -603,16 +599,16 @@ func _handle_player_spawn(from_peer_id: int, payload: Dictionary) -> void:
 func _apply_cached_remote_player_state(peer_id: int) -> void:
 	if active_world == null:
 		return
-
+	
 	if peer_id == NetworkManager.get_local_peer_id():
 		return
-
-	if not latest_received_player_positions_by_peer_id.has(peer_id):
+	
+	if not latest_received_player_snapshots_by_peer_id.has(peer_id):
 		return
 
-	var cached_position: Vector2 = (latest_received_player_positions_by_peer_id[peer_id])
-
-	active_world.push_remote_player_position_snapshot(peer_id, cached_position)
+	var cached_snapshot: PlayerSnapshot = (latest_received_player_snapshots_by_peer_id[peer_id])
+	
+	active_world.apply_remote_player_snapshot(cached_snapshot)
 
 
 
@@ -692,12 +688,6 @@ func _handle_player_input(from_peer_id: int, payload: Dictionary) -> void:
 	session_player.latest_movement_input = movement_input
 	session_player.last_input_received_time_msec = Time.get_ticks_msec()
 
-	if did_input_change:
-		print(
-			"Host ontving input van peer %d: %s."
-			% [from_peer_id, movement_input]
-		)
-
 
 
 func _send_player_input() -> void:
@@ -759,7 +749,6 @@ func _simulate_remote_client_players() -> void:
 			movement_input = Vector2.ZERO
 
 		remote_player.simulate_movement(movement_input)
-		session_player.world_position = remote_player.global_position
 
 
 
@@ -774,7 +763,6 @@ func _send_player_states_if_due(delta: float) -> void:
 
 	player_state_send_timer = 0.0
 	next_player_state_sequence += 1
-	_update_host_session_player_position()
 
 	for state_session_player: SessionPlayer in session_players_by_peer_id.values():
 		for target_session_player: SessionPlayer in session_players_by_peer_id.values():
@@ -788,19 +776,32 @@ func _send_player_states_if_due(delta: float) -> void:
 
 
 
+## verstuurt PLAYER_STATE packet:  state_sequence | peer_id | global_position
 func _send_player_state(target_peer_id: int, state_session_player: SessionPlayer, state_sequence: int) -> void:
+	if active_world == null:
+		return
+
+	var state_player: Player = active_world.get_player_for_peer(state_session_player.peer_id)
+
+	if state_player == null:
+		return
+
+	var player_snapshot: PlayerSnapshot = PlayerSnapshot.create(
+		state_sequence,
+		state_session_player.peer_id,
+		state_player.global_position,
+		state_player.get_network_movement_velocity(),
+		state_player.get_facing_direction()
+	)
+
 	var send_error: Error = NetworkManager.send_packet(
 		target_peer_id,
 		NetworkProtocol.MessageType.PLAYER_STATE,
-		{
-			"state_sequence": state_sequence,
-			"peer_id": state_session_player.peer_id,
-			"position": state_session_player.world_position,
-		},
+		player_snapshot.to_dictionary(),
 		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED,
 		NetworkProtocol.CHANNEL_MOVEMENT
 	)
-
+	
 	if send_error != OK:
 		print("PLAYER_STATE versturen mislukt: %s." % error_string(send_error))
 
@@ -812,52 +813,33 @@ func _handle_player_state(from_peer_id: int, payload: Dictionary) -> void:
 
 	if active_world == null:
 		return
-	
-	var raw_state_sequence: Variant = payload.get("state_sequence")
-	if not raw_state_sequence is int or raw_state_sequence < 0:
-		return
-	
-	var raw_peer_id: Variant = payload.get("peer_id")
-	var raw_position: Variant = payload.get("position")
-	
-	if not raw_peer_id is int or raw_peer_id <= 0:
-		return
-	
-	if not raw_position is Vector2:
-		return
-	
-	var state_sequence: int = raw_state_sequence
-	var state_peer_id: int = raw_peer_id
-	var state_position: Vector2 = raw_position
-	var last_received_state_sequence: int = (latest_received_player_state_sequence_by_peer_id.get(state_peer_id, -1))
-	if state_sequence <= last_received_state_sequence:
-		return
-	
-	var is_first_state_for_peer: bool = (not latest_received_player_positions_by_peer_id.has(state_peer_id))
-	latest_received_player_state_sequence_by_peer_id[state_peer_id] = state_sequence
-	latest_received_player_positions_by_peer_id[state_peer_id] = state_position
-	if is_first_state_for_peer:
-		print("Eerste PLAYER_STATE ontvangen voor peer %d." % state_peer_id)
-	
-	if state_peer_id == NetworkManager.get_local_peer_id():
-		active_world.reconcile_local_player_position(state_position)
+
+	var received_snapshot: PlayerSnapshot = PlayerSnapshot.from_dictionary(payload)
+
+	if received_snapshot == null:
 		return
 
-	active_world.push_remote_player_position_snapshot(state_peer_id, state_position)
+	if latest_received_player_snapshots_by_peer_id.has(received_snapshot.peer_id):
+		var previous_snapshot: PlayerSnapshot = (latest_received_player_snapshots_by_peer_id[received_snapshot.peer_id])
 
+		if received_snapshot.state_sequence <= previous_snapshot.state_sequence:
+			return
 
+	var is_first_snapshot_for_peer: bool = (not latest_received_player_snapshots_by_peer_id.has(received_snapshot.peer_id))
 
-func _update_host_session_player_position() -> void:
-	var host_peer_id: int = MultiplayerPeer.TARGET_PEER_SERVER
+	latest_received_player_snapshots_by_peer_id[received_snapshot.peer_id] = received_snapshot
 
-	if not session_players_by_peer_id.has(host_peer_id):
+	if is_first_snapshot_for_peer:
+		print("Eerste PLAYER_STATE ontvangen voor peer %d." % received_snapshot.peer_id)
+
+	if received_snapshot.peer_id == NetworkManager.get_local_peer_id():
+		active_world.reconcile_local_player_position(received_snapshot.world_position)
 		return
 
-	var host_session_player: SessionPlayer = (
-		session_players_by_peer_id[host_peer_id]
-	)
+	active_world.apply_remote_player_snapshot(received_snapshot)
 
-	host_session_player.world_position = active_world.player.global_position
+
+
 
 
 
