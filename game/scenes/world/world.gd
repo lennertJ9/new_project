@@ -71,7 +71,10 @@ func initialize(start_data: WorldStartData) -> void:
 	chunk_manager.start_world(active_world_data)
 	await chunk_manager.initial_area_loaded
 
-	player.set_controls_enabled(true)
+	# Een netwerkclient mag pas bewegen nadat de host ook de catch-uprevisies
+	# heeft bevestigd en de lokale sessiespeler officieel heeft gespawned.
+	if not NetworkManager.is_client():
+		player.set_controls_enabled(true)
 
 
 

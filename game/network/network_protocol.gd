@@ -1,7 +1,7 @@
 class_name NetworkProtocol
 extends RefCounted
 
-const VERSION: int = 1
+const VERSION: int = 2
 
 const CHANNEL_CONTROL: int = 0
 const CHANNEL_MOVEMENT: int = 1
@@ -22,6 +22,9 @@ enum MessageType {
 	WORLD_TILES_CHANGED = 11,
 	REQUEST_WORLD_JOIN_DATA = 12,
 	WORLD_JOIN_DATA = 13,
+	CLIENT_WORLD_LOADED = 14,
+	WORLD_CATCH_UP = 15,
+	WORLD_SYNC_COMPLETE = 16,
 }
 
 
