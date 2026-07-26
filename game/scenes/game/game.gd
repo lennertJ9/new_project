@@ -94,6 +94,7 @@ func start_world(start_data: WorldStartData) -> void:
 	await active_world.initialize(start_data)
 
 	active_world.player.movement_input_sampled.connect(_on_local_movement_input_sampled)
+	active_world.chunk_manager.wall_destroyed.connect(_on_host_wall_destroyed)
 
 	if NetworkManager.is_host():
 		_register_host_session_player()
@@ -163,9 +164,14 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 		NetworkProtocol.MessageType.PLAYER_INPUT:
 			if NetworkManager.is_host():
 				_handle_player_input(from_peer_id, payload)
+				
 		NetworkProtocol.MessageType.PLAYER_STATE:
 			if NetworkManager.is_client():
 				_handle_player_state(from_peer_id, payload)
+		
+		NetworkProtocol.MessageType.WORLD_TILES_CHANGED:
+			if NetworkManager.is_client():
+				_handle_world_tiles_changed(from_peer_id, payload)
 
 
 
@@ -840,6 +846,90 @@ func _handle_player_state(from_peer_id: int, payload: Dictionary) -> void:
 
 
 
+## bij het destroyen van een wall word de broadcast opgeroepen die een WORLD_TILES_CHANGED packet stuurt naar alle clients
+func _on_host_wall_destroyed(tile_position: Vector2i, _destroyed_wall_id: int) -> void:
+	if not NetworkManager.is_host():
+		return
+
+	var tile_change: WorldTileChange = WorldTileChange.create(tile_position, Chunk.TileLayer.WALL, 0)
+	var tile_changes: Array[WorldTileChange] = [tile_change]
+
+	_broadcast_world_tile_changes(tile_changes)
+
+
+
+## stuurt een WORLD_TILES_CHANGED packet naar alle clients
+func _broadcast_world_tile_changes(tile_changes: Array[WorldTileChange]) -> void:
+	if not NetworkManager.is_host():
+		return
+
+	if tile_changes.is_empty():
+		return
+
+	var serialized_changes: Array[Dictionary] = []
+
+	for tile_change: WorldTileChange in tile_changes:
+		serialized_changes.append(tile_change.to_dictionary())
+
+	for session_player: SessionPlayer in session_players_by_peer_id.values():
+		var target_peer_id: int = session_player.peer_id
+
+		if target_peer_id == MultiplayerPeer.TARGET_PEER_SERVER:
+			continue
+
+		var send_error: Error = NetworkManager.send_packet(
+			target_peer_id,
+			NetworkProtocol.MessageType.WORLD_TILES_CHANGED,
+			{
+				"changes": serialized_changes,
+			},
+			MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+			NetworkProtocol.CHANNEL_WORLD
+		)
+
+		if send_error != OK:
+			print(
+				"WORLD_TILES_CHANGED versturen mislukt: %s."
+				% error_string(send_error)
+			)
+
+
+
+## uitgevoerd bij het onvangen van een WORLD_TILES_CHANGED packet
+func _handle_world_tiles_changed(from_peer_id: int, payload: Dictionary) -> void:
+	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
+		return
+
+	if active_world == null:
+		return
+
+	var raw_changes: Variant = payload.get("changes")
+
+	if not raw_changes is Array or raw_changes.is_empty():
+		return
+
+	var tile_changes: Array[WorldTileChange] = []
+
+	for raw_change: Variant in raw_changes:
+		if not raw_change is Dictionary:
+			return
+
+		var change_dictionary: Dictionary = raw_change
+		var tile_change: WorldTileChange = (WorldTileChange.from_dictionary(change_dictionary))
+
+		if tile_change == null:
+			return
+
+		tile_changes.append(tile_change)
+
+	for tile_change: WorldTileChange in tile_changes:
+		var applied: bool = active_world.chunk_manager.apply_world_tile_change(tile_change)
+
+		if not applied:
+			print(
+				"Niet-ondersteunde world tile change ontvangen voor laag %d."
+				% tile_change.layer
+			)
 
 
 

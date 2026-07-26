@@ -324,7 +324,7 @@ func apply_modified_wall_ids(chunk: Chunk) -> void:
 	world_data_mutex.unlock()
 
 
-# deze functie vult de tile aanpassingen in active world data aan zodat we dat object kunnen saven later
+## deze functie vult de tile aanpassingen in active world data aan zodat we dat object kunnen saven later
 func set_modified_tile_id_locked(layer: Chunk.TileLayer, tile_position: Vector2i, tile_id: int) -> void:
 	var modified_ids: Dictionary[Vector2i, Dictionary] = {}
 
@@ -348,7 +348,37 @@ func set_modified_tile_id_locked(layer: Chunk.TileLayer, tile_position: Vector2i
 
 
 
+func apply_world_tile_change(tile_change: WorldTileChange) -> bool:
+	if tile_change.layer != Chunk.TileLayer.WALL:
+		return false
 
+	var dirty_tiles: Array[Vector2i] = get_wall_dirty_tiles(tile_change.tile_position)
+	var chunk_position: Vector2i = get_chunk_position_from_tile(tile_change.tile_position)
+
+	world_data_mutex.lock()
+
+	# Altijd opslaan in de werelddata:
+	# ook wanneer deze chunk bij deze client nog niet gegenereerd is.
+	set_modified_tile_id_locked(tile_change.layer, tile_change.tile_position, tile_change.tile_id)
+
+	if generated_chunks.has(chunk_position):
+		var chunk: Chunk = generated_chunks[chunk_position]
+		var local_position: Vector2i = get_local_tile_position(tile_change.tile_position)
+		var local_index: int = chunk.local_vector_to_index(local_position)
+
+		chunk.wall_id_layer[local_index] = tile_change.tile_id
+		chunk.wall_health_layer[local_index] = 0
+
+		for dirty_tile: Vector2i in dirty_tiles:
+			autotiling.autotile_wall_tile(dirty_tile)
+			autotiling.autotile_ground_tile(dirty_tile)
+
+	world_data_mutex.unlock()
+
+	refresh_wall_tiles(dirty_tiles)
+	refresh_ground_tiles(dirty_tiles)
+
+	return true
 
 
 
