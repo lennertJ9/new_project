@@ -11,6 +11,7 @@ const WORLD_SCENE: PackedScene = preload("uid://bt2absuqhkyvq")
 @onready var world_container: Node2D = $WorldContainer
 @onready var world_sync: WorldSync = $WorldSync
 @onready var player_sync: PlayerSync = $PlayerSync
+@onready var projectile_sync: ProjectileSync = $ProjectileSync
 
 @onready var main_menu: Control = $Interface/MainMenu
 @onready var loading_screen: Control = $Interface/LoadingScreen
@@ -26,6 +27,7 @@ func _ready() -> void:
 	
 	NetworkManager.host_started.connect(world_sync.on_host_started)
 	NetworkManager.host_started.connect(player_sync.on_host_started)
+	NetworkManager.host_started.connect(projectile_sync.on_host_started)
 	NetworkManager.remote_peer_disconnected.connect(world_sync.on_remote_peer_disconnected)
 	NetworkManager.remote_peer_disconnected.connect(player_sync.on_remote_peer_disconnected)
 	world_sync.client_world_start_requested.connect(_on_client_world_start_requested)
@@ -76,6 +78,7 @@ func start_world(start_data: WorldStartData) -> void:
 
 	world_sync.set_active_world(active_world)
 	player_sync.set_active_world(active_world)
+	projectile_sync.set_active_world(active_world)
 
 	if NetworkManager.is_client():
 		world_sync.notify_client_world_loaded()
@@ -104,7 +107,10 @@ func _on_network_packet_received(from_peer_id: int, message_type: int, payload: 
 	if world_sync.handle_network_packet(from_peer_id, message_type, payload):
 		return
 
-	player_sync.handle_network_packet(from_peer_id, message_type, payload)
+	if player_sync.handle_network_packet(from_peer_id, message_type, payload):
+		return
+
+	projectile_sync.handle_network_packet(from_peer_id, message_type, payload)
 
 
 func _on_multiplayer_toggle(enabled: bool):

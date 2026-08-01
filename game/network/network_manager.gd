@@ -18,7 +18,7 @@ signal connection_rejected(reason: int)
 
 const DEFAULT_PORT: int = 25001
 const MAX_CLIENTS: int = 4
-const ENET_CHANNEL_COUNT: int = 3
+const ENET_CHANNEL_COUNT: int = 4
 
 @onready var scene_multiplayer: SceneMultiplayer = multiplayer as SceneMultiplayer
 

@@ -30,7 +30,6 @@ var save_timer: float
 
 
 func _ready() -> void:
-	player.configure_world(chunk_manager, projectiles)
 	player.set_controls_enabled(false)
 
 	var a_star_manager: Node = get_node_or_null("/root/AStarManager")
@@ -104,7 +103,6 @@ func spawn_remote_player(peer_id: int, spawn_position: Vector2) -> Player:
 
 	remote_players.add_child(remote_player)
 
-	remote_player.configure_world(chunk_manager, projectiles)
 	remote_player.global_position = spawn_position
 	remote_players_by_peer_id[peer_id] = remote_player
 

@@ -5,6 +5,7 @@ class_name PlayerSync
 const PLAYER_INPUT_TIMEOUT_MSEC: int = 250
 const PLAYER_INPUT_SEND_INTERVAL: float = 1.0 / 30.0
 const PLAYER_STATE_SEND_INTERVAL: float = 1.0 / 20.0
+const BASIC_WALL_DAMAGE: int = 30
 
 
 signal local_player_ready
@@ -32,6 +33,8 @@ func _physics_process(delta: float) -> void:
 		_send_player_states_if_due(delta)
 
 
+
+
 func set_active_world(world: World) -> void:
 	if active_world == world:
 		return
@@ -43,6 +46,7 @@ func set_active_world(world: World) -> void:
 		return
 
 	active_world.player.movement_input_sampled.connect(_on_local_movement_input_sampled)
+	active_world.player.wall_damage_requested.connect(_on_local_wall_damage_requested)
 	_register_host_session_player()
 
 
@@ -51,11 +55,7 @@ func clear_active_world() -> void:
 	active_world = null
 
 
-func handle_network_packet(
-	from_peer_id: int,
-	message_type: int,
-	payload: Dictionary
-) -> bool:
+func handle_network_packet(from_peer_id: int, message_type: int, payload: Dictionary) -> bool:
 	match message_type:
 		NetworkProtocol.MessageType.PLAYER_SPAWN:
 			if NetworkManager.is_client():
@@ -70,6 +70,11 @@ func handle_network_packet(
 		NetworkProtocol.MessageType.PLAYER_INPUT:
 			if NetworkManager.is_host():
 				_handle_player_input(from_peer_id, payload)
+			return true
+
+		NetworkProtocol.MessageType.REQUEST_DAMAGE_WALL:
+			if NetworkManager.is_host():
+				_handle_wall_damage_request(from_peer_id, payload)
 			return true
 
 		NetworkProtocol.MessageType.PLAYER_STATE:
@@ -109,12 +114,10 @@ func prepare_for_client_join() -> void:
 	latest_received_player_snapshots_by_peer_id.clear()
 
 
+
 # WorldSync only emits this after it has validated the world revision and the
 # incoming PlayerSaveData. PlayerSync now owns the session and Player node.
-func register_client_session(
-	from_peer_id: int,
-	player_save_data: PlayerSaveData
-) -> void:
+func register_client_session(from_peer_id: int, player_save_data: PlayerSaveData) -> void:
 	if not NetworkManager.is_host():
 		return
 
@@ -154,16 +157,62 @@ func _disconnect_from_active_world() -> void:
 	if active_world == null:
 		return
 
-	if active_world.player.movement_input_sampled.is_connected(
-		_on_local_movement_input_sampled
-	):
-		active_world.player.movement_input_sampled.disconnect(
-			_on_local_movement_input_sampled
-		)
+	if active_world.player.movement_input_sampled.is_connected(_on_local_movement_input_sampled):
+		active_world.player.movement_input_sampled.disconnect(_on_local_movement_input_sampled)
+
+	if active_world.player.wall_damage_requested.is_connected(_on_local_wall_damage_requested):
+		active_world.player.wall_damage_requested.disconnect(_on_local_wall_damage_requested)
+
 
 
 func _on_local_movement_input_sampled(movement_input: Vector2) -> void:
 	local_movement_input = movement_input
+
+
+func _on_local_wall_damage_requested(world_position: Vector2) -> void:
+	if NetworkManager.is_client():
+		if client_gameplay_ready:
+			_request_wall_damage_from_host(world_position)
+		return
+
+	_apply_authoritative_wall_damage(world_position)
+
+
+
+func _request_wall_damage_from_host(world_position: Vector2) -> void:
+	var send_error: Error = NetworkManager.send_packet(
+		MultiplayerPeer.TARGET_PEER_SERVER,
+		NetworkProtocol.MessageType.REQUEST_DAMAGE_WALL,
+		{
+			"world_position": world_position,
+		},
+		MultiplayerPeer.TRANSFER_MODE_RELIABLE,
+		NetworkProtocol.CHANNEL_CONTROL
+	)
+
+	if send_error != OK:
+		print("REQUEST_DAMAGE_WALL versturen mislukt: %s." % error_string(send_error))
+
+
+func _handle_wall_damage_request(from_peer_id: int, payload: Dictionary) -> void:
+	if not NetworkManager.is_client_approved(from_peer_id):
+		return
+
+	if not session_players_by_peer_id.has(from_peer_id):
+		return
+
+	var raw_world_position: Variant = payload.get("world_position")
+	if not raw_world_position is Vector2:
+		return
+
+	_apply_authoritative_wall_damage(raw_world_position)
+
+
+func _apply_authoritative_wall_damage(world_position: Vector2) -> void:
+	if active_world == null or active_world.chunk_manager == null:
+		return
+
+	active_world.chunk_manager.damage_wall(world_position, BASIC_WALL_DAMAGE)
 
 
 func _register_host_session_player() -> void:

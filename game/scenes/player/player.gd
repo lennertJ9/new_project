@@ -7,6 +7,10 @@ class RemotePositionSnapshot:
 
 
 signal movement_input_sampled(movement_input: Vector2)
+signal wall_damage_requested(world_position: Vector2)
+signal spell_cast_requested(spell_id: String, aim_direction: Vector2)
+
+const MAGIC_BOLT_SPELL_ID: String = "magic_bolt"
 
 const REMOTE_INTERPOLATION_DELAY_MSEC: int = 100
 const MAX_REMOTE_POSITION_SNAPSHOTS: int = 4
@@ -18,19 +22,11 @@ const LOCAL_RECONCILIATION_SOFT_FACTOR: float = 0.25
 
 var speed: int = 120
 var facing_direction: Vector2 = Vector2.UP
-var chunk_manager: ChunkManager
-var projectile_container: Node2D
 var controls_enabled: bool = false
 var remote_position_snapshots: Array[RemotePositionSnapshot] = []
 
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
-const BOLT_SCENE: PackedScene = preload("res://scenes/spells/magic_bolt/MagicBolt.tscn")
-
-
-func configure_world(chunk_manager_reference: ChunkManager, projectile_container_reference: Node2D) -> void:
-	chunk_manager = chunk_manager_reference
-	projectile_container = projectile_container_reference
 
 
 
@@ -113,21 +109,17 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("left_click"):
-		if chunk_manager != null:
-			chunk_manager.damage_wall(get_global_mouse_position(), 30)
+		wall_damage_requested.emit(get_global_mouse_position())
 	
 	if event.is_action_pressed("right_click"):
-		if chunk_manager == null or projectile_container == null:
+		var aim_direction: Vector2 = global_position.direction_to(
+			get_global_mouse_position()
+		)
+
+		if aim_direction.is_zero_approx():
 			return
 
-		var bolt: MagicBolt = BOLT_SCENE.instantiate() as MagicBolt
-		if bolt == null:
-			return
-
-		bolt.global_position = global_position
-		bolt.direction = global_position.direction_to(get_global_mouse_position())
-		bolt.chunk_manager = chunk_manager
-		projectile_container.add_child(bolt)
+		spell_cast_requested.emit(MAGIC_BOLT_SPELL_ID, aim_direction)
 
 
 
