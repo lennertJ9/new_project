@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="TileCatalog" format=3 uid="uid://cmarr2nv3csqw"]
+
+[ext_resource type="Script" uid="uid://cvp0t7d0ud0dk" path="res://systems/tiles/tile_catalog.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://sqtnkm3x8tpu" path="res://systems/tiles/ground_tile_definition.gd" id="2_ground"]
+[ext_resource type="Script" uid="uid://1va5ujlymm5t" path="res://systems/tiles/wall_tile_definition.gd" id="3_wall"]
+
+[sub_resource type="Resource" id="Ground_Normal"]
+script = ExtResource("2_ground")
+tile_id = 2
+display_name = "Normal ground"
+
+[sub_resource type="Resource" id="Wall_Dirt"]
+script = ExtResource("3_wall")
+tile_id = 1
+display_name = "Dirt wall"
+
+[sub_resource type="Resource" id="Wall_Stone"]
+script = ExtResource("3_wall")
+tile_id = 2
+display_name = "Stone wall"
+max_health = 200
+
+[resource]
+script = ExtResource("1_catalog")
+ground_tiles = Array[ExtResource("2_ground")]([SubResource("Ground_Normal")])
+wall_tiles = Array[ExtResource("3_wall")]([SubResource("Wall_Dirt"), SubResource("Wall_Stone")])

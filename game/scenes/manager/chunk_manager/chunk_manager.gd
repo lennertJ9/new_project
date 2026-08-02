@@ -2,14 +2,16 @@ extends Node2D
 class_name ChunkManager
 
 
+signal chunk_loaded(chunk: Chunk)
+signal chunk_unloaded(chunk: Chunk)
+signal tile_changed(tile_change: WorldTileChange)
 
-signal chunk_deloaded
 signal neighbours_checked
 signal wall_damaged(tile_position: Vector2i, remaining_health: int)
-signal wall_destroyed(tile_position: Vector2i, wall_id: int)
 signal initial_area_loaded
 
-const WALL_DATABASE := preload("res://scenes/tile_database/wall_database.gd")
+const TILE_DATABASE := preload("res://systems/tiles/tile_database.gd")
+const NAVIGATION_MAP := preload("res://systems/pathfinding/navigation_map.gd")
 const CHUNK_SIZE := 16
 const CHUNK_PIXEL_SIZE: int = CHUNK_SIZE * 16
 const GENERATION_PADDING: int = 1
@@ -78,6 +80,7 @@ var is_world_running: bool = false
 var initial_area_is_loaded: bool = false
 
 var active_world_data: WorldSaveData
+
 
 # ------------- Check Timers --------------#
 var chunk_check_interval: float = 0.2
@@ -157,8 +160,6 @@ func is_running() -> bool:
 func _process(delta: float) -> void:
 	if not is_running():
 		return
-	
-	
 	
 	process_data_generated_chunks()
 	process_autotiled_chunks()
@@ -348,36 +349,54 @@ func set_modified_tile_id_locked(layer: Chunk.TileLayer, tile_position: Vector2i
 
 
 
-func apply_world_tile_change(tile_change: WorldTileChange) -> bool:
-	if tile_change.layer != Chunk.TileLayer.WALL:
-		return false
-
-	var dirty_tiles: Array[Vector2i] = get_wall_dirty_tiles(tile_change.tile_position)
+func apply_tile_change(tile_change: WorldTileChange) -> bool:
+	var dirty_tiles: Array[Vector2i] = get_autotile_dirty_tiles(tile_change.tile_position)
 	var chunk_position: Vector2i = get_chunk_position_from_tile(tile_change.tile_position)
+	var changed_chunk: Chunk = null
+	var changed_local_index: int = -1
 
 	world_data_mutex.lock()
 
-	# Altijd opslaan in de werelddata:
-	# ook wanneer deze chunk bij deze client nog niet gegenereerd is.
-	set_modified_tile_id_locked(tile_change.layer, tile_change.tile_position, tile_change.tile_id)
+	# Ook bewaren wanneer deze chunk lokaal nog niet geladen is.
+	set_modified_tile_id_locked(
+		tile_change.layer,
+		tile_change.tile_position,
+		tile_change.tile_id
+	)
 
 	if generated_chunks.has(chunk_position):
 		var chunk: Chunk = generated_chunks[chunk_position]
 		var local_position: Vector2i = get_local_tile_position(tile_change.tile_position)
 		var local_index: int = chunk.local_vector_to_index(local_position)
 
-		chunk.wall_id_layer[local_index] = tile_change.tile_id
-		chunk.wall_health_layer[local_index] = 0
+		match tile_change.layer:
+			Chunk.TileLayer.GROUND:
+				chunk.ground_id_layer[local_index] = tile_change.tile_id
+
+			Chunk.TileLayer.WALL:
+				chunk.wall_id_layer[local_index] = tile_change.tile_id
+				chunk.wall_health_layer[local_index] = 0
+
+			Chunk.TileLayer.CLIFF:
+				chunk.cliff_id_layer[local_index] = tile_change.tile_id
+
+		changed_chunk = chunk
+		changed_local_index = local_index
 
 		for dirty_tile: Vector2i in dirty_tiles:
 			autotiling.autotile_wall_tile(dirty_tile)
 			autotiling.autotile_ground_tile(dirty_tile)
+			autotiling.autotile_cliff_tile(dirty_tile)
 
 	world_data_mutex.unlock()
 
 	refresh_wall_tiles(dirty_tiles)
 	refresh_ground_tiles(dirty_tiles)
+	refresh_cliff_tiles(dirty_tiles)
 
+	tile_changed.emit(tile_change)
+
+	
 	return true
 
 
@@ -413,8 +432,11 @@ func chunk_loader() -> void:
 					ground_layer.erase_cell(tile_pos)
 				i += 1
 		
+		
 		chunk.last_accessed = Time.get_ticks_msec() / 1000.0
 		chunk.state = Chunk.ChunkState.LOADED
+		chunk_loaded.emit(chunk)
+		
 		if not loaded_chunks.has(chunk):
 			loaded_chunks.append(chunk)
 		
@@ -609,9 +631,10 @@ func chunk_unloader():
 				cliff_layer.erase_cell(tile_pos)
 		while loaded_chunks.has(chunk):
 			loaded_chunks.erase(chunk)
+		
 		chunk.state = Chunk.ChunkState.UNLOADED
 		
-		chunk_deloaded.emit(chunk)
+		chunk_unloaded.emit(chunk)
 
 
 
@@ -654,57 +677,54 @@ func damage_wall_tile(tile_position: Vector2i, damage: int) -> bool:
 	if damage <= 0:
 		return false
 
-	var dirty_tiles := get_wall_dirty_tiles(tile_position)
-	var destroyed_wall_id := 0
+	var dirty_tiles: Array[Vector2i] =get_autotile_dirty_tiles(tile_position)
+	var destroyed_wall_id: int = 0
 
 	world_data_mutex.lock()
-	var chunk_position := get_chunk_position_from_tile(tile_position)
+	var chunk_position: Vector2i = get_chunk_position_from_tile(tile_position)
 	if not generated_chunks.has(chunk_position):
 		world_data_mutex.unlock()
 		return false
 
 	var chunk: Chunk = generated_chunks[chunk_position]
-	var local_position := get_local_tile_position(tile_position)
-	var local_index := chunk.local_vector_to_index(local_position)
-	var wall_id := chunk.wall_id_layer[local_index]
+	var local_position: Vector2i = get_local_tile_position(tile_position)
+	var local_index: int = chunk.local_vector_to_index(local_position)
+	var wall_id: int= chunk.wall_id_layer[local_index]
+	
 	if wall_id == 0:
 		world_data_mutex.unlock()
 		return false
 
-	var wall_stats: Dictionary = WALL_DATABASE.WALL_STATS.get(wall_id, {})
-	if wall_stats.is_empty() or not wall_stats.get("damageable", false):
+	var wall_definition: WallTileDefinition = TILE_DATABASE.get_wall(wall_id)
+	if wall_definition == null or not wall_definition.damageable:
+		world_data_mutex.unlock()
+		return false
+
+	var applied_damage: int = damage - wall_definition.damage_resistance
+	if applied_damage <= 0:
 		world_data_mutex.unlock()
 		return false
 
 	var current_health: int = chunk.wall_health_layer[local_index]
 	if current_health == 0:
-		current_health = int(wall_stats.get("max_health", 0))
+		current_health = wall_definition.max_health
 
-	current_health -= damage
+	current_health -= applied_damage
 	if current_health > 0:
 		chunk.wall_health_layer[local_index] = current_health
 		world_data_mutex.unlock()
 		wall_damaged.emit(tile_position, current_health)
 		return true
-
-	chunk.wall_id_layer[local_index] = 0
-	chunk.wall_health_layer[local_index] = 0
-	set_modified_tile_id_locked(Chunk.TileLayer.WALL, tile_position, 0)
-	destroyed_wall_id = wall_id
-
-	# Only the destroyed tile and its neighbours can have a changed bitmask.
-	for dirty_tile in dirty_tiles:
-		autotiling.autotile_wall_tile(dirty_tile)
-		autotiling.autotile_ground_tile(dirty_tile)
+	
 	world_data_mutex.unlock()
-
-	refresh_wall_tiles(dirty_tiles)
-	refresh_ground_tiles(dirty_tiles)
-	wall_destroyed.emit(tile_position, destroyed_wall_id)
-
-	return true
+	
+	var tile_change: WorldTileChange = WorldTileChange.create(tile_position, Chunk.TileLayer.WALL, 0)
+	
+	return apply_tile_change(tile_change)
 
 
+
+## returnt chunk position van een globale tile
 func get_chunk_position_from_tile(tile_position: Vector2i) -> Vector2i:
 	return Vector2i(
 		floori(float(tile_position.x) / CHUNK_SIZE),
@@ -712,6 +732,8 @@ func get_chunk_position_from_tile(tile_position: Vector2i) -> Vector2i:
 	)
 
 
+
+## zet een globale positie om naar een local tile position
 func get_local_tile_position(tile_position: Vector2i) -> Vector2i:
 	return Vector2i(
 		posmod(tile_position.x, CHUNK_SIZE),
@@ -719,12 +741,36 @@ func get_local_tile_position(tile_position: Vector2i) -> Vector2i:
 	)
 
 
-func get_wall_dirty_tiles(center_tile: Vector2i) -> Array[Vector2i]:
+
+## returnt lijst van de 8 buren
+func get_autotile_dirty_tiles(center_tile: Vector2i) -> Array[Vector2i]:
 	var dirty_tiles: Array[Vector2i] = []
 	for y in range(-1, 2):
 		for x in range(-1, 2):
 			dirty_tiles.append(center_tile + Vector2i(x, y))
 	return dirty_tiles
+
+
+
+func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:
+	world_data_mutex.lock()
+	for tile_position in tile_positions:
+		var chunk_position: Vector2i = get_chunk_position_from_tile(tile_position)
+		if not generated_chunks.has(chunk_position):
+			continue
+
+		var chunk: Chunk = generated_chunks[chunk_position]
+		if chunk.state != Chunk.ChunkState.LOADED:
+			continue
+
+		var index: int = chunk.local_vector_to_index(get_local_tile_position(tile_position))
+		var ground_id: int = chunk.ground_id_layer[index]
+		if ground_id == 0:
+			ground_layer.erase_cell(tile_position)
+		else:
+			ground_layer.set_cell(tile_position, ground_id, chunk.unpack_atlas(chunk.ground_atlas_coords[index]))
+	world_data_mutex.unlock()
+
 
 
 func refresh_wall_tiles(tile_positions: Array[Vector2i]) -> void:
@@ -748,10 +794,11 @@ func refresh_wall_tiles(tile_positions: Array[Vector2i]) -> void:
 
 
 
-func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:
+func refresh_cliff_tiles(tile_positions: Array[Vector2i]) -> void:
 	world_data_mutex.lock()
-	for tile_position in tile_positions:
-		var chunk_position := get_chunk_position_from_tile(tile_position)
+
+	for tile_position: Vector2i in tile_positions:
+		var chunk_position: Vector2i = get_chunk_position_from_tile(tile_position)
 		if not generated_chunks.has(chunk_position):
 			continue
 
@@ -759,14 +806,27 @@ func refresh_ground_tiles(tile_positions: Array[Vector2i]) -> void:
 		if chunk.state != Chunk.ChunkState.LOADED:
 			continue
 
-		var index := chunk.local_vector_to_index(get_local_tile_position(tile_position))
-		var ground_id := chunk.ground_id_layer[index]
-		if ground_id == 0:
-			ground_layer.erase_cell(tile_position)
+		var index: int = chunk.local_vector_to_index(get_local_tile_position(tile_position))
+		var cliff_id: int = chunk.cliff_id_layer[index]
+
+		if cliff_id == 0:
+			cliff_layer.erase_cell(tile_position)
 		else:
-			ground_layer.set_cell(tile_position, ground_id, chunk.unpack_atlas(chunk.ground_atlas_coords[index]))
+			cliff_layer.set_cell(tile_position, cliff_id, chunk.unpack_atlas(chunk.cliff_atlas_coords[index]))
+
 	world_data_mutex.unlock()
 
+
+
+
+
+
+
+func get_chunk_position_from_world_position(world_position: Vector2) -> Vector2i:
+	return Vector2i(
+		floori(world_position.x / float(CHUNK_PIXEL_SIZE)),
+		floori(world_position.y / float(CHUNK_PIXEL_SIZE))
+	)
 
 
 ############## NETWORK CODE ########################################################################
@@ -811,15 +871,6 @@ func get_simulation_anchor_chunk_positions() -> Array[Vector2i]:
 		simulation_anchors_by_id.erase(anchor_id)
 
 	return chunk_positions
-
-
-
-func get_chunk_position_from_world_position(world_position: Vector2) -> Vector2i:
-	return Vector2i(
-		floori(world_position.x / float(CHUNK_PIXEL_SIZE)),
-		floori(world_position.y / float(CHUNK_PIXEL_SIZE))
-	)
-
 
 
 

@@ -16,6 +16,7 @@ const PLAYER_SCENE = preload("uid://bnr7g5ndf57a")
 var remote_players_by_peer_id: Dictionary[int, Player] = {}
 var active_world_data: WorldSaveData
 var local_player_data: PlayerSaveData
+var pathfinding_service: PathfindingService 
 
 var debug_mode: bool = false
 
@@ -31,11 +32,10 @@ var save_timer: float
 
 func _ready() -> void:
 	player.set_controls_enabled(false)
-
-	var a_star_manager: Node = get_node_or_null("/root/AStarManager")
-	if a_star_manager != null and a_star_manager.has_method("configure"):
-		a_star_manager.configure(chunk_manager)
-
+	pathfinding_service = PathfindingService.new()
+	pathfinding_service.configure(chunk_manager)
+	add_child(pathfinding_service)
+	
 
 
 func _process(delta: float) -> void:
@@ -74,6 +74,9 @@ func initialize(start_data: WorldStartData) -> void:
 	# heeft bevestigd en de lokale sessiespeler officieel heeft gespawned.
 	if not NetworkManager.is_client():
 		player.set_controls_enabled(true)
+		
+	var path: Array = pathfinding_service.find_tile_path(Vector2i(0,0), Vector2i(5,0))
+	print(path)
 
 
 

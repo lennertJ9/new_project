@@ -35,7 +35,7 @@ func set_active_world(world: World) -> void:
 	active_world = world
 
 	if active_world != null:
-		active_world.chunk_manager.wall_destroyed.connect(_on_host_wall_destroyed)
+		active_world.chunk_manager.tile_changed.connect(_on_host_tile_changed)
 
 
 func clear_active_world() -> void:
@@ -93,8 +93,10 @@ func handle_network_packet(from_peer_id: int, message_type: int, payload: Dictio
 	return false
 
 
+
 func on_host_started() -> void:
 	_reset_host_state()
+
 
 
 func on_remote_peer_disconnected(peer_id: int) -> void:
@@ -102,6 +104,7 @@ func on_remote_peer_disconnected(peer_id: int) -> void:
 		return
 
 	_cleanup_host_peer_state(peer_id)
+
 
 
 func begin_join(address: String, host_port: int, player_data: PlayerSaveData) -> void:
@@ -113,6 +116,7 @@ func begin_join(address: String, host_port: int, player_data: PlayerSaveData) ->
 	if join_error != OK:
 		pending_join_player_data = null
 		print("Joinen van wereld mislukt: %s" % error_string(join_error))
+
 
 
 func request_world_join_data() -> void:
@@ -132,6 +136,7 @@ func request_world_join_data() -> void:
 		return
 
 	print("Client vraagt werelddata op.")
+
 
 
 # Called by Game only after the snapshot world finished initializing locally.
@@ -154,6 +159,7 @@ func notify_client_world_loaded() -> void:
 		return
 
 	print("Client meldt dat snapshot R%d lokaal geladen is." % client_snapshot_revision)
+
 
 
 # Called by host-side gameplay code after a permanent world mutation.
@@ -187,12 +193,14 @@ func broadcast_tile_changes(tile_changes: Array[WorldTileChange]) -> void:
 		)
 
 
+
 func _disconnect_from_active_world() -> void:
 	if active_world == null:
 		return
 
-	if active_world.chunk_manager.wall_destroyed.is_connected(_on_host_wall_destroyed):
-		active_world.chunk_manager.wall_destroyed.disconnect(_on_host_wall_destroyed)
+	if active_world.chunk_manager.tile_changed.is_connected(_on_host_tile_changed):
+		active_world.chunk_manager.tile_changed.disconnect(_on_host_tile_changed)
+
 
 
 func _reset_host_state() -> void:
@@ -203,6 +211,7 @@ func _reset_host_state() -> void:
 	host_world_live_peer_ids.clear()
 
 
+
 func _reset_client_state() -> void:
 	pending_join_player_data = null
 	pending_world_join_data = null
@@ -210,11 +219,13 @@ func _reset_client_state() -> void:
 	client_last_applied_world_revision = -1
 
 
+
 func _cleanup_host_peer_state(peer_id: int) -> void:
 	host_snapshot_revision_by_peer_id.erase(peer_id)
 	host_sync_target_revision_by_peer_id.erase(peer_id)
 	host_world_live_peer_ids.erase(peer_id)
 	_trim_host_world_change_log()
+
 
 
 # The temporary log only retains revisions that at least one loading client
@@ -237,6 +248,7 @@ func _trim_host_world_change_log() -> void:
 			break
 
 		host_world_change_log.pop_front()
+
 
 
 func _handle_world_join_data_request(from_peer_id: int) -> void:
@@ -266,6 +278,7 @@ func _handle_world_join_data_request(from_peer_id: int) -> void:
 	print("WorldJoinData verstuurd naar peer %d." % from_peer_id)
 
 
+
 func _handle_world_join_data(from_peer_id: int, payload: Dictionary) -> void:
 	if from_peer_id != MultiplayerPeer.TARGET_PEER_SERVER:
 		return
@@ -288,6 +301,7 @@ func _handle_world_join_data(from_peer_id: int, payload: Dictionary) -> void:
 	)
 
 
+
 func _request_world_snapshot() -> void:
 	var request_error: Error = NetworkManager.send_packet(
 		MultiplayerPeer.TARGET_PEER_SERVER,
@@ -302,6 +316,7 @@ func _request_world_snapshot() -> void:
 		return
 
 	print("Client vraagt wereldsnapshot op.")
+
 
 
 func _handle_world_snapshot_request(from_peer_id: int) -> void:
@@ -341,6 +356,7 @@ func _handle_world_snapshot_request(from_peer_id: int) -> void:
 		"Wereldsnapshot op revisie %d verstuurd naar peer %d."
 		% [snapshot_revision, from_peer_id]
 	)
+
 
 
 func _handle_world_snapshot(from_peer_id: int, payload: Dictionary) -> void:
@@ -397,6 +413,7 @@ func _handle_world_snapshot(from_peer_id: int, payload: Dictionary) -> void:
 		pending_join_player_data
 	)
 	client_world_start_requested.emit(start_data)
+
 
 
 func _handle_client_world_loaded(from_peer_id: int, payload: Dictionary) -> void:
@@ -461,11 +478,7 @@ func _handle_client_world_loaded(from_peer_id: int, payload: Dictionary) -> void
 	)
 
 
-func _send_world_catch_up(
-	target_peer_id: int,
-	after_revision: int,
-	through_revision: int
-) -> bool:
+func _send_world_catch_up(target_peer_id: int, after_revision: int, through_revision: int) -> bool:
 	var packet_batches: Array[Dictionary] = []
 
 	for logged_batch: Dictionary in host_world_change_log:
@@ -593,6 +606,7 @@ func _send_client_world_ready() -> void:
 	)
 
 
+
 func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
 	if not NetworkManager.is_client_approved(from_peer_id):
 		return
@@ -644,18 +658,14 @@ func _handle_client_world_ready(from_peer_id: int, payload: Dictionary) -> void:
 	client_world_ready.emit(from_peer_id, player_save_data)
 
 
-func _on_host_wall_destroyed(tile_position: Vector2i, _destroyed_wall_id: int) -> void:
+
+func _on_host_tile_changed(tile_change: WorldTileChange) -> void:
 	if not NetworkManager.is_host():
 		return
 
-	var tile_change: WorldTileChange = WorldTileChange.create(
-		tile_position,
-		Chunk.TileLayer.WALL,
-		0
-	)
 	var tile_changes: Array[WorldTileChange] = [tile_change]
-
 	broadcast_tile_changes(tile_changes)
+
 
 
 func _send_live_world_tile_changes(
@@ -696,10 +706,7 @@ func _handle_world_tiles_changed(from_peer_id: int, payload: Dictionary) -> void
 	_apply_client_world_change_batch(raw_revision, payload.get("changes"))
 
 
-func _apply_client_world_change_batch(
-	change_revision: int,
-	raw_changes: Variant
-) -> bool:
+func _apply_client_world_change_batch(change_revision: int, raw_changes: Variant) -> bool:
 	if active_world == null:
 		return false
 
@@ -736,7 +743,7 @@ func _apply_client_world_change_batch(
 		tile_changes.append(tile_change)
 
 	for tile_change: WorldTileChange in tile_changes:
-		var applied: bool = active_world.chunk_manager.apply_world_tile_change(tile_change)
+		var applied: bool = active_world.chunk_manager.apply_tile_change(tile_change)
 
 		if not applied:
 			print(

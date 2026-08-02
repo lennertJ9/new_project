@@ -46,9 +46,7 @@ enum TileLayer {
 var last_accessed: float
 
 
-# ----- AStar ----- # 
-var a_star_id: int # een "start" id. 0,256,512,...
-var a_star_is_ready: bool # als point generated en connected zijn
+
 
 # ----- Neighbour Data ----- # 
 var is_neigbhoured
@@ -92,5 +90,7 @@ func index_to_xy(index: int):
 	return Vector2i(x,y)
 
 
+
+# zet een local tile positie om naar zijn index in de array
 func local_vector_to_index(vector: Vector2i)-> int:
 	return vector.y * 16 + vector.x
